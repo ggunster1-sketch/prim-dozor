@@ -1,0 +1,9 @@
+{
+  "name": "Прим_Дозор — Новости Приморья и России",
+  "short_name": "Прим_Дозор",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "description": "Главный информационный портал Владивостока, Приморского края и России 24/7"
+}

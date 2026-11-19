@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Прим_Дозор — Главные новости Владивостока, Приморья и России 24/7</title>
+  <meta name="yandex-verification" content="0dc10018fffed4cc" />
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="container top-flex">
+      <div>
+        <span class="live-pill">● ВЛАДИВОСТОК <span id="clock">--:--</span></span>
+        <span style="margin-left:10px;">Погода:
+          <select id="city-sel">
+            <option>Владивосток +2°C ☀️</option>
+            <option>Большой Камень +1°C 🌤</option>
+            <option>Артём 0°C ☁️</option>
+            <option>Уссурийск -2°C ☀️</option>
+            <option>Находка +3°C 🌊</option>
+          </select>
+        </span>
+        <span style="margin-left:10px;">🌉 Мосты: <strong style="color:#10b981">Открыты</strong></span>
+      </div>
+      <div>💵 USD: 98.4 ₽ · 💴 CNY: 13.6 ₽ · 🏫 Школы: <strong>Очно</strong></div>
+    </div>
+  </div>
+
+  <header>
+    <div class="container head-flex">
+      <div>
+        <span class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></span>
+        <div id="season-txt" style="font-size:12px; color:var(--muted); margin-top:4px;">Главный надзор Приморья и России 24/7</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" onclick="document.body.classList.toggle('big-font')">А+</button>
+        <button class="btn" onclick="document.body.classList.toggle('light')">🌓</button>
+        <button class="btn btn-red" onclick="document.getElementById('rep-modal').style.display='flex'">+ Прислать ЧП</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="ticker">
+    <div class="container"><span class="ticker-tag">⚡ МОЛНИЯ</span><span>Оперативные сводки Приморья, законы РФ и новости 24/7</span></div>
+  </div>
+
+  <div class="container">
+    <div class="socials">
+      <div style="font-size:14px; font-weight:700; color:var(--muted);">📲 Читайте «Прим_Дозор» там, где вам удобно (нажмите для перехода):</div>
+      <div class="soc-grid">
+        <a id="s-tg" href="https://t.me" target="_blank" class="soc-link" style="background:#0088cc;">✈️ Telegram</a>
+        <a id="s-max" href="https://max.ru" target="_blank" class="soc-link" style="background:linear-gradient(135deg,#6366f1,#ec4899);">💬 Мессенджер Макс</a>
+        <a id="s-dzen" href="https://dzen.ru" target="_blank" class="soc-link" style="background:#1e293b; border:1px solid #475569;">⭐ Яндекс Дзен</a>
+        <a id="s-vk" href="https://vk.com" target="_blank" class="soc-link" style="background:#0077ff;">🌐 ВКонтакте</a>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="setCat('all', this)">🔥 Главное</button>
+      <button class="tab" onclick="setCat('chp', this)">🚨 ЧП и 112</button>
+      <button class="tab" onclick="setCat('svo', this)">🇷🇺 СВО и Защитники</button>
+      <button class="tab" onclick="setCat('law', this)">🏛 Законы и Политика</button>
+      <button class="tab" onclick="setCat('city', this)">🏙 Город и ЖКХ</button>
+      <button class="tab" onclick="setCat('family', this)">👨‍👩‍👧 Семья и Медицина</button>
+      <button class="tab" onclick="setCat('sport', this)">🏆 Спорт</button>
+    </div>
+
+    <div class="grid">
+      <aside>
+        <div class="box">
+          <h3>📍 Города края и РФ</h3>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('all')">Все</button>
+            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Владивосток')">Владивосток</button>
+            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Большой Камень')">Большой Камень</button>
+            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Артём')">Артём</button>
+            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Уссурийск')">Уссурийск</button>
+            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Находка')">Находка</button>
+            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Россия')">Россия</button>
+          </div>
+        </div>
+        <div class="box">
+          <h3>💡 Радар отключений ЖКХ</h3>
+          <div class="row"><span>Владивосток (Чуркин)</span><span style="color:#f59e0b;font-weight:700;">Свет до 17:00</span></div>
+          <div class="row"><span>Большой Камень</span><span style="color:#10b981;font-weight:700;">Штатно</span></div>
+          <div class="row"><span>Уссурийск (Центр)</span><span style="color:#f59e0b;font-weight:700;">ХВС до 16:00</span></div>
+          <div class="row"><span>Находка / Артём</span><span style="color:#10b981;font-weight:700;">Без аварий</span></div>
+        </div>
+        <div class="box">
+          <h3>🌊 Морской и таёжный радар</h3>
+          <div class="row"><span>Вода (Амурский зал.)</span><span>+4°C</span></div>
+          <div class="row"><span>Пожары в лесах</span><span style="color:#10b981;font-weight:700;">1 класс (Низкая)</span></div>
+          <div class="row"><span>Сезон / Клёв</span><span>Навага, корюшка</span></div>
+        </div>
+      </aside>
+
+      <main>
+        <div id="ad-slot" class="card" style="display:none; border-color:#3b82f6;">
+          <div id="ad-mark" style="font-size:11px; color:var(--muted); margin-bottom:6px;"></div>
+          <h3 id="ad-t" style="margin-bottom:6px;"></h3>
+          <p id="ad-d" style="font-size:14px; color:var(--muted); margin-bottom:10px;"></p>
+          <a id="ad-btn" href="#" class="btn" style="background:#3b82f6; color:#fff; display:inline-block;"></a>
+        </div>
+        <div id="feed"></div>
+      </main>
+
+      <aside>
+        <div class="box">
+          <h3>☎️ Службы края в 1 клик</h3>
+          <div class="row"><span>Служба спасения</span><a href="tel:112" style="color:#f59e0b;font-weight:700;">112</a></div>
+          <div class="row"><span>Полиция (УМВД)</span><a href="tel:102" style="color:#60a5fa;font-weight:700;">102</a></div>
+          <div class="row"><span>ЕДДС Владивостока</span><a href="tel:84232222333" style="color:#60a5fa;font-weight:700;">222-23-33</a></div>
+          <div class="row"><span>Примводоканал</span><a href="tel:84232005777" style="color:#60a5fa;font-weight:700;">200-57-77</a></div>
+        </div>
+        <div class="box">
+          <h3>📅 Авто-сводки 24/7</h3>
+          <div class="row"><span>07:30</span><span>Погода, мосты, школы</span></div>
+          <div class="row"><span>09:00–18:00</span><span>Главное в крае и РФ</span></div>
+          <div class="row"><span>20:00</span><span>Погода на завтра</span></div>
+          <div class="row"><span>21:00</span><span>Дайджест дня</span></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p><strong>© 2026 Прим_Дозор (18+).</strong> <span id="foot-owner">Информационный портал.</span></p>
+      <p style="margin-top:8px;">
+        <a href="legal.html" style="text-decoration:underline; margin-right:12px;">Политика конфиденциальности (152-ФЗ)</a>
+        <a href="legal.html#rules" style="text-decoration:underline;">Правила публикации и авторские права</a>
+      </p>
+    </div>
+  </footer>
+
+  <div id="art-modal" class="modal" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-box">
+      <button class="btn" style="float:right;" onclick="document.getElementById('art-modal').style.display='none'">✕ Закрыть</button>
+      <div id="art-body"></div>
+    </div>
+  </div>
+
+  <div id="rep-modal" class="modal" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-box">
+      <button class="btn" style="float:right;" onclick="document.getElementById('rep-modal').style.display='none'">✕</button>
+      <h3 style="margin-bottom:10px;">📢 Прислать новость / Народный контроль</h3>
+      <form onsubmit="event.preventDefault(); alert('Сообщение принято редакцией Прим_Дозор!'); document.getElementById('rep-modal').style.display='none';">
+        <input class="input" placeholder="Город или район Приморья" required>
+        <textarea class="input" rows="4" placeholder="Опишите ситуацию..." required></textarea>
+        <label style="display:flex; gap:8px; font-size:12px; color:var(--muted); margin-bottom:12px;">
+          <input type="checkbox" required> Согласен на обработку персональных данных (152-ФЗ)
+        </label>
+        <button type="submit" class="btn btn-red" style="width:100%;">Отправить в редакцию</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="cookie-box" class="cookie">
+    <span>Мы используем файлы cookie и Яндекс.Метрику для работы сайта. Продолжая просмотр, вы соглашаетесь с Политикой конфиденциальности.</span>
+    <button class="btn" style="background:#10b981; color:#fff; border:none;" onclick="localStorage.setItem('ck','1');document.getElementById('cookie-box').style.display='none'">Согласен</button>
+  </div>
+
+</body>
+</html>

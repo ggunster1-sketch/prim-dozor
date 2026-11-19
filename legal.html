@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Правовая информация и Политика конфиденциальности — Прим_Дозор</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container head-flex">
+      <a href="index.html" class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></a>
+      <a href="index.html" class="btn">← Вернуться на главную</a>
+    </div>
+  </header>
+
+  <div class="container" style="margin-top:24px; max-width:860px;">
+    <div class="card">
+      <h1 style="margin-bottom:14px;">Политика конфиденциальности и обработки персональных данных (152-ФЗ)</h1>
+      <p style="margin-bottom:12px;">Настоящая Политика определяет порядок обработки и защиты информации о пользователях информационного портала <strong>«Прим_Дозор»</strong> в соответствии с Федеральным законом РФ № 152-ФЗ «О персональных данных».</p>
+      <p style="margin-bottom:12px;"><strong>1. Какие данные собираются:</strong> обезличенные технические данные (файлы cookie, IP-адрес, сведения о браузере через сервис Яндекс.Метрика) для улучшения работы сайта, а также сведения, которые пользователь добровольно указывает в форме «Прислать новость / Народный контроль».</p>
+      <p style="margin-bottom:12px;"><strong>2. Локализация и защита:</strong> хранение и обработка персональных данных граждан РФ осуществляются с соблюдением требований законодательства Российской Федерации. Данные не передаются третьим лицам, за исключением случаев, предусмотренных законом.</p>
+      <p id="legal-operator" style="color:var(--muted); font-size:14px;">Оператор персональных данных: Администрация портала «Прим_Дозор».</p>
+    </div>
+
+    <div class="card" id="rules">
+      <h2 style="margin-bottom:14px;">Правила публикации и защита авторских прав (ГК РФ)</h2>
+      <p style="margin-bottom:12px;"><strong>1. Возрастная маркировка (436-ФЗ):</strong> материалы портала предназначены для аудитории 18+ (отдельным публикациям присваивается маркировка 0+, 6+, 12+, 16+, 18+ в соответствии с их содержанием).</p>
+      <p style="margin-bottom:12px;"><strong>2. Авторские права:</strong> все оригинальные тексты, подборки, графические обложки и дизайн портала охраняются Гражданским кодексом РФ. Копирование допускается только с активной гиперссылкой на первоисточник.</p>
+      <p style="margin-bottom:12px;"><strong>3. Материалы очевидцев («Народный контроль»):</strong> отправляя фото, видео или текст через форму на сайте, пользователь подтверждает, что не нарушает права третьих лиц и законы РФ, и предоставляет редакции безвозмездное право на публикацию материала.</p>
+      <p style="margin-bottom:12px;"><strong>4. Реклама (38-ФЗ):</strong> рекламные и партнерские материалы маркируются пометкой «Реклама», данными рекламодателя и идентификатором <strong>erid</strong>.</p>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const cfg = window.PRIM_DOZOR_CONFIG || {};
+      if (cfg.ownerName && !cfg.ownerName.includes('ВПИШИ')) {
+        document.getElementById('legal-operator').textContent = `Оператор: ${cfg.ownerName} (${cfg.legalStatus}). Контактный e-mail: ${cfg.contactEmail}`;
+      }
+    });
+  </script>
+</body>
+</html>
