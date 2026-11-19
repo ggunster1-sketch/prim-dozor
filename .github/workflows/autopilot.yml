@@ -24,7 +24,7 @@ jobs:
       - name: Save news to site
         run: |
           git config user.name "PrimDozor Bot"
-          git config user.email "bot@primdozor.ru"
+          git config user.email "fixaxx2@mail.ru"
           git add news.json
           git commit -m "Auto news update" || exit 0
           git push
