@@ -1,0 +1,30 @@
+name: PrimDozor Autopilot 24/7
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run AI Editor
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: node bot.js
+      - name: Save news to site
+        run: |
+          git config user.name "PrimDozor Bot"
+          git config user.email "bot@primdozor.ru"
+          git add news.json
+          git commit -m "Auto news update" || exit 0
+          git push
