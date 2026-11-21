@@ -1,6 +1,7 @@
 const fs = require('fs');
 const https = require('https');
 const { createCanvas, loadImage } = require('canvas');
+const { buildHtml } = require('./builder');
 
 const AI_KEY = (process.env.AI_API_KEY || '').trim();
 const INDEXNOW_KEY = (process.env.INDEXNOW_KEY || '').trim();
@@ -33,10 +34,6 @@ const CHANNELS = [
   { id: 'primvodokanal', name: 'Примводоканал', off: true }
 ];
 
-function tag(name, attrs, inner) {
-  return LT + name + (attrs ? ' ' + attrs : '') + GT + (inner !== undefined ? inner + LT + SLASH + name + GT : '');
-}
-
 function getHttp(url) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { family: 4, timeout: 9000, headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
@@ -55,10 +52,6 @@ function cleanText(s) {
   return String(s || '').replace(new RegExp(LT + '[^' + GT + ']+' + GT, 'g'), ' ').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 }
 
-function esc(s) {
-  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 async function fetchWeatherAndRates() {
   let weather = [
     { name: 'Владивосток', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' },
@@ -68,7 +61,7 @@ async function fetchWeatherAndRates() {
     { name: 'Большой Камень', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' }
   ];
   try {
-    const wUrl = ['https:', '', '://open-meteo.com', 'v1', 'forecast?latitude=43.1155,43.7972,42.8241,43.3592,43.1128&longitude=131.8855,131.9517,132.8928,132.1892,132.3481&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'].join(SLASH);
+    const wUrl = ['https:', '', 'api.open-meteo.com', 'v1', 'forecast?latitude=43.1155,43.7972,42.8241,43.3592,43.1128&longitude=131.8855,131.9517,132.8928,132.1892,132.3481&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'].join(SLASH);
     const list = JSON.parse(await getHttp(wUrl));
     const fmt = v => (v > 0 ? '+' : '') + Math.round(v) + '°C';
     const ico = c => c === 0 ? '☀' : c <= 3 ? '🌤' : (c >= 71 && c <= 77) ? '❄' : c >= 51 ? '🌧' : '☁';
@@ -165,7 +158,9 @@ async function drawCover(post, imgUrl) {
   for (const word of words) {
     if (ctx.measureText(line + ' ' + word).width > 1100) {
       ctx.fillText(line, 40, y); line = word; y += 44;
-    } else line = line ? line + ' ' + word : word;
+    } else {
+      line = line ? line + ' ' + word : word;
+    }
   }
   if (line) ctx.fillText(line, 40, y);
 
@@ -177,66 +172,18 @@ async function drawCover(post, imgUrl) {
   return file;
 }
 
-function buildHtml(news, weather, rates) {
-  if (!fs.existsSync('news')) fs.mkdirSync('news', { recursive: true });
-  const w0 = weather.at(0) || { name: 'Владивосток', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' };
-
-  for (const p of news) {
-    const body = tag('article', 'class="widget" style="padding:22px"',
-      tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(p.catLabel)) + tag('span', '', esc(p.city)) + tag('span', '', '• ' + esc(p.date)) + tag('span', 'class="badge-age"', esc(p.age))) +
-      tag('h1', 'style="font-size:23px;line-height:1.3;margin:10px 0 14px"', esc(p.title)) +
-      tag('img', 'class="hero-img" src="/' + esc(p.cover) + '" alt="' + esc(p.title) + '" style="border-radius:10px;margin-bottom:14px"') +
-      tag('div', 'class="tldr"', esc(p.tldr).split(NL).join(tag('br'))) +
-      tag('div', 'style="font-size:16px;white-space:pre-line;line-height:1.75"', esc(p.text)) +
-      tag('p', 'style="font-size:12px;color:var(--muted);margin-top:14px"', esc(p.src || ''))
-    );
-    const artHtml = '<!DOCTYPE html>' + tag('html', 'lang="ru"',
-      tag('head', '', tag('meta', 'charset="UTF-8"') + tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') + tag('title', '', esc(p.title) + ' — Прим_Дозор') + tag('link', 'rel="stylesheet" href="/style.css?v=6"')) +
-tag('body', '', tag('header', 'class="site-header"', tag('div', 'class="wrap header-inner"', tag('a', 'href="/" class="brand"', tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР')) + tag('a', 'href="/" class="soc-pill"', '← Все новости'))) + tag('main', 'class="wrap" style="max-width:780px;margin-top:20px"', body))
-);
-fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
-}
-const cards = news.map((n, i) => {
-const lead = n.text.replace(/\s+/g, ' ').slice(0, 145);
-const meta = tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(n.catLabel)) + tag('span', '', esc(n.city)) + tag('span', '', '• ' + esc(n.date)) + tag('span', 'class="badge-age"', esc(n.age)));
-const clickAttr = 'data-id="' + n.id + '" onclick="openArt(this.dataset.id)"';
-if (i === 0) {
-return tag('article', 'class="hero-card" ' + clickAttr,
-tag('img', 'class="hero-img" src="./' + esc(n.cover) + '" alt="' + esc(n.title) + '"') +
-tag('div', 'class="hero-body"', meta + tag('h2', 'class="hero-title"', esc(n.title)) + tag('p', 'class="hero-lead"', esc(lead) + '...'))
-);
-}
-return tag('article', 'class="news-card" ' + clickAttr,
-tag('img', 'class="news-thumb" src="./' + esc(n.cover) + '" alt="' + esc(n.title) + '" loading="lazy"') +
-tag('div', '', meta + tag('h3', 'class="news-title"', esc(n.title)) + tag('p', 'class="news-excerpt"', esc(lead) + '...'))
-);
-}).join('');
-const tpl = fs.readFileSync('template.html', 'utf8');
-const html = tpl
-.replace(/{{W_NOW}}/g, esc(w0.now))
-.replace(/{{W_M}}/g, esc(w0.morning))
-.replace(/{{W_D}}/g, esc(w0.day))
-.replace(/{{W_E}}/g, esc(w0.evening))
-.replace(/{{W_T}}/g, esc(w0.tomorrow))
-.replace(/{{USD}}/g, esc(rates.usd))
-.replace(/{{EUR}}/g, esc(rates.eur))
-.replace(/{{CNY}}/g, esc(rates.cny))
-.replace(/{{JPY}}/g, esc(rates.jpy))
-.replace('{{CARDS}}', cards)
-.replace('{{NEWS_JSON}}', JSON.stringify(news))
-.replace('{{WEATHER_JSON}}', JSON.stringify(weather));
-fs.writeFileSync('index.html', html, 'utf8');
-const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
-for (const n of news) urls.push(tag('url', '', tag('loc', '', 'https://' + HOST + '/news/' + n.id + '.html') + tag('priority', '', '0.8')));
-fs.writeFileSync('sitemap.xml', '' + NL + tag('urlset', 'xmlns="sitemaps.org"', NL + urls.join(NL) + NL), 'utf8');
-}
 async function run() {
-const { weather, rates } = await fetchWeatherAndRates();
-let news = [];
-if (fs.existsSync('news.json')) { try { news = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {} }
-let state = {};
-if (fs.existsSync('tg_state.json')) { try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {} }
-const candidates = [];
+  const { weather, rates } = await fetchWeatherAndRates();
+  let news = [];
+  if (fs.existsSync('news.json')) { try { news = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {} }
+  let state = {};
+  if (fs.existsSync('tg_state.json')) { try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {} }
+
+  const candidates = [];
+  for (const ch of CHANNELS) {
+    try {
+      const html = await getHttp(['https:', '', 't.me', 's', ch.id].join(SLASH));
+      let maxId = state[ch.id] || 0;
       for (const b of html.split('tgme_widget_message_wrap').slice(-5)) {
         const pm = b.match(new RegExp('data-post="[^"]+' + SLASH + '(\\d+)"'));
         const num = pm ? Number(pm.at(1)) : 0;
@@ -259,39 +206,36 @@ const candidates = [];
     if (added >= 6) break;
     const ai = await rewriteNews(c.raw);
     if (!ai) continue;
-    const vl = new Date(Date.now() + 10 * 3600000);
-    const post = {
-      id: Date.now() + added,
-      date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
-      cat: ai.cat || 'city',
-      catLabel: ai.catLabel || 'Город и ЖКХ',
-      city: ai.city || 'Приморье',
-      age: ai.age || '16+',
-      title: ai.title,
-      tldr: ai.tldr,
-      text: ai.text,
-      src: c.src
-    };
-    post.cover = await drawCover(post, c.img);
-    news.unshift(post);
-    added++;
-  }
-
-  news = news.slice(0, 60);
-  fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
-  buildHtml(news, weather, rates);
-
-  if (added > 0 && INDEXNOW_KEY) {
-    try {
-      const idxUrl = ['https:', '', 'yandex.com', 'indexnow'].join(SLASH);
-      await fetch(idxUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + HOST + '/'] })
-      });
-    } catch (e) {}
-  }
-  console.log('Готово. Опубликовано статей: ' + added);
+const vl = new Date(Date.now() + 10 * 3600000);
+const post = {
+id: Date.now() + added,
+date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
+cat: ai.cat || 'city',
+catLabel: ai.catLabel || 'Город и ЖКХ',
+city: ai.city || 'Приморье',
+age: ai.age || '16+',
+title: ai.title,
+tldr: ai.tldr,
+text: ai.text,
+src: c.src
+};
+post.cover = await drawCover(post, c.img);
+news.unshift(post);
+added++;
 }
-
+news = news.slice(0, 60);
+fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
+buildHtml(news, weather, rates);
+if (added > 0 && INDEXNOW_KEY) {
+try {
+const idxUrl = ['https:', '', 'yandex.com', 'indexnow'].join(SLASH);
+await fetch(idxUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + HOST + '/'] })
+});
+} catch (e) {}
+}
+console.log('Готово. Опубликовано статей: ' + added);
+}
 run();
