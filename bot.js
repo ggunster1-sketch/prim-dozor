@@ -10,18 +10,28 @@ const MAX_CHAT_ID = (process.env.MAX_CHAT_ID || '').trim();
 const INDEXNOW_KEY = (process.env.INDEXNOW_KEY || '').trim();
 const SITE_HOST = 'primdozor.ru';
 
+const LT = String.fromCharCode(60);
+const GT = String.fromCharCode(62);
+const BR_TAG = LT + 'br' + GT;
+const B_OPEN = LT + 'b' + GT;
+const B_CLOSE = LT + '/b' + GT;
+
+function makeLink(url, label) {
+  return LT + 'a href="' + url + '"' + GT + label + LT + '/a' + GT;
+}
+
 const SITE_URL = 'https://' + 'primdozor.ru';
 const ADMIN_URL = 'https://' + 't.me' + '/prim_dozor?direct';
 const TG_URL = 'https://' + 't.me' + '/prim_dozor';
 const MAX_URL = 'https://' + 'max.ru' + '/join/RyxItD9MEitACdZjmI88YZkBI2ps78Qq3iMW0sBJcoE';
 
 const TG_FOOTER_HTML =
-  '\n\n🌐 Читайте новости на нашем <a href="' + SITE_URL + '">сайте</a>' +
+  '\n\n🌐 Читайте новости на нашем ' + makeLink(SITE_URL, 'сайте') +
   '\n\n🔎 Прим_Дозор — жестко фиксируем то, что другие пытаются скрыть.' +
-  '\n\n📲 Вопросы : <a href="' + ADMIN_URL + '">связь с админом</a>' +
+  '\n\n📲 Вопросы : ' + makeLink(ADMIN_URL, 'связь с админом') +
   '\n\n🤝 Сотрудничество: prim_dozor@internet.ru' +
-  '\n\n👉 <a href="' + TG_URL + '">telegram прим_дозор</a>' +
-  '\n\n👉 <a href="' + MAX_URL + '">прим_дозор в Max</a>';
+  '\n\n👉 ' + makeLink(TG_URL, 'telegram прим_дозор') +
+  '\n\n👉 ' + makeLink(MAX_URL, 'прим_дозор в Max');
 
 const MAX_FOOTER_MD =
   '\n\n🌐 Читайте новости на нашем [сайте](' + SITE_URL + ')' +
@@ -48,6 +58,10 @@ const PRIM_KEYWORDS = [
 ];
 
 const UKRAINE_KEYWORDS = ['украин', 'киев', 'зеленск', 'всу', 'донбасс', 'харьков', 'одесс', 'сво'];
+
+function stripTags(str) {
+  return (str || '').replace(new RegExp(LT + '[^' + GT + ']+' + GT, 'g'), '');
+}
 
 function normalizeRussianText(str) {
   if (!str) return '';
@@ -201,17 +215,23 @@ async function fetchRSS(feedObj) {
     if (!res.ok) return [];
     const xml = await res.text();
     const items = [];
-    const matches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
+    const itemRegex = new RegExp(LT + 'item' + GT + '([\\s\\S]*?)' + LT + '/item' + GT, 'g');
+    const titleCdata = new RegExp(LT + 'title' + GT + LT + '!\\[CDATA\\[([\\s\\S]*?)\\]\\]' + GT + LT + '/title' + GT);
+    const titlePlain = new RegExp(LT + 'title' + GT + '([\\s\\S]*?)' + LT + '/title' + GT);
+    const descCdata = new RegExp(LT + 'description' + GT + LT + '!\\[CDATA\\[([\\s\\S]*?)\\]\\]' + GT + LT + '/description' + GT);
+    const descPlain = new RegExp(LT + 'description' + GT + '([\\s\\S]*?)' + LT + '/description' + GT);
+
+    const matches = xml.matchAll(itemRegex);
     for (const m of matches) {
       const block = m.at(1) || '';
-      const titleMatch = block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) || block.match(/<title>([\s\S]*?)<\/title>/);
-      const descMatch = block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/) || block.match(/<description>([\s\S]*?)<\/description>/);
+      const titleMatch = block.match(titleCdata) || block.match(titlePlain);
+      const descMatch = block.match(descCdata) || block.match(descPlain);
       const title = titleMatch ? titleMatch.at(1) : '';
       const desc = descMatch ? descMatch.at(1) : '';
       if (title) {
         items.push({
-          title: title.replace(/<[^>]+>/g, '').trim(),
-          desc: desc.replace(/<[^>]+>/g, '').trim(),
+          title: stripTags(title).trim(),
+          desc: stripTags(desc).trim(),
           regional: feedObj.regional
         });
       }
@@ -240,16 +260,15 @@ async function rewriteWithAI(rawItem, blockedCats, allowSvo) {
     'Верни ответ СТРОГО в формате JSON без markdown:',
     '{',
     '  "title": "Точный информативный SEO-заголовок (до 85 символов)",',
-    '  "cat": "одно из: chp, svo, law, city, family, sport",',
-    '  "catLabel": "одно из: 🚨 ЧП и 112, 🇷🇺 СВО и Защитники, 🏛 Законы и Политика, 🏙 Город и ЖКХ, 👨‍👩‍👧 Семья и Медицина, 🏆 Спорт",',
-    '  "city": "город Приморья (Владивосток, Большой Камень, Артём, Уссурийск, Находка, Приморье) или Россия",',
-    '  "age": "возрастная маркировка по 436-ФЗ: 0+, 6+, 12+, 16+ или 18+",',
-    '  "tldr": "• Краткий факт 1\\n• Краткий факт 2",',
-    '  "text": "Полный уникальный текст статьи в спокойном редакционном стиле (2-3 коротких абзаца с уместными эмодзи)",',
-    '  "needSource": true или false (true ТОЛЬКО если это официальная сводка МВД/СК/МЧС/Минобороны РФ/Прокуратуры/Правительства ПК или прямая цитата; иначе false)',
-    '}',
-
-    'Исходник: ' + rawItem.title + '. ' + rawItem.desc
+'  "cat": "одно из: chp, svo, law, city, family, sport",',
+'  "catLabel": "одно из: 🚨 ЧП и 112, 🇷🇺 СВО и Защитники, 🏛 Законы и Политика, 🏙 Город и ЖКХ, 👨‍👩‍👧 Семья и Медицина, 🏆 Спорт",',
+'  "city": "город Приморья (Владивосток, Большой Камень, Артём, Уссурийск, Находка, Приморье) или Россия",',
+'  "age": "возрастная маркировка по 436-ФЗ: 0+, 6+, 12+, 16+ или 18+",',
+'  "tldr": "• Краткий факт 1\n• Краткий факт 2",',
+'  "text": "Полный уникальный текст статьи в спокойном редакционном стиле (2-3 коротких абзаца с уместными эмодзи)",',
+'  "needSource": true или false (true ТОЛЬКО если это официальная сводка МВД/СК/МЧС/Минобороны РФ/Прокуратуры/Правительства ПК или прямая цитата; иначе false)',
+'}',
+'Исходник: ' + rawItem.title + '. ' + rawItem.desc
 ].join('\n');
 const content = await callAI(prompt);
 if (!content || content.includes('SKIP')) return null;
@@ -257,8 +276,7 @@ try {
 const cleanJson = content.replace(/^json|$/g, '').trim();
 const parsed = JSON.parse(cleanJson);
 parsed.title = normalizeRussianText(parsed.title);
-parsed.tldr = normalizeRussianText(parsed.tldr).replace(/\n/g, '
-');
+parsed.tldr = normalizeRussianText(parsed.tldr).replace(/\n/g, BR_TAG);
 parsed.text = normalizeRussianText(parsed.text);
 return parsed;
 } catch (e) {
@@ -267,8 +285,8 @@ return null;
 }
 async function sendToTelegram(news, imagePath) {
 if (!TG_TOKEN) return;
-const cleanText = (news.text || '').replace(/<br\s*/?>/gi, '\n');
-const fullCaption = news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n' + news.title + '\n\n' + cleanText + TG_FOOTER_HTML;
+const cleanText = stripTags((news.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
+const fullCaption = news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n' + B_OPEN + news.title + B_CLOSE + '\n\n' + cleanText + TG_FOOTER_HTML;
 try {
 if (imagePath && fs.existsSync(imagePath) && fullCaption.length <= 1020) {
 const form = new FormData();
@@ -311,7 +329,7 @@ console.log('Telegram сбой:', e.message);
 async function sendToMax(news) {
 if (!MAX_TOKEN || !MAX_CHAT_ID) return;
 const maxApiUrl = 'https://' + 'platform-api.max.ru' + '/messages?chat_id=' + encodeURIComponent(MAX_CHAT_ID);
-const cleanText = (news.text || '').replace(/<br\s*/?>/gi, '\n');
+const cleanText = stripTags((news.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
 const bodyText = news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n**' + news.title + '**\n\n' + cleanText + MAX_FOOTER_MD;
 try {
 const res = await fetch(maxApiUrl, {
@@ -384,21 +402,21 @@ return synced;
 function updateSitemap() {
 const nowIso = new Date().toISOString();
 const xml = [
-'',
-'',
-'  ',
-'    https://' + SITE_HOST + '/',
-'    ' + nowIso + '',
-'    hourly',
-'    1.0',
-'  ',
-'  ',
-'    https://' + SITE_HOST + '/legal.html',
-'    ' + nowIso + '',
-'    monthly',
-'    0.5',
-'  ',
-''
+LT + '?xml version="1.0" encoding="UTF-8"?' + GT,
+LT + 'urlset xmlns="sitemaps.org"' + GT,
+'  ' + LT + 'url' + GT,
+'    ' + LT + 'loc' + GT + 'https://' + SITE_HOST + '/' + LT + '/loc' + GT,
+'    ' + LT + 'lastmod' + GT + nowIso + LT + '/lastmod' + GT,
+'    ' + LT + 'changefreq' + GT + 'hourly' + LT + '/changefreq' + GT,
+'    ' + LT + 'priority' + GT + '1.0' + LT + '/priority' + GT,
+'  ' + LT + '/url' + GT,
+'  ' + LT + 'url' + GT,
+'    ' + LT + 'loc' + GT + 'https://' + SITE_HOST + '/legal.html' + LT + '/loc' + GT,
+'    ' + LT + 'lastmod' + GT + nowIso + LT + '/lastmod' + GT,
+'    ' + LT + 'changefreq' + GT + 'monthly' + LT + '/changefreq' + GT,
+'    ' + LT + 'priority' + GT + '0.5' + LT + '/priority' + GT,
+'  ' + LT + '/url' + GT,
+LT + '/urlset' + GT
 ].join('\n');
 fs.writeFileSync('sitemap.xml', xml, 'utf8');
 }
