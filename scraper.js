@@ -36,19 +36,19 @@ async function fetchTelegram(tgList) {
     try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {}
   }
 
-  const msgRe = new RegExp('tgme_widget_message_text[^' + GT + ']*' + GT + '([\\s\\S]*?)' + LT + '/div' + GT, 'i');
-
+  let okPages = 0;
   for (const src of tgList) {
     try {
       const url = 'https://t.me' + src.id;
       const res = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
         }
       });
       if (!res.ok) continue;
       const html = await res.text();
+      if (html.includes('tgme_widget_message_wrap')) okPages++;
+
       const blocks = html.split('tgme_widget_message_wrap').slice(-6);
       let maxPostNum = state[src.id] || 0;
 
@@ -58,10 +58,14 @@ async function fetchTelegram(tgList) {
         if (postNum && state[src.id] && postNum <= state[src.id]) continue;
         if (postNum > maxPostNum) maxPostNum = postNum;
 
-        const m = b.match(msgRe);
-        if (!m || !m.at(1)) continue;
-        const clean = stripTags(m.at(1));
-        if (clean.length < 85 || isAdOrSpam(clean)) continue;
+        const txtIdx = b.indexOf('tgme_widget_message_text');
+        if (txtIdx === -1) continue;
+        const startContent = b.indexOf(GT, txtIdx);
+        const endContent = b.indexOf(LT + '/div' + GT, startContent);
+        if (startContent === -1 || endContent === -1) continue;
+
+        const clean = stripTags(b.slice(startContent + 1, endContent));
+        if (clean.length < 70 || isAdOrSpam(clean)) continue;
 
         const imgM = b.match(/background-image:url\('(https?:\/\/[^']+)'\)/i);
         const firstSentence = clean.split(/[.!\n]/).at(0) || clean;
@@ -80,7 +84,7 @@ async function fetchTelegram(tgList) {
   }
 
   fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
-  console.log('Из пабликов и ведомств Приморья собрано: ' + out.length);
+  console.log('Telegram каналов доступно: ' + okPages + ', постов собрано: ' + out.length);
   return out;
 }
 
@@ -90,13 +94,15 @@ async function fetchFeeds(rssList) {
     try {
       const res = await fetch(f.url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-          'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
         }
       });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        console.log('RSS недоступен (' + res.status + '): ' + f.name);
+        continue;
+      }
       const xml = await res.text();
-      const items = xml.split(/<item[\s>]/i).slice(1, 10);
+      const items = xml.split(/<item[\s>]/i).slice(1, 12);
 
       for (const rawItem of items) {
         const titleM = rawItem.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -105,12 +111,12 @@ async function fetchFeeds(rssList) {
         const encM = rawItem.match(/<enclosure[^>]+url=["']([^"']+)["']/i);
 
         const title = stripTags(titleM ? titleM.at(1) : '');
-        const desc = stripTags(descM ? descM.at(1) : '');
-        if (!title || desc.length < 50 || isAdOrSpam(title + ' ' + desc)) continue;
+        const desc = stripTags(descM ? descM.at(1) : '') || title;
+        if (!title || title.length < 25 || isAdOrSpam(title + ' ' + desc)) continue;
 
         out.push({
           title: title,
-          desc: desc.slice(0, 2600),
+          desc: (title + '. ' + desc).slice(0, 2600),
           link: linkM ? stripTags(linkM.at(1)) : '',
           img: encM ? encM.at(1) : '',
           regional: Boolean(f.regional),
@@ -118,7 +124,9 @@ async function fetchFeeds(rssList) {
           sourceName: f.name || ''
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.log('RSS ошибка (' + f.name + '): ' + e.message);
+    }
   }
   console.log('Из RSS-лент собрано: ' + out.length);
   return out;
