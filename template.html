@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="yandex-verification" content="0dc10018fffed4cc">
+<title>Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)</title>
+<meta name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма и Приморского края 24/7: ЧП, ЖКХ, дороги, погода, курсы валют, законы РФ.">
+<link rel="canonical" href="https://primdozor.ru">
+<link rel="stylesheet" href="/style.css?v=5">
+<script type="text/javascript">(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://yandex.ru","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});</script>
+</head>
+<body>
+
+<div class="infobar">
+  <div class="wrap infobar-inner">
+    <div class="infobar-left">
+      <span class="live-dot"></span>
+      <strong id="clock">Владивосток</strong>
+      <select class="city-select" id="w-sel" onchange="setWeather(this.value)">
+        <option value="0">Владивосток</option>
+        <option value="1">Уссурийск</option>
+        <option value="2">Находка</option>
+        <option value="3">Артём</option>
+        <option value="4">Большой Камень</option>
+      </select>
+      <strong id="w-top">{{W_NOW}}</strong>
+    </div>
+    <div class="infobar-right">
+      <span class="hide-mob">${{USD}} | €{{EUR}} | ¥{{CNY}}</span>
+      <button class="icon-btn" onclick="document.body.classList.toggle('big-font')">А+</button>
+      <button class="icon-btn" onclick="document.body.classList.toggle('dark')">🌙</button>
+    </div>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="/" class="brand"><span class="brand-mark">ПРИМ_ДОЗОР</span><span class="brand-age">18+</span></a>
+    <div class="header-actions">
+      <select class="filter-city" onchange="filterCity(this.value)">
+        <option value="all">Весь край</option>
+        <option value="Владивосток">Владивосток</option>
+        <option value="Уссурийск">Уссурийск</option>
+        <option value="Находка">Находка</option>
+        <option value="Артём">Артём</option>
+        <option value="Большой Камень">Б. Камень</option>
+      </select>
+      <a href="https://t.me" target="_blank" rel="noopener" class="btn-cta">+ Прислать ЧП</a>
+    </div>
+  </div>
+</header>
+
+<div class="nav-strip">
+  <div class="wrap">
+    <nav class="tabs">
+      <button class="tab active" onclick="filterCat('all',this)">Главное</button>
+      <button class="tab" onclick="filterCat('chp',this)">ЧП и 112</button>
+      <button class="tab" onclick="filterCat('city',this)">Город и ЖКХ</button>
+      <button class="tab" onclick="filterCat('law',this)">Законы и Власть</button>
+      <button class="tab" onclick="filterCat('svo',this)">СВО</button>
+      <button class="tab" onclick="filterCat('family',this)">Общество</button>
+      <button class="tab" onclick="filterCat('sport',this)">Спорт</button>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap layout" style="margin-top:18px">
+  <main id="feed">{{CARDS}}</main>
+  <aside>
+    <div class="widget">
+      <div class="widget-title">Погода: <span id="w-name">Владивосток</span></div>
+      <div class="w-row"><span>Сейчас</span><strong id="w-now">{{W_NOW}}</strong></div>
+      <div class="w-row"><span>Утром</span><strong id="w-m">{{W_M}}</strong></div>
+      <div class="w-row"><span>Днём</span><strong id="w-d">{{W_D}}</strong></div>
+      <div class="w-row"><span>Вечером</span><strong id="w-e">{{W_E}}</strong></div>
+      <div class="w-row"><span>Завтра</span><strong id="w-t">{{W_T}}</strong></div>
+    </div>
+    <div class="widget">
+      <div class="widget-title">Курсы ЦБ РФ</div>
+      <div class="w-row"><span>Доллар (USD)</span><strong>{{USD}} ₽</strong></div>
+      <div class="w-row"><span>Евро (EUR)</span><strong>{{EUR}} ₽</strong></div>
+      <div class="w-row"><span>Юань (CNY)</span><strong>{{CNY}} ₽</strong></div>
+      <div class="w-row"><span>100 Иен (JPY)</span><strong>{{JPY}} ₽</strong></div>
+    </div>
+    <div class="widget">
+      <div class="widget-title">Экстренные службы края</div>
+      <div class="w-row"><span>Служба спасения</span><strong>112</strong></div>
+      <div class="w-row"><span>ГИБДД Приморья</span><strong>231-09-08</strong></div>
+      <div class="w-row"><span>ЕДДС Владивостока</span><strong>222-23-33</strong></div>
+      <div class="w-row"><span>Примводоканал</span><strong>200-5-777</strong></div>
+    </div>
+    <div class="widget">
+      <div class="widget-title">Каналы редакции</div>
+      <div class="w-row"><a href="https://t.me" target="_blank">✈ Telegram-канал ЧП</a><strong>→</strong></div>
+      <div class="w-row"><a href="https://max.ru" target="_blank">💬 Канал в МАКС</a><strong>→</strong></div>
+    </div>
+  </aside>
+</div>
+
+<div id="modal" class="modal" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <strong style="color:var(--red)">ПРИМ_ДОЗОР • 18+</strong>
+      <button class="soc-pill" onclick="document.getElementById('modal').style.display='none'">✕ Закрыть</button>
+    </div>
+    <div id="m-body"></div>
+  </div>
+</div>
+
+<div id="ck" class="cookie-bar">
+  <span>🍪 Используем cookie и Яндекс.Метрику (152-ФЗ).</span>
+  <button class="btn-cta" onclick="localStorage.setItem('ck','1');document.getElementById('ck').style.display='none'">ОК</button>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">© 2026 Прим_Дозор (18+). Региональный портал Приморского края. <a href="/legal.html" style="text-decoration:underline;">Правовая информация и 152-ФЗ</a></div>
+</footer>
+
+<script>window.NEWS={{NEWS_JSON}};window.WEATHER={{WEATHER_JSON}};</script>
+<script src="/app.js?v=5"></script>
+</body>
+</html>
