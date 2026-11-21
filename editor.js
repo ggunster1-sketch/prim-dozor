@@ -5,10 +5,15 @@ const BR_TAG = LT + 'br' + GT;
 
 function normalizeText(str) {
   if (!str) return '';
-  return str
+  let out = str
     .replace(/\bв Украине\b/g, 'на Украине')
     .replace(/\bВ Украине\b/g, 'На Украине')
     .replace(/\bв украине\b/g, 'на Украине');
+
+  if (/\b(Instagram|Facebook|Meta|Инстаграм|Фейсбук)\b/i.test(out) && !out.includes('экстремистск')) {
+    out += '\n\n*Деятельность Meta (соцсети Facebook и Instagram) запрещена в России как экстремистская.';
+  }
+  return out;
 }
 
 function cleanEmojis(text) {
