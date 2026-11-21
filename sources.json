@@ -2,20 +2,27 @@
   "tg": [
     { "id": "dpskontrol_125rus", "name": "ДПС Контроль Приморье", "official": false },
     { "id": "dpsvl", "name": "ДПС Владивосток", "official": false },
+    { "id": "gibdd25", "name": "Госавтоинспекция Приморья", "official": true },
     { "id": "newsvlc", "name": "Новости Владивостока", "official": false },
     { "id": "vladivostok_smi", "name": "Владивосток СМИ", "official": false },
     { "id": "vlnews25", "name": "VL News 25", "official": false },
     { "id": "svodka25", "name": "Сводка 25", "official": false },
     { "id": "novosti_primorye25", "name": "Новости Приморье 25", "official": false },
+    { "id": "hardkorushka_25", "name": "Хардкорушка 25", "official": false },
     { "id": "prim_police", "name": "УМВД Приморского края", "official": true },
     { "id": "prosecutor_pk", "name": "Прокуратура Приморского края", "official": true },
     { "id": "sledcom25", "name": "СУ СК по Приморскому краю", "official": true },
     { "id": "mchs_primorye", "name": "ГУ МЧС по Приморскому краю", "official": true },
     { "id": "primorskyadmin", "name": "Правительство Приморского края", "official": true },
+    { "id": "kozhemyako_official", "name": "Губернатор Олег Кожемяко", "official": true },
     { "id": "minzdrav_pk", "name": "Минздрав Приморского края", "official": true },
     { "id": "shestakovblog", "name": "Глава Владивостока Константин Шестаков", "official": true },
+    { "id": "adm_vl", "name": "Администрация Владивостока", "official": true },
+    { "id": "ussurmedia", "name": "Уссурийск Новости", "official": false },
+    { "id": "nakhodka_news", "name": "Находка Новости", "official": false },
+    { "id": "artem_news25", "name": "Артём Новости", "official": false },
+    { "id": "bk_news25", "name": "Большой Камень Новости", "official": false },
     { "id": "primamedia", "name": "PrimaMedia", "official": false },
-    { "id": "hardkorushka_25", "name": "Хардкорушка 25", "official": false },
     { "id": "otvprimofficial", "name": "ОТВ-Прим", "official": false },
     { "id": "primorye_online", "name": "Приморье Онлайн", "official": false },
     { "id": "pogoda_25_region", "name": "Погода 25 Регион", "official": false },
@@ -23,10 +30,12 @@
     { "id": "primvodokanal", "name": "Примводоканал", "official": true }
   ],
   "rss": [
-    { "url": "https://kp.ru", "regional": true },
-    { "url": "https://aif.ru", "regional": true },
-    { "url": "https://ria.ru", "regional": false },
-    { "url": "https://tass.ru", "regional": false },
-    { "url": "https://lenta.ru", "regional": false }
+    { "url": "https://primamedia.ru", "regional": true, "official": false, "name": "PrimaMedia" },
+    { "url": "https://vostokmedia.com", "regional": true, "official": false, "name": "Восток-Медиа" },
+    { "url": "https://deita.ru", "regional": true, "official": false, "name": "Дейта.ру" },
+    { "url": "https://kp.ru", "regional": true, "official": false, "name": "КП Владивосток" },
+    { "url": "https://aif.ru", "regional": true, "official": false, "name": "АиФ Приморье" },
+    { "url": "https://ria.ru", "regional": false, "official": false, "name": "РИА Новости" },
+    { "url": "https://tass.ru", "regional": false, "official": false, "name": "ТАСС" }
   ]
 }
