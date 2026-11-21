@@ -202,50 +202,27 @@ function selectWeatherCity(idx) {
 }
 
 async function loadWeather() {
-  const cities = [
-    { name: 'Владивосток', lat: 43.1155, lon: 131.8855 },
-    { name: 'Большой Камень', lat: 43.1128, lon: 132.3481 },
-    { name: 'Артём', lat: 43.3592, lon: 132.1892 },
-    { name: 'Уссурийск', lat: 43.7972, lon: 131.9517 },
-    { name: 'Находка', lat: 42.8241, lon: 132.8928 }
+  weatherCache = [
+    { name: 'Владивосток', now: '+2°C ☀', morning: '0°C', day: '+3°C', evening: '+1°C', tomorrow: '+4°C' },
+    { name: 'Большой Камень', now: '+1°C 🌤', morning: '-1°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' },
+    { name: 'Артём', now: '0°C ☁', morning: '-2°C', day: '+2°C', evening: '-1°C', tomorrow: '+3°C' },
+    { name: 'Уссурийск', now: '-2°C ☀', morning: '-5°C', day: '+1°C', evening: '-3°C', tomorrow: '+2°C' },
+    { name: 'Находка', now: '+3°C 🌊', morning: '+1°C', day: '+4°C', evening: '+2°C', tomorrow: '+5°C' }
   ];
-  try {
-    const lats = cities.map(function(c) { return c.lat; }).join(',');
-    const lons = cities.map(function(c) { return c.lon; }).join(',');
-    const url = 'https://open-meteo.com' + lats + '&longitude=' + lons + '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok';
-    const res = await fetch(url);
-    if (!res.ok) return;
-    const data = await res.json();
-    const results = Array.isArray(data) ? data : [data];
+  selectWeatherCity(0);
 
-    const fmt = function(v) {
-if (v === undefined || v === null || Number.isNaN(Number(v))) return '--°C';
-return (v > 0 ? '+' : '') + Math.round(v) + '°C';
-};
-const icon = function(code) {
-if (code === 0) return '☀';
-if (code <= 3) return '🌤';
-if (code >= 71 && code <= 77) return '❄';
-if (code >= 51) return '🌧';
-return '☁';
-};
-const sel = document.getElementById('city-sel');
-weatherCache = results.map(function(r, i) {
-const h = (r.hourly && r.hourly.temperature_2m) ? r.hourly.temperature_2m : [];
-const dMax = (r.daily && r.daily.temperature_2m_max) ? r.daily.temperature_2m_max : [];
-const curT = r.current ? Math.round(r.current.temperature_2m) : 0;
-const curI = r.current ? icon(r.current.weather_code) : '🌤';
-const cityObj = cities.at(i);
-if (sel && sel.options.item(i) && cityObj) {
-sel.options.item(i).textContent = cityObj.name + ' ' + fmt(curT) + ' ' + curI;
+  try {
+    const res = await fetch('./weather.json?v=' + Date.now());
+    if (!res.ok) return;
+    const list = await res.json();
+    if (!Array.isArray(list) || list.length === 0) return;
+
+    const sel = document.getElementById('city-sel');
+    weatherCache = list.map(function(c, i) {
+      if (sel && sel.options.item(i)) {
+sel.options.item(i).textContent = c.name + ' ' + c.now;
 }
-return {
-name: cityObj ? cityObj.name : 'Приморье',
-morning: h.at(8) !== undefined ? fmt(h.at(8)) : fmt(curT),
-day: h.at(14) !== undefined ? fmt(h.at(14)) : fmt(curT),
-evening: h.at(20) !== undefined ? fmt(h.at(20)) : fmt(curT),
-tomorrow: dMax.at(1) !== undefined ? fmt(dMax.at(1)) : fmt(curT)
-};
+return c;
 });
 selectWeatherCity(0);
 } catch (e) {}
