@@ -9,38 +9,19 @@
   <meta name="yandex-verification" content="0dc10018fffed4cc" />
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
-  <script src="app.js" defer></script>
-
-  <!-- Yandex.Metrika counter -->
-  <script type="text/javascript">
-    (function(m,e,t,r,i,k,a){
-      m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-      m[i].l=1*new Date();
-      for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-      k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-    })(window, document, "script", "https://yandex.ru", "ym");
-
-    ym(114370869, "init", {
-      clickmap:true,
-      trackLinks:true,
-      accurateTrackBounce:true
-    });
-  </script>
-  <noscript><div><img src="https://yandex.ru" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-  <!-- /Yandex.Metrika counter -->
 </head>
 <body>
 
   <div class="top-bar">
     <div class="container top-flex">
       <div>
-        <span class="live-pill">● ВЛАДИВОСТОК <span id="clock">--:--</span></span>
+        <span class="live-pill">● ВЛАДИВОСТОК <span id="clock">00:00</span></span>
         <span style="margin-left:10px;">Город:
           <select id="city-sel" onchange="selectWeatherCity(this.selectedIndex)">
-            <option value="0">Владивосток +2°C ☀️</option>
+            <option value="0">Владивосток +2°C ☀</option>
             <option value="1">Большой Камень +1°C 🌤</option>
-            <option value="2">Артём 0°C ☁️</option>
-            <option value="3">Уссурийск -2°C ☀️</option>
+            <option value="2">Артём 0°C ☁</option>
+            <option value="3">Уссурийск -2°C ☀</option>
             <option value="4">Находка +3°C 🌊</option>
           </select>
         </span>
@@ -53,14 +34,14 @@
   <header>
     <div class="container head-flex">
       <div>
-        <span class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></span>
+        <a href="https://primdozor.ru" class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></a>
         <div id="season-txt" style="font-size:12px; color:var(--muted); margin-top:4px;">Главный надзор Приморья и России 24/7</div>
       </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn" title="Увеличить шрифт" onclick="document.body.classList.toggle('big-font')">А+</button>
-        <button class="btn" title="Ночная графитовая тема" onclick="document.body.classList.toggle('dark')">🌓</button>
-        <button class="btn" onclick="document.getElementById('adv-modal').style.display='flex'">📢 Реклама и тендеры</button>
-        <button class="btn btn-red" onclick="document.getElementById('rep-modal').style.display='flex'">+ Прислать ЧП</button>
+        <button type="button" class="btn" title="Увеличить шрифт" onclick="document.body.classList.toggle('big-font')">А+</button>
+        <button type="button" class="btn" title="Ночная тема" onclick="document.body.classList.toggle('dark')">🌓</button>
+        <button type="button" class="btn" onclick="openModal('adv-modal')">📢 Реклама и тендеры</button>
+        <button type="button" class="btn btn-red" onclick="openModal('rep-modal')">+ Прислать ЧП</button>
       </div>
     </div>
   </header>
@@ -70,10 +51,10 @@
   </div>
 
   <div class="container">
-    <div id="season-banner" class="box" style="margin-top:14px; border-left:4px solid var(--red); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div class="box" style="margin-top:14px; border-left:4px solid var(--red); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
       <div>
         <strong id="season-title">🍂 Осень в Приморском крае</strong>
-        <div id="season-desc" style="font-size:13px; color:var(--muted); margin-top:2px;">Следите за сводками погоды, состоянием перевалов и графиком отопительного сезона.</div>
+        <div id="season-desc" style="font-size:13px; color:var(--muted); margin-top:2px;">Контроль запуска отопления в городах и сёлах края, дорожная обстановка и осенняя путина.</div>
       </div>
       <span id="holiday-badge" class="cat-tag">Приморье 24/7</span>
     </div>
@@ -81,21 +62,21 @@
     <div class="socials">
       <div style="font-size:14px; font-weight:700; color:var(--muted);">📲 Читайте «Прим_Дозор» там, где вам удобно (нажмите для перехода):</div>
       <div class="soc-grid">
-        <a id="s-tg" href="https://t.me" target="_blank" rel="noopener" class="soc-link">✈️ Telegram</a>
-        <a id="s-max" href="https://max.ru" target="_blank" rel="noopener" class="soc-link">💬 Мессенджер Макс</a>
-        <a id="s-dzen" href="https://dzen.ru" target="_blank" rel="noopener" class="soc-link">⭐ Яндекс Дзен</a>
-        <a id="s-vk" href="https://vk.com" target="_blank" rel="noopener" class="soc-link">🌐 ВКонтакте</a>
+        <a href="https://t.me" target="_blank" rel="noopener" class="soc-link">✈️ Telegram</a>
+        <a href="https://max.ru" target="_blank" rel="noopener" class="soc-link">💬 Мессенджер Макс</a>
+        <a href="https://dzen.ru" target="_blank" rel="noopener" class="soc-link">⭐ Яндекс Дзен</a>
+        <a href="https://vk.com" target="_blank" rel="noopener" class="soc-link">🌐 ВКонтакте</a>
       </div>
     </div>
 
     <div class="tabs">
-      <button class="tab active" onclick="setCat('all', this)">🔥 Главное</button>
-      <button class="tab" onclick="setCat('chp', this)">🚨 ЧП и 112</button>
-      <button class="tab" onclick="setCat('city', this)">🏙 Город и ЖКХ</button>
-      <button class="tab" onclick="setCat('law', this)">🏛 Законы и Политика</button>
-      <button class="tab" onclick="setCat('svo', this)">🇷🇺 СВО и Защитники</button>
-      <button class="tab" onclick="setCat('family', this)">👨‍👩‍👧 Семья и Медицина</button>
-      <button class="tab" onclick="setCat('sport', this)">🏆 Спорт и Афиша</button>
+      <button type="button" class="tab active" onclick="setCat('all', this)">🔥 Главное</button>
+      <button type="button" class="tab" onclick="setCat('chp', this)">🚨 ЧП и 112</button>
+      <button type="button" class="tab" onclick="setCat('city', this)">🏙 Город и ЖКХ</button>
+      <button type="button" class="tab" onclick="setCat('law', this)">🏛 Законы и Политика</button>
+      <button type="button" class="tab" onclick="setCat('svo', this)">🇷🇺 СВО и Защитники</button>
+      <button type="button" class="tab" onclick="setCat('family', this)">👨‍👩‍👧 Семья и Медицина</button>
+      <button type="button" class="tab" onclick="setCat('sport', this)">🏆 Спорт и Афиша</button>
     </div>
 
     <div class="grid">
@@ -103,31 +84,31 @@
         <div class="box">
           <h3>📍 Города края и РФ</h3>
           <div style="display:flex; flex-wrap:wrap; gap:6px;">
-            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('all')">Все</button>
-            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Владивосток')">Владивосток</button>
-            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Большой Камень')">Большой Камень</button>
-            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Артём')">Артём</button>
-            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Уссурийск')">Уссурийск</button>
-            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Находка')">Находка</button>
-            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Приморье')">Весь край</button>
-            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Россия')">Россия</button>
+            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('all', 0)">Все</button>
+            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Владивосток', 0)">Владивосток</button>
+            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Большой Камень', 1)">Большой Камень</button>
+            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Артём', 2)">Артём</button>
+            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Уссурийск', 3)">Уссурийск</button>
+            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Находка', 4)">Находка</button>
+            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Приморье', 0)">Весь край</button>
+            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Россия', 0)">Россия</button>
           </div>
         </div>
 
         <div class="box">
           <h3>🌤 Погода: <span id="w-city-name">Владивосток</span></h3>
-          <div class="row"><span>Утро / День</span><strong id="w-day">Загрузка...</strong></div>
-          <div class="row"><span>Вечер</span><strong id="w-eve">Загрузка...</strong></div>
-          <div class="row"><span>Завтра (днём)</span><strong id="w-tom">Загрузка...</strong></div>
+          <div class="row"><span>Утро / День</span><strong id="w-day">0°C / +3°C</strong></div>
+          <div class="row"><span>Вечер</span><strong id="w-eve">+1°C</strong></div>
+          <div class="row"><span>Завтра (днём)</span><strong id="w-tom">+4°C</strong></div>
         </div>
 
         <div class="box">
           <h3>💡 Радар отключений ЖКХ</h3>
           <div id="outages-list">
-            <div class="row"><span>Владивосток (Чуркин)</span><span style="color:#d97706;font-weight:700;">Плановые работы</span></div>
-            <div class="row"><span>Большой Камень</span><span style="color:var(--green);font-weight:700;">Штатно</span></div>
-            <div class="row"><span>Уссурийск / Находка</span><span style="color:var(--green);font-weight:700;">Без аварий</span></div>
-            <div class="row"><span>Артём</span><span style="color:var(--green);font-weight:700;">Сети штатно</span></div>
+            <div class="row" style="cursor:pointer;" onclick="setCat('city', null)"><span>Владивосток (Чуркин)</span><span style="color:#d97706;font-weight:700;">Плановые работы</span></div>
+            <div class="row" style="cursor:pointer;" onclick="setCat('city', null)"><span>Большой Камень</span><span style="color:var(--green);font-weight:700;">Штатно</span></div>
+            <div class="row" style="cursor:pointer;" onclick="setCat('city', null)"><span>Уссурийск / Находка</span><span style="color:var(--green);font-weight:700;">Без аварий</span></div>
+            <div class="row" style="cursor:pointer;" onclick="setCat('city', null)"><span>Артём</span><span style="color:var(--green);font-weight:700;">Сети штатно</span></div>
           </div>
         </div>
 
@@ -140,12 +121,6 @@
       </aside>
 
       <main>
-        <div id="ad-slot" class="card" style="display:none; border-color:var(--blue);">
-          <div id="ad-mark" style="font-size:11px; color:var(--muted); margin-bottom:6px;"></div>
-          <h3 id="ad-t" style="margin-bottom:6px;"></h3>
-          <p id="ad-d" style="font-size:14px; color:var(--muted); margin-bottom:10px;"></p>
-          <a id="ad-btn" href="#" class="btn btn-red" style="display:inline-block;"></a>
-        </div>
         <div id="feed"></div>
       </main>
 
@@ -162,12 +137,17 @@
           <div class="row"><span>ЕДДС Находки</span><a href="tel:84236692151" style="color:var(--blue);font-weight:700;">69-21-51</a></div>
           <div class="row"><span>ЕДДС Большого Камня</span><a href="tel:84233551555" style="color:var(--blue);font-weight:700;">5-15-55</a></div>
           <div class="row"><span>Примводоканал (аварии)</span><a href="tel:84232005777" style="color:var(--blue);font-weight:700;">200-57-77</a></div>
-Свет: ДРСК / ВПЭС8-800-1000-397
-🎭 Бесплатная афиша и спорт
-Набережная СпортивнаяПрогулки, спорт
-Музеи и выставкиДни открытых дверей
-КСК «Фетисов Арена»Матчи ХК «Адмирал»
-СК «Олимпиец»Баскетбол / Волейбол
+          <div class="row"><span>Свет: ДРСК / ВПЭС</span><a href="tel:88001000397" style="color:var(--blue);font-weight:700;">8-800-1000-397</a></div>
+        </div>
+
+        <div class="box">
+          <h3>🎭 Бесплатная афиша и спорт</h3>
+          <div class="row" style="cursor:pointer;" onclick="setCat('sport', null)"><span>Набережная Спортивная</span><span style="color:var(--blue);">Прогулки, спорт</span></div>
+          <div class="row" style="cursor:pointer;" onclick="setCat('sport', null)"><span>Музеи и выставки</span><span style="color:var(--blue);">Дни открытых дверей</span></div>
+          <div class="row" style="cursor:pointer;" onclick="setCat('sport', null)"><span>КСК «Фетисов Арена»</span><span style="color:var(--blue);">Матчи ХК «Адмирал»</span></div>
+          <div class="row" style="cursor:pointer;" onclick="setCat('sport', null)"><span>СК «Олимпиец»</span><span style="color:var(--blue);">Баскетбол / Волейбол</span></div>
+        </div>
+
 💼 Реклама и тендеры
 Размещение нативных публикаций, спецпроектов и баннеров с маркировкой erid (38-ФЗ).
 Оставить заявку
@@ -202,3 +182,117 @@
 
 Мы используем файлы cookie и Яндекс.Метрику для работы сайта. Продолжая просмотр, вы соглашаетесь с Политикой конфиденциальности.
 Согласен
+var newsData = [{
+id: 1,
+cat: 'chp',
+catLabel: '🚨 ЧП и 112',
+city: 'Владивосток',
+age: '16+',
+date: 'Сегодня',
+title: 'Оперативный мониторинг дорог, мостов и коммунальных сетей Приморья 24/7',
+tldr: '• Золотой и Русский мосты открыты в штатном режиме.
+• Аварийные бригады ВПЭС и Примводоканала дежурят круглосуточно.',
+text: '🚨 Оперативные службы Приморского края контролируют обстановку на магистралях и объектах ЖКХ.\n\n🏙 Сообщить о нечищеных дорогах, прорыве труб или отключениях света можно через кнопку «Прислать ЧП» или в наш Telegram-канал.',
+src: 'Редакция «Прим_Дозор»'
+}];
+var curCat = 'all';
+var curCity = 'all';
+var weatherCache = [
+{ name: 'Владивосток', now: '+2°C ☀', morning: '0°C', day: '+3°C', evening: '+1°C', tomorrow: '+4°C' },
+{ name: 'Большой Камень', now: '+1°C 🌤', morning: '-1°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' },
+{ name: 'Артём', now: '0°C ☁', morning: '-2°C', day: '+2°C', evening: '-1°C', tomorrow: '+3°C' },
+{ name: 'Уссурийск', now: '-2°C ☀', morning: '-5°C', day: '+1°C', evening: '-3°C', tomorrow: '+2°C' },
+{ name: 'Находка', now: '+3°C 🌊', morning: '+1°C', day: '+4°C', evening: '+2°C', tomorrow: '+5°C' }
+];
+function openModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'flex'; }
+function closeModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
+function acceptCookies() { localStorage.setItem('ck', '1'); closeModal('cookie-box'); }
+function selectWeatherCity(idx) {
+var c = weatherCache[Number(idx)] || weatherCache[0];
+var sel = document.getElementById('city-sel');
+if (sel) sel.selectedIndex = Number(idx);
+document.getElementById('w-city-name').textContent = c.name;
+document.getElementById('w-day').textContent = c.morning + ' / ' + c.day;
+document.getElementById('w-eve').textContent = c.evening;
+document.getElementById('w-tom').textContent = c.tomorrow;
+}
+function setCat(c, btn) {
+curCat = c;
+document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+if (btn) btn.classList.add('active');
+render();
+}
+function setCity(c, wIdx) {
+curCity = c;
+if (wIdx !== undefined) selectWeatherCity(wIdx);
+render();
+}
+function openArt(id) {
+var n = newsData.find(function(x) { return String(x.id) === String(id); });
+if (!n) return;
+var coverImg = n.cover ? '' : '';
+document.getElementById('art-body').innerHTML =
+'' + n.catLabel + '📍 ' + n.city + '🕒 ' + n.date + '' + (n.age || '16+') + '' +
+'' + n.title + '' +
+coverImg +
+'Суть кратко:
+' + n.tldr + '' +
+'' + (n.fullText || n.text) + '' +
+'📲 Читайте «Прим_Дозор» в мессенджерах:' +
+'✈ Telegram💬 Макс';
+openModal('art-modal');
+}
+function render() {
+var box = document.getElementById('feed');
+if (!box) return;
+var list = newsData.filter(function(n) {
+var catOk = curCat === 'all' || n.cat === curCat;
+var cityOk = curCity === 'all' || (n.city && n.city.toLowerCase().indexOf(curCity.toLowerCase()) !== -1);
+return catOk && cityOk;
+});
+if (list.length === 0) {
+box.innerHTML = 'В этой рубрике пока нет свежих публикаций. Нажмите «🔥 Главное» или «Все» города.';
+return;
+}
+box.innerHTML = list.map(function(n) {
+var cover = n.cover
+? ''
+: '' + n.catLabel + ' · ' + n.city + '' + n.title + '';
+return '' + cover +
+'' + n.catLabel + '📍 ' + n.city + '🕒 ' + n.date + '' + (n.age || '16+') + '' +
+'' + n.title + '' +
+'Главное за 10 секунд:
+' + n.tldr + '' +
+'' + n.text + '' +
+'' + (n.src || '') + 'Читать полностью ➔' +
+'';
+}).join('');
+}
+function updateClock() {
+var now = new Date();
+var vl = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 36000000);
+var el = document.getElementById('clock');
+if (el) el.textContent = String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
+}
+(function init() {
+if (localStorage.getItem('ck')) closeModal('cookie-box');
+updateClock();
+setInterval(updateClock, 10000);
+render();
+fetch('./news.json?v=' + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
+if (Array.isArray(d) && d.length > 0) { newsData = d; render(); }
+}).catch(function() {});
+fetch('./weather.json?v=' + Date.now()).then(function(r) { return r.json(); }).then(function(w) {
+if (Array.isArray(w) && w.length > 0) {
+weatherCache = w;
+var sel = document.getElementById('city-sel');
+w.forEach(function(item, idx) { if (sel && sel.options[idx]) sel.options[idx].textContent = item.name + ' ' + item.now; });
+selectWeatherCity(0);
+}
+}).catch(function() {});
+fetch('cbr-xml-daily.ru').then(function(r) { return r.json(); }).then(function(d) {
+var usd = (d.Valute.USD.Value / d.Valute.USD.Nominal).toFixed(1);
+var cny = (d.Valute.CNY.Value / d.Valute.CNY.Nominal).toFixed(1);
+document.getElementById('rates-box').innerHTML = '💵 USD: ' + usd + ' ₽ · 💴 CNY: ' + cny + ' ₽ · 🏫 Школы: Очно';
+}).catch(function() {});
+})();
