@@ -16,14 +16,19 @@ const FEEDS = [
 async function fetchRSS(url) {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': 'PrimDozorBot/1.0' } });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.log(`RSS ошибка ${res.status}: ${url}`);
+      return [];
+    }
     const xml = await res.text();
     const items = [];
     const matches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
     for (const m of matches) {
       const block = m[1];
-      const title = (block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) || block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
-      const desc = (block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/) || block.match(/<description>([\s\S]*?)<\/description>/) || [])[1] || '';
+      const titleMatch = block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) || block.match(/<title>([\s\S]*?)<\/title>/);
+      const descMatch = block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/) || block.match(/<description>([\s\S]*?)<\/description>/);
+      const title = titleMatch ? titleMatch[1] : '';
+      const desc = descMatch ? descMatch[1] : '';
       if (title) {
         items.push({
           title: title.replace(/<[^>]+>/g, '').trim(),
@@ -31,14 +36,19 @@ async function fetchRSS(url) {
         });
       }
     }
+    console.log(`RSS получено (${items.length}): ${url}`);
     return items.slice(0, 6);
   } catch (e) {
+    console.log(`RSS сбой: ${url}`, e.message);
     return [];
   }
 }
 
 async function rewriteWithAI(rawItem) {
-  if (!AI_KEY) return null;
+  if (!AI_KEY) {
+    console.log('ОШИБКА: Не задан секрет AI_API_KEY');
+    return null;
+  }
   const prompt = `Ты главный редактор портала «Прим_Дозор» (Владивосток, Приморье, Россия).
 Оцени важность новости от 1 до 10. Приоритет: Приморский край, Владивосток, законы РФ, ЧП, СВО, ЖКХ. Если важность меньше 6 — верни строго слово SKIP.
 Если 6 и выше — перепиши уникальным живым языком в стиле «НТВ ЧП / 112 / Блокнот» со строгим соблюдением законов РФ (УК, КоАП, ГК, 436-ФЗ, без фейков и запрещенных данных).
@@ -75,22 +85,30 @@ async function rewriteWithAI(rawItem) {
           temperature: 0.7
         })
       });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        console.log(`AI статус ${res.status} на ${ep.url}`);
+        continue;
+      }
       const data = await res.json();
       const content = data.choices?.[0]?.message?.content?.trim();
       if (!content || content.includes('SKIP')) return null;
       const cleanJson = content.replace(/^```json|```$/g, '').trim();
       return JSON.parse(cleanJson);
-    } catch (e) {}
+    } catch (e) {
+      console.log(`AI ошибка на ${ep.url}:`, e.message);
+    }
   }
   return null;
 }
 
 async function sendToTelegram(news) {
-  if (!TG_TOKEN) return;
-  const caption = `${news.catLabel} | ${news.city} (${news.age})\n\n<b>${news.title}</b>\n\n${news.text}\n\n🌐 Полная картина: https://primdozor.ru\n💬 Мы в Макс: https://max.ru\n✈️ Подписаться: @prim_dozor`;
+  if (!TG_TOKEN) {
+    console.log('ОШИБКА: Не задан секрет TG_BOT_TOKEN');
+    return;
+  }
+  const caption = `${news.catLabel} | ${news.city} (${news.age})\n\n<b>${news.title}</b>\n\n${news.text}\n\n🌐 Полная картина: https://www.primdozor.ru\n💬 Мы в Макс: https://max.ru\n✈️ Подписаться: @prim_dozor`;
   try {
-    await fetch(`https://telegram.org{TG_TOKEN}/sendMessage`, {
+    const res = await fetch(`https://telegram.org{TG_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -100,7 +118,11 @@ async function sendToTelegram(news) {
         disable_web_page_preview: true
       })
     });
-  } catch (e) {}
+    const tgData = await res.json();
+    if (!tgData.ok) console.log('Telegram ошибка:', tgData.description);
+  } catch (e) {
+    console.log('Telegram сбой:', e.message);
+  }
 }
 
 function updateSitemap() {
@@ -108,13 +130,13 @@ function updateSitemap() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://sitemaps.org">
   <url>
-    <loc>https://${SITE_HOST}/</loc>
+    <loc>https://www.${SITE_HOST}/</loc>
     <lastmod>${nowIso}</lastmod>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://${SITE_HOST}/legal.html</loc>
+    <loc>https://www.${SITE_HOST}/legal.html</loc>
     <lastmod>${nowIso}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -130,10 +152,10 @@ async function pingIndexNow() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify({
-        host: SITE_HOST,
+        host: `www.${SITE_HOST}`,
         key: INDEXNOW_KEY,
-        keyLocation: `https://${SITE_HOST}/${INDEXNOW_KEY}.txt`,
-        urlList: [`https://${SITE_HOST}/`]
+        keyLocation: `https://www.${SITE_HOST}/${INDEXNOW_KEY}.txt`,
+        urlList: [`https://www.${SITE_HOST}/`]
       })
     });
   } catch (e) {}
@@ -150,6 +172,7 @@ async function run() {
     const items = await fetchRSS(f);
     candidates = candidates.concat(items);
   }
+  console.log(`Всего кандидатов из RSS: ${candidates.length}`);
 
   let added = 0;
   for (const item of candidates) {
