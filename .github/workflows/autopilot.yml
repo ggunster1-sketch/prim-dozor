@@ -20,7 +20,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install canvas for cover images
+      - name: Clean old node_modules from git
+        run: |
+          git rm -rf --cached node_modules || true
+
+      - name: Install dependencies
         run: npm install canvas
 
       - name: Run news bot
@@ -32,6 +36,9 @@ jobs:
           MAX_CHAT_ID: ${{ secrets.MAX_CHAT_ID }}
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
         run: node bot.js
+
+      - name: Generate SEO pages and sitemap
+        run: node sitegen.js || true
 
       - name: Commit and push updates
         run: |
