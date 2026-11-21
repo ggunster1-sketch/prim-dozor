@@ -8,6 +8,7 @@ const HOST = 'primdozor.ru';
 const SLASH = String.fromCharCode(47);
 const LT = String.fromCharCode(60);
 const GT = String.fromCharCode(62);
+const NL = String.fromCharCode(10);
 
 const CHANNELS = [
   { id: 'dpskontrol_125rus', name: 'ДПС Контроль Приморье', off: false },
@@ -105,9 +106,9 @@ async function rewriteNews(raw) {
     'СТРОГО: Если событие не в Приморском крае (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Хасан, Спасск и др.) и не касается важных законов РФ — верни слово SKIP. Никогда не путай Благовещенск или Хабаровск с Приморьем.',
     'Рекламу и розыгрыши отклоняй словом SKIP. Соблюдай законы РФ (436-ФЗ, УК, КоАП).',
     'Верни строго JSON без markdown:',
-    '{"title":"Сильный заголовок до 85 символов","cat":"chp|city|law|svo|family|sport","catLabel":"ЧП и 112|Город и ЖКХ|Законы и Власть|СВО|Общество|Спорт","city":"Город Приморья","age":"0+|6+|12+|16+|18+","tldr":"• Тезис 1\\n• Тезис 2","text":"3 содержательных абзаца (800-1100 символов)."}',
+    '{"title":"Сильный заголовок до 85 символов","cat":"chp|city|law|svo|family|sport","catLabel":"ЧП и 112|Город и ЖКХ|Законы и Власть|СВО|Общество|Спорт","city":"Город Приморья","age":"0+|6+|12+|16+|18+","tldr":"• Тезис 1 • Тезис 2","text":"3 содержательных абзаца (800-1100 символов)."}',
     'Исходный текст: ' + raw.slice(0, 2200)
-  ].join('\n');
+  ].join(NL);
 
   try {
     const aiUrl = ['https:', '', 'polza.ai', 'api', 'v1', 'chat', 'completions'].join(SLASH);
@@ -122,7 +123,7 @@ async function rewriteNews(raw) {
     if (!txt || txt.includes('SKIP')) return null;
     const p = JSON.parse(txt.replace(/^```json|```$/g, '').trim());
     if (/\b(Meta|Instagram|Facebook|Инстаграм|Фейсбук)\b/i.test(p.text)) {
-      p.text += '\n\n*Деятельность Meta (Facebook и Instagram) запрещена в России как экстремистская.';
+      p.text += NL + NL + '*Деятельность Meta (Facebook и Instagram) запрещена в России как экстремистская.';
     }
     return p;
   } catch (e) { return null; }
@@ -185,12 +186,12 @@ function buildHtml(news, weather, rates) {
       tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(p.catLabel)) + tag('span', '', esc(p.city)) + tag('span', '', '• ' + esc(p.date)) + tag('span', 'class="badge-age"', esc(p.age))) +
       tag('h1', 'style="font-size:23px;line-height:1.3;margin:10px 0 14px"', esc(p.title)) +
       tag('img', 'class="hero-img" src="/' + esc(p.cover) + '" alt="' + esc(p.title) + '" style="border-radius:10px;margin-bottom:14px"') +
-      tag('div', 'class="tldr"', esc(p.tldr).split('\n').join(tag('br'))) +
+      tag('div', 'class="tldr"', esc(p.tldr).split(NL).join(tag('br'))) +
       tag('div', 'style="font-size:16px;white-space:pre-line;line-height:1.75"', esc(p.text)) +
       tag('p', 'style="font-size:12px;color:var(--muted);margin-top:14px"', esc(p.src || ''))
     );
     const artHtml = '<!DOCTYPE html>' + tag('html', 'lang="ru"',
-      tag('head', '', tag('meta', 'charset="UTF-8"') + tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') + tag('title', '', esc(p.title) + ' — Прим_Дозор') + tag('link', 'rel="stylesheet" href="/style.css?v=5"')) +
+      tag('head', '', tag('meta', 'charset="UTF-8"') + tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') + tag('title', '', esc(p.title) + ' — Прим_Дозор') + tag('link', 'rel="stylesheet" href="/style.css?v=6"')) +
 tag('body', '', tag('header', 'class="site-header"', tag('div', 'class="wrap header-inner"', tag('a', 'href="/" class="brand"', tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР')) + tag('a', 'href="/" class="soc-pill"', '← Все новости'))) + tag('main', 'class="wrap" style="max-width:780px;margin-top:20px"', body))
 );
 fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
@@ -198,13 +199,14 @@ fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
 const cards = news.map((n, i) => {
 const lead = n.text.replace(/\s+/g, ' ').slice(0, 145);
 const meta = tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(n.catLabel)) + tag('span', '', esc(n.city)) + tag('span', '', '• ' + esc(n.date)) + tag('span', 'class="badge-age"', esc(n.age)));
+const clickAttr = 'data-id="' + n.id + '" onclick="openArt(this.dataset.id)"';
 if (i === 0) {
-return tag('article', 'class="hero-card" onclick="openArt('' + n.id + '')"',
+return tag('article', 'class="hero-card" ' + clickAttr,
 tag('img', 'class="hero-img" src="./' + esc(n.cover) + '" alt="' + esc(n.title) + '"') +
 tag('div', 'class="hero-body"', meta + tag('h2', 'class="hero-title"', esc(n.title)) + tag('p', 'class="hero-lead"', esc(lead) + '...'))
 );
 }
-return tag('article', 'class="news-card" onclick="openArt('' + n.id + '')"',
+return tag('article', 'class="news-card" ' + clickAttr,
 tag('img', 'class="news-thumb" src="./' + esc(n.cover) + '" alt="' + esc(n.title) + '" loading="lazy"') +
 tag('div', '', meta + tag('h3', 'class="news-title"', esc(n.title)) + tag('p', 'class="news-excerpt"', esc(lead) + '...'))
 );
@@ -226,7 +228,7 @@ const html = tpl
 fs.writeFileSync('index.html', html, 'utf8');
 const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
 for (const n of news) urls.push(tag('url', '', tag('loc', '', 'https://' + HOST + '/news/' + n.id + '.html') + tag('priority', '', '0.8')));
-fs.writeFileSync('sitemap.xml', '\n' + tag('urlset', 'xmlns="sitemaps.org"', '\n' + urls.join('\n') + '\n'), 'utf8');
+fs.writeFileSync('sitemap.xml', '' + NL + tag('urlset', 'xmlns="sitemaps.org"', NL + urls.join(NL) + NL), 'utf8');
 }
 async function run() {
 const { weather, rates } = await fetchWeatherAndRates();
@@ -257,7 +259,7 @@ if (maxId > 0) state[ch.id] = maxId;
 fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
 let added = 0;
 for (const c of candidates) {
-if (added >= 5) break;
+if (added >= 6) break;
 const ai = await rewriteNews(c.raw);
 if (!ai) continue;
 const vl = new Date(Date.now() + 10 * 3600000);
