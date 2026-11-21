@@ -1,19 +1,29 @@
 const fs = require('fs');
 
 const AI_KEY = process.env.AI_API_KEY;
-const TG_TOKEN = process.env.TG_BOT_TOKEN;
-const TG_CHAT = process.env.TG_CHAT_ID || '@prim_dozor';
-const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '';
+const TG_TOKEN = (process.env.TG_BOT_TOKEN || '').trim().replace(/^bot/i, '');
+const TG_CHAT = (process.env.TG_CHAT_ID || '@prim_dozor').trim();
+const INDEXNOW_KEY = (process.env.INDEXNOW_KEY || '').trim();
 const SITE_HOST = 'primdozor.ru';
 
 const FEEDS = [
   'https://' + 'www.dv.kp.ru' + '/rss/allsections.xml',
-  'https://' + 'primpress.ru' + '/rss/news.xml',
+  'https://' + 'vostokmedia.com' + '/rss',
   'https://' + 'www.kp.ru' + '/rss/allsections.xml',
   'https://' + 'ria.ru' + '/export/rss2/archive/index.xml',
   'https://' + 'tass.ru' + '/rss/v2.xml',
   'https://' + 'lenta.ru' + '/rss/news'
 ];
+
+const PRIM_KEYWORDS = ['примор', 'владивосток', 'уссурийск', 'находк', 'артём', 'артем', 'большой камен', 'большом камн', 'дальневосточ', 'дфо', 'кожемяко', 'тихоокеан'];
+
+function normalizeRussianText(str) {
+  if (!str) return '';
+  return str
+    .replace(/\bв Украине\b/g, 'на Украине')
+    .replace(/\bВ Украине\b/g, 'На Украине')
+    .replace(/\bв украине\b/g, 'на Украине');
+}
 
 async function fetchRSS(url) {
   try {
@@ -43,7 +53,7 @@ async function fetchRSS(url) {
       }
     }
     console.log('RSS получено (' + items.length + '): ' + url);
-    return items.slice(0, 6);
+    return items.slice(0, 8);
   } catch (e) {
     console.log('RSS сбой: ' + url, e.message);
     return [];
@@ -55,19 +65,24 @@ async function rewriteWithAI(rawItem) {
     console.log('ОШИБКА: Не задан AI_API_KEY');
     return null;
   }
-  const prompt = `Ты главный редактор портала «Прим_Дозор» (Владивосток, Приморье, Россия).
-Оцени важность новости от 1 до 10. Приоритет: Приморский край, Владивосток, законы РФ, ЧП, СВО, ЖКХ. Если важность меньше 5 — верни строго слово SKIP.
-Если 5 и выше — перепиши уникальным живым языком в стиле «НТВ ЧП / 112 / Блокнот» со строгим соблюдением законов РФ (УК, КоАП, ГК, 436-ФЗ, без фейков и запрещенных данных).
+  const prompt = `Ты главный редактор российского патриотического информационного портала «Прим_Дозор» (Владивосток, Приморский край, Россия).
+
+ЖЕСТКИЕ ПРАВИЛА РЕДАКЦИИ:
+1. ПОЗИЦИЯ ПО СВО И ВОЕННОЙ ТЕМЕ: Все материалы по теме СВО, армии и внешней политики освещаются строго в поддержку России, Вооруженных Сил РФ и государственной политики Российской Федерации, с опорой на официальные данные Минобороны РФ и российских ведомств. Категорически запрещено ретранслировать пропаганду, обвинения или оценки противников России. Если новость продвигает антироссийский нарратив — верни строго слово SKIP.
+2. НОРМА РУССКОГО ЯЗЫКА: Пиши строго «на Украине» (никогда не пиши «в Украине»).
+3. ТОЧНОСТЬ ФАКТОВ: Не выдумывай цифры и факты, которых нет в исходнике. Соблюдай УК РФ, КоАП РФ, ГК РФ, 436-ФЗ.
+4. ПРИОРИТЕТ: Главный фокус — события Владивостока, Приморского края, законы РФ, ЖКХ, ЧП, успехи России и поддержка участников СВО. Если новость неважная (светская хроника, слухи, шоу-бизнес) — верни строго слово SKIP.
+
 Верни ответ СТРОГО в формате JSON без markdown:
 {
-  "title": "Цепляющий SEO-заголовок (до 90 символов)",
+  "title": "Точный информативный SEO-заголовок (до 90 символов)",
   "cat": "одно из: chp, svo, law, city, family, sport",
   "catLabel": "одно из: 🚨 ЧП и 112, 🇷🇺 СВО и Защитники, 🏛 Законы и Политика, 🏙 Город и ЖКХ, 👨‍👩‍👧 Семья и Медицина, 🏆 Спорт",
   "city": "город Приморья (Владивосток, Большой Камень, Артём, Уссурийск, Находка) или Россия",
   "age": "возрастная маркировка по 436-ФЗ: 0+, 6+, 12+, 16+ или 18+",
-  "tldr": "• Пункт 1<br>• Пункт 2",
-  "text": "Полный уникальный текст статьи с уместными эмодзи (2-3 абзаца)",
-  "needSource": true или false (true ТОЛЬКО если это официальная сводка МВД/СК/МО/МЧС/Прокуратуры или прямая цитата; для обычного пересказа фактов ставь false)
+  "tldr": "• Краткий факт 1<br>• Краткий факт 2",
+  "text": "Полный уникальный текст статьи в спокойном, уверенном редакционном стиле с уместными эмодзи (2-3 абзаца)",
+  "needSource": true или false (true ТОЛЬКО если это официальная сводка Минобороны РФ/МВД/СК/МЧС/Прокуратуры/Правительства или прямая цитата; для обычного пересказа факта ставь false)
 }
 Исходник: ${rawItem.title}. ${rawItem.desc}`;
 
@@ -88,7 +103,7 @@ async function rewriteWithAI(rawItem) {
         body: JSON.stringify({
           model: ep.model,
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7
+          temperature: 0.5
         })
       });
       if (!res.ok) {
@@ -100,7 +115,11 @@ async function rewriteWithAI(rawItem) {
       const content = firstChoice && firstChoice.message ? firstChoice.message.content.trim() : '';
       if (!content || content.includes('SKIP')) return null;
       const cleanJson = content.replace(/^```json|```$/g, '').trim();
-      return JSON.parse(cleanJson);
+      const parsed = JSON.parse(cleanJson);
+      parsed.title = normalizeRussianText(parsed.title);
+      parsed.tldr = normalizeRussianText(parsed.tldr);
+      parsed.text = normalizeRussianText(parsed.text);
+      return parsed;
     } catch (e) {
       console.log('AI ошибка на ' + ep.url + ':', e.message);
     }
@@ -187,6 +206,16 @@ async function run() {
     const items = await fetchRSS(f);
     candidates = candidates.concat(items);
   }
+
+  // Ставим новости Приморья и Дальнего Востока первыми в очередь
+  candidates.sort((a, b) => {
+    const aText = (a.title + ' ' + a.desc).toLowerCase();
+    const bText = (b.title + ' ' + b.desc).toLowerCase();
+    const aIsPrim = PRIM_KEYWORDS.some(k => aText.includes(k)) ? 1 : 0;
+    const bIsPrim = PRIM_KEYWORDS.some(k => bText.includes(k)) ? 1 : 0;
+    return bIsPrim - aIsPrim;
+  });
+
   console.log('Всего кандидатов из RSS: ' + candidates.length);
 
   let added = 0;
