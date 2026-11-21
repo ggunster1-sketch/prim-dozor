@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="yandex-verification" content="0dc10018fffed4cc">
-<title>Прим_Дозор — Главные новости Владивостока, Приморья и России 24/7 (18+)</title>
-<meta name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, криминал, ЖКХ, отключения, погода, дороги, законы РФ.">
+<title>Прим_Дозор — Новости Владивостока и Приморского края 24/7 (18+)</title>
+<meta name="description" content="Главные новости Владивостока, Уссурийска, Находки, Артёма и Приморского края 24/7: ЧП, ЖКХ, дороги, погода, законы РФ.">
 <link rel="canonical" href="https://primdozor.ru/">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/style.css">
@@ -22,21 +22,21 @@ ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
 
 <div class="top-bar">
   <div class="container top-flex">
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-      <span class="live-pill">● ВЛАДИВОСТОК <span id="clock">--:--</span></span>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="live-pill">● <span id="clock">--:--</span></span>
       <select id="city-sel" onchange="selectWeatherCity(this.value)" aria-label="Город погоды">
         <option value="0">Владивосток</option>
-        <option value="1">Большой Камень</option>
+        <option value="1">Б. Камень</option>
         <option value="2">Артём</option>
         <option value="3">Уссурийск</option>
         <option value="4">Находка</option>
       </select>
-      <span id="w-top-now" style="font-weight:700; color:#fff;">🌤 --°C</span>
+      <span id="w-top-now" style="font-weight:700; color:#fff;">--°C</span>
     </div>
-    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-      <span id="rates-top">💵 -- ₽ | 🇨🇳 -- ₽</span>
-      <button onclick="toggleBigFont()" style="color:#fff; font-weight:700; border:1px solid #475569; padding:1px 7px; border-radius:4px;">А+</button>
-      <button onclick="toggleTheme()" id="theme-btn" style="color:#fff;">🌙 Ночь</button>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span id="rates-top" class="hide-mob">$-- | ¥--</span>
+      <button onclick="toggleBigFont()" style="color:#fff; font-weight:700; border:1px solid #4b5563; padding:1px 6px; border-radius:4px;">А+</button>
+      <button onclick="toggleTheme()" id="theme-btn" style="color:#fff;">🌙</button>
     </div>
   </div>
 </div>
@@ -44,83 +44,72 @@ ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
 <header>
   <div class="container head-flex">
     <a href="/" class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></a>
-    <input id="search-input" class="input" type="search" placeholder="🔍 Поиск по новостям Приморья..." oninput="setSearch(this.value)" style="max-width:340px; margin-bottom:0;">
-    <div style="display:flex; gap:8px; align-items:center;">
-      <select onchange="setCity(this.value)" aria-label="Фильтр по городу" style="background:var(--bg); color:var(--text); border:1px solid var(--border); padding:8px 10px;">
-        <option value="all">📍 Весь край</option>
+    <div class="head-controls">
+      <select onchange="setCity(this.value)" aria-label="Город" style="background:var(--bg); color:var(--text); border:1px solid var(--border); padding:6px 8px;">
+        <option value="all">Весь край</option>
         <option value="Владивосток">Владивосток</option>
         <option value="Уссурийск">Уссурийск</option>
         <option value="Находка">Находка</option>
         <option value="Артём">Артём</option>
-        <option value="Большой Камень">Большой Камень</option>
-        <option value="Арсеньев">Арсеньев</option>
+        <option value="Большой Камень">Б. Камень</option>
       </select>
-      <button class="btn btn-red" onclick="openReport()">🚨 Прислать ЧП</button>
+      <button class="btn btn-red" onclick="openReport()">+ ЧП</button>
     </div>
   </div>
 </header>
 
-<div class="ticker">
+<div class="search-bar">
   <div class="container">
-    <span class="ticker-tag" id="holiday-badge">⚡ МОЛНИЯ 24/7</span>
-    <span id="holiday-ticker">Оперативный мониторинг дорог, мостов, ЖКХ и происшествий Приморского края в реальном времени.</span>
+    <input id="search-input" class="input" type="search" placeholder="Поиск по новостям Приморья..." oninput="setSearch(this.value)">
   </div>
 </div>
 
 <div class="container">
-  <div class="socials">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-      <strong style="font-size:14px;">📲 Читайте «Прим_Дозор» там, где удобно (сводки без задержек):</strong>
-      <span style="font-size:12px; color:var(--muted);">18+ • Приморский край</span>
-    </div>
-    <div class="soc-grid" id="soc-links-grid">
-      <a href="https://t.me/prim_dozor" target="_blank" rel="noopener" class="soc-link">✈ Telegram ЧП</a>
-      <a href="https://max.ru" target="_blank" rel="noopener" class="soc-link">💬 Канал в МАКС</a>
-      <a href="https://dzen.ru" target="_blank" rel="noopener" class="soc-link">🔥 Яндекс Дзен</a>
-      <a href="https://vk.com" target="_blank" rel="noopener" class="soc-link">🌐 ВКонтакте</a>
-    </div>
+  <div class="soc-strip">
+    <a href="https://t.me/prim_dozor" target="_blank" rel="noopener" class="soc-chip">✈ Telegram</a>
+    <a href="https://max.ru" target="_blank" rel="noopener" class="soc-chip">💬 МАКС</a>
+    <a href="https://dzen.ru" target="_blank" rel="noopener" class="soc-chip">🔥 Дзен</a>
+    <a href="https://vk.com" target="_blank" rel="noopener" class="soc-chip">🌐 ВК</a>
   </div>
 
   <nav class="tabs">
-🔥 Главное
-🚨 ЧП и 112
-🏙 Город и ЖКХ
-🏛 Законы и Власть
-🇷🇺 СВО и Защитники
-👨‍👩‍👧 Семья и Медицина
-🏆 Спорт и Афиша
-🌤 Погода: Владивосток
+    <button class="tab active" onclick="setCat('all', this)">Главное</button>
+    <button class="tab" onclick="setCat('chp', this)">🚨 ЧП</button>
+    <button class="tab" onclick="setCat('city', this)">🏙 Город и ЖКХ</button>
+    <button class="tab" onclick="setCat('law', this)">🏛 Власть</button>
+    <button class="tab" onclick="setCat('svo', this)">🇷🇺 СВО</button>
+    <button class="tab" onclick="setCat('family', this)">👨‍👩‍👧 Общество</button>
+    <button class="tab" onclick="setCat('sport', this)">🏆 Спорт</button>
+  </nav>
 
-Сейчас--°C
-Утром--°C
-Днём--°C
-Вечером--°C
-Завтра--°C
-
-⚡ Отключения ЖКХ
+  <div class="grid">
+    <aside class="side-left">
+      <div class="box">
+        <h3>Погода: <span id="w-city-name">Владивосток</span></h3>
+        <div class="row"><span>Сейчас</span><strong id="w-now">--°C</strong></div>
+        <div class="row"><span>Утром</span><strong id="w-morning">--°C</strong></div>
+        <div class="row"><span>Днём</span><strong id="w-day">--°C</strong></div>
+        <div class="row"><span>Вечером</span><strong id="w-evening">--°C</strong></div>
+        <div class="row"><span>Завтра</span><strong id="w-tomorrow">--°C</strong></div>
+Отключения ЖКХ
 
 Сети краяШтатно
 
-🍂 Сезон в Приморье
-Контроль котельных, расчистки дорог и коммунальной обстановки в городах края.
 
-Загрузка оперативной ленты Приморья...
-💱 Курсы ЦБ РФ
+Загрузка ленты...
+Курсы ЦБ РФ
+USD-- ₽
+EUR-- ₽
+CNY-- ₽
+100 JPY-- ₽
+Экстренные службы
+Служба спасения112
+ГИБДД Приморья231-09-08
+ЕДДС Владивостока222-23-33
+Примводоканал200-5-777
+О портале (18+)
 
-🇺🇸 Доллар США (USD)-- ₽
-🇪🇺 Евро (EUR)-- ₽
-🇨🇳 Юань (CNY)-- ₽
-🇯🇵 100 Иен (JPY)-- ₽
-
-📞 Экстренные службы
-Единый номер спасения112
-Дежурная часть ГИБДД231-09-08
-ЕДДС Владивостока (ЖКХ)222-23-33
-Примводоканал (аварии)200-5-777
-⚖ Редакция и Закон
-
-Возрастная категория 18+ (436-ФЗ). Материалы подготовлены на основе открытых источников и официальных сводок ведомств Приморского края.
-
+Возрастная маркировка 18+ (436-ФЗ). Информационный портал Приморского края.
 
 Политика 152-ФЗ и правила →
 
@@ -132,13 +121,10 @@ ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
 
 
 
-🍪 Мы используем файлы cookie и Яндекс.Метрику для быстрой работы портала (152-ФЗ). Продолжая просмотр, вы соглашаетесь с Политикой конфиденциальности.
-Понятно
-© 2026 Прим_Дозор (18+). Региональный информационный портал Приморского края. Правовая информация и 152-ФЗ
+🍪 Мы используем cookie и Яндекс.Метрику (152-ФЗ). Подробнее
+ОК
+© 2026 Прим_Дозор (18+). Приморский край. Правовая информация и 152-ФЗ
 
-Прим_Дозор (18+) — Главные новости Владивостока и Приморского края
-<li><a href="/news/1795279172394.html">Федеральный МРОТ растёт: как изменятся зарплаты и пособия с 1 января 2027 года</a> — Россия (0+)</li><li><a href="/news/1795279142264.html">Погиб работник железной дороги в Приморском крае при падении укладочного крана</a> — Владивосток (18+)</li><li><a href="/news/1795279115343.html">⚖️ Жительницу Приморья будут судить за истязание и угрозу ножом десятилетней дочери</a> — Хасанский округ, Приморский край (0+)</li><li><a href="/news/1795278268078.html">Жительница Комсомольска обвинена в убийстве в Владивостоке: назначено заключение</a> — Владивосток (0+)</li><li><a href="/news/1795278227671.html">Прокуратура проверяет пожар в цехе по переработке сои в Уссурийском округе</a> — Село Степное, Уссурийский округ, Приморский край (0+)</li><li><a href="/news/1795278213644.html">Прокуратура проверит жалобы на отопление во Владивостоке</a> — Владивосток (0+)</li><li><a href="/news/1795278059277.html">Ветеран МВД завоевал 9 золотых медалей и 4 мировых рекорда на Кубке мира по силовому</a> — Благовещенск, Приморский край (0+)</li><li><a href="/news/1795275513370.html">Ключевые объекты Находки в фокусе: от удобрений до новых фасадов</a> — Находка (0+)</li><li><a href="/news/1795275498778.html">Четыре новых объекта здравоохранения планируем построить во Владивостоке и Уссурийске</a> — Владивосток, Уссурийск (0+)</li><li><a href="/news/1795275473019.html">Полиция Приморья призывает граждан к ответственности за нарушение родительских обязанностей</a> — Приморский край (18+)</li><li><a href="/news/1795274851059.html">Владивосток обсудил строительство технопарка, кампуса ДВФУ и центра «Океан‑2»</a> — Владивосток (0+)</li><li><a href="/news/1795274833529.html">⚡️ Во Владивостоке завершено расследование дела о бывшем руководителе организации</a> — Владивосток (0+)</li><li><a href="/news/1795274806655.html">Владивосток: доследственная проверка по факту смерти мужчины после медицинской помощи</a> — Владивосток (0+)</li><li><a href="/news/1795265149616.html">Владивосток: ВТБ разместит новогоднюю ёлку в центре города</a> — Владивосток (6+)</li><li><a href="/news/1795265128847.html">Владивостокские школьники «прикрыли» профессии криминалиста, оператора БПЛА и пожарного</a> — Владивосток (6+)</li><li><a href="/news/1795264277965.html">Владивосток: 7 мифов о похудении в спортзале, которые развенчал местный тренер</a> — Владивосток (18+)</li><li><a href="/news/1795264260092.html">«ОСТОРОЖНО – ОСТРЫЙ УМ!» – еженедельная рубрика мудростей от «Комсомолки» и «СОКРАТ»</a> — Владивосток (0+)</li><li><a href="/news/1795263373796.html">Трамп установил жесткий срок для переговоров по Украине, а Сакс отмечает влияние ВПК США</a> — Россия (12+)</li><li><a href="/news/1795263318190.html">Киев готовится: 37 млн долларов на уличные туалеты в условиях черного вырубки</a> — Россия (0+)</li><li><a href="/news/1795261431022.html">Лантратова направит гуманитарную помощь пострадавшим от украинского удара в Луганске</a> — Россия (0+)</li><li><a href="/news/1795261405853.html">Снижение больничной смертности от инфаркта в России: новые данные 2023</a> — Россия (0+)</li><li><a href="/news/1795261211902.html">Возможные уголовные статьи, которые могут применяться к Хуанге</a> — Россия (18+)</li><li><a href="/news/1795261176673.html">Лантратова готовит обращение в ООН после атаки ВСУ на Луганск</a> — Russia (18+)</li><li><a href="/news/1795261073716.html">Локомотив-Кубань победил Динамо: серия побед продолжается в Лиге ВТБ</a> — Россия (18+)</li><li><a href="/news/1795261051189.html">В Приморском крае закрыли движение по дамбе Печенежского водохранилища из‑за повреждений</a> — Приморский край (0+)</li>
-
-
+<li><a href="/news/1795279172394.html">Федеральный МРОТ растёт: как изменятся зарплаты и пособия с 1 января 2027 года</a> — Россия</li><li><a href="/news/1795279142264.html">Погиб работник железной дороги в Приморском крае при падении укладочного крана</a> — Владивосток</li><li><a href="/news/1795279115343.html">⚖️ Жительницу Приморья будут судить за истязание и угрозу ножом десятилетней дочери</a> — Хасанский округ, Приморский край</li><li><a href="/news/1795278268078.html">Жительница Комсомольска обвинена в убийстве в Владивостоке: назначено заключение</a> — Владивосток</li><li><a href="/news/1795278227671.html">Прокуратура проверяет пожар в цехе по переработке сои в Уссурийском округе</a> — Село Степное, Уссурийский округ, Приморский край</li><li><a href="/news/1795278213644.html">Прокуратура проверит жалобы на отопление во Владивостоке</a> — Владивосток</li><li><a href="/news/1795278059277.html">Ветеран МВД завоевал 9 золотых медалей и 4 мировых рекорда на Кубке мира по силовому</a> — Благовещенск, Приморский край</li><li><a href="/news/1795275513370.html">Ключевые объекты Находки в фокусе: от удобрений до новых фасадов</a> — Находка</li><li><a href="/news/1795275498778.html">Четыре новых объекта здравоохранения планируем построить во Владивостоке и Уссурийске</a> — Владивосток, Уссурийск</li><li><a href="/news/1795275473019.html">Полиция Приморья призывает граждан к ответственности за нарушение родительских обязанностей</a> — Приморский край</li><li><a href="/news/1795274851059.html">Владивосток обсудил строительство технопарка, кампуса ДВФУ и центра «Океан‑2»</a> — Владивосток</li><li><a href="/news/1795274833529.html">⚡️ Во Владивостоке завершено расследование дела о бывшем руководителе организации</a> — Владивосток</li><li><a href="/news/1795274806655.html">Владивосток: доследственная проверка по факту смерти мужчины после медицинской помощи</a> — Владивосток</li><li><a href="/news/1795265149616.html">Владивосток: ВТБ разместит новогоднюю ёлку в центре города</a> — Владивосток</li><li><a href="/news/1795265128847.html">Владивостокские школьники «прикрыли» профессии криминалиста, оператора БПЛА и пожарного</a> — Владивосток</li><li><a href="/news/1795264277965.html">Владивосток: 7 мифов о похудении в спортзале, которые развенчал местный тренер</a> — Владивосток</li><li><a href="/news/1795264260092.html">«ОСТОРОЖНО – ОСТРЫЙ УМ!» – еженедельная рубрика мудростей от «Комсомолки» и «СОКРАТ»</a> — Владивосток</li><li><a href="/news/1795263373796.html">Трамп установил жесткий срок для переговоров по Украине, а Сакс отмечает влияние ВПК США</a> — Россия</li><li><a href="/news/1795263318190.html">Киев готовится: 37 млн долларов на уличные туалеты в условиях черного вырубки</a> — Россия</li><li><a href="/news/1795261431022.html">Лантратова направит гуманитарную помощь пострадавшим от украинского удара в Луганске</a> — Россия</li>
 
 
