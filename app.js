@@ -179,82 +179,20 @@ async function loadOutages() {
     const res = await fetch('./outages.json?v=' + Date.now());
     if (!res.ok) return;
     const list = await res.json();
-    const box = document.getElementById('outages-list');
-    if (box && Array.isArray(list) && list.length > 0) {
+        const box = document.getElementById('outages-list');
+    if (box && Array.isArray(list)) {
       box.innerHTML = list.map(function(o) {
-        return '<div class="row"><span>' + o.district + '</span><span style="color:#d97706;font-weight:700;">' + o.status + '</span></div>';
+        return '<div class="row"><span>' + o.district + '</span><strong>' + o.status + '</strong></div>';
       }).join('');
     }
   } catch (e) {}
 }
 
-function selectWeatherCity(idx) {
-  const c = weatherCache.at(Number(idx));
-  if (!c) return;
-  const nEl = document.getElementById('w-city-name');
-  const dEl = document.getElementById('w-day');
-  const eEl = document.getElementById('w-eve');
-  const tEl = document.getElementById('w-tom');
-  if (nEl) nEl.textContent = c.name;
-  if (dEl) dEl.textContent = c.morning + ' / ' + c.day;
-  if (eEl) eEl.textContent = c.evening;
-  if (tEl) tEl.textContent = c.tomorrow;
-}
-
-async function loadWeather() {
-  weatherCache = [
-    { name: 'Владивосток', now: '+2°C ☀', morning: '0°C', day: '+3°C', evening: '+1°C', tomorrow: '+4°C' },
-    { name: 'Большой Камень', now: '+1°C 🌤', morning: '-1°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' },
-    { name: 'Артём', now: '0°C ☁', morning: '-2°C', day: '+2°C', evening: '-1°C', tomorrow: '+3°C' },
-    { name: 'Уссурийск', now: '-2°C ☀', morning: '-5°C', day: '+1°C', evening: '-3°C', tomorrow: '+2°C' },
-    { name: 'Находка', now: '+3°C 🌊', morning: '+1°C', day: '+4°C', evening: '+2°C', tomorrow: '+5°C' }
-  ];
-  selectWeatherCity(0);
-
-  try {
-    const res = await fetch('./weather.json?v=' + Date.now());
-    if (!res.ok) return;
-    const list = await res.json();
-    if (!Array.isArray(list) || list.length === 0) return;
-
-    const sel = document.getElementById('city-sel');
-    weatherCache = list.map(function(c, i) {
-      if (sel && sel.options.item(i)) {
-sel.options.item(i).textContent = c.name + ' ' + c.now;
-}
-return c;
-});
-selectWeatherCity(0);
-} catch (e) {}
-}
-async function loadRates() {
-try {
-const res = await fetch('cbr-xml-daily.ru');
-if (!res.ok) return;
-const data = await res.json();
-const usd = (data.Valute.USD.Value / data.Valute.USD.Nominal).toFixed(1);
-const cny = (data.Valute.CNY.Value / data.Valute.CNY.Nominal).toFixed(1);
-const rb = document.getElementById('rates-box');
-if (rb) {
-rb.innerHTML = '💵 USD: ' + usd + ' ₽ · 💴 CNY: ' + cny + ' ₽ · 🏫 Школы: Очно';
-}
-} catch (e) {}
-}
 window.addEventListener('DOMContentLoaded', function() {
-if (localStorage.getItem('ck')) {
-const ck = document.getElementById('cookie-box');
-if (ck) ck.style.display = 'none';
-}
-const cfg = window.PRIM_DOZOR_CONFIG || {};
-if (cfg.ownerName && !cfg.ownerName.includes('ВПИШИ')) {
-const fo = document.getElementById('foot-owner');
-if (fo) fo.textContent = cfg.legalStatus + '. Администратор: ' + cfg.ownerName + ' (' + cfg.contactEmail + ')';
-}
-updateClock();
-setInterval(updateClock, 10000);
-updateSeasonAndHolidays();
-loadNews();
-loadOutages();
-loadWeather();
-loadRates();
+  updateClock();
+  setInterval(updateClock, 10000);
+  updateSeasonAndHolidays();
+  loadNews();
+  loadOutages();
 });
+
