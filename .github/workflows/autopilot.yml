@@ -5,6 +5,10 @@ on:
     - cron: '*/30 * * * *'
   workflow_dispatch:
 
+concurrency:
+  group: autopilot-main
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -37,12 +41,13 @@ jobs:
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
         run: node bot.js
 
-      - name: Generate SEO pages and sitemap
-        run: node sitegen.js || true
-
       - name: Commit and push updates
         run: |
           git config user.name "PrimDozor Bot"
           git config user.email "actions@github.com"
           git add -A
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update site & news" && git push)
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+            git commit -m "Auto update site & news"
+            git pull --rebase origin main
+            git push
+          fi
