@@ -189,3 +189,182 @@ return <article class="hero" onclick="openArt('${n.id}')"><img src="./${esc(n.co
 return <article class="item" onclick="openArt('${n.id}')"><img src="./${esc(n.cover)}" alt="${esc(n.title)}" loading="lazy"><div><div class="meta"><span class="cat">${esc(n.catLabel)}</span><span>${esc(n.city)}</span><span>• ${esc(n.date)}</span><span>${esc(n.age)}</span></div><h2>${esc(n.title)}</h2><p class="lead">${esc(lead)}...</p></div></article>;
 }).join('');
 const page = `
+Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)
+Владивосток
+
+${weather.map((w, idx) => <option value="\({idx}">\){esc(w.name)}</option>).join('')}
+
+${esc(w0.now)}
+
+
+$${esc(rates.usd)} | €${esc(rates.eur)} | ¥${esc(rates.cny)}
+А+
+🌙
+
+
+ПРИМ_ДОЗОР18+
+
+
+Весь край
+Владивосток
+Уссурийск
+Находка
+Артём
+Б. Камень
+
++ Прислать ЧП
+
+
+Главное
+ЧП и 112
+Город и ЖКХ
+Законы и Власть
+СВО
+Общество
+Спорт
+
+${cards}
+
+
+Погода: ${esc(w0.name)}
+Сейчас${esc(w0.now)}
+Утром${esc(w0.morning)}
+Днём${esc(w0.day)}
+Вечером${esc(w0.evening)}
+Завтра${esc(w0.tomorrow)}
+
+
+Курсы ЦБ РФ
+Доллар (USD)${esc(rates.usd)} ₽
+Евро (EUR)${esc(rates.eur)} ₽
+Юань (CNY)${esc(rates.cny)} ₽
+100 Иен (JPY)${esc(rates.jpy)} ₽
+
+
+Экстренные службы края
+Служба спасения112
+ГИБДД Приморья231-09-08
+ЕДДС Владивостока222-23-33
+Примводоканал200-5-777
+
+
+Каналы редакции
+✈ Telegram-канал ЧП→
+💬 Канал в МАКС→
+
+
+ПРИМ_ДОЗОР • 18+
+✕ Закрыть
+
+
+
+🍪 Используем cookie и Яндекс.Метрику (152-ФЗ).
+ОК
+© 2026 Прим_Дозор (18+). Региональный портал Приморского края. Соблюдение 152-ФЗ, 436-ФЗ и ГК РФ.
+const NEWS = ${JSON.stringify(news)};
+const WEATHER = ${JSON.stringify(weather)};
+let cCat = 'all', cCity = 'all';
+if (localStorage.getItem('ck')) document.getElementById('ck').style.display = 'none';
+function setWeather(i) {
+const w = WEATHER[i]; if (!w) return;
+document.getElementById('w-top').textContent = w.now;
+document.getElementById('w-name').textContent = w.name;
+document.getElementById('w-now').textContent = w.now;
+document.getElementById('w-m').textContent = w.morning;
+document.getElementById('w-d').textContent = w.day;
+document.getElementById('w-e').textContent = w.evening;
+document.getElementById('w-t').textContent = w.tomorrow;
+}
+function renderFeed() {
+const list = NEWS.filter(n => (cCat === 'all' || n.cat === cCat) && (cCity === 'all' || n.city.includes(cCity)));
+document.getElementById('feed').innerHTML = list.map((n, i) => {
+const lead = n.text.replace(/\s+/g, ' ').slice(0, 145);
+return i === 0
+? '' + n.catLabel + '' + n.city + '• ' + n.date + '' + n.age + '' + n.title + '' + lead + '...'
+: '' + n.catLabel + '' + n.city + '• ' + n.date + '' + n.age + '' + n.title + '' + lead + '...';
+}).join('');
+}
+function filterCat(c, btn) { cCat = c; document.querySelectorAll('.tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderFeed(); }
+function filterCity(c) { cCity = c; renderFeed(); }
+function openArt(id) {
+const n = NEWS.find(x => String(x.id) === String(id)); if (!n) return;
+document.getElementById('m-body').innerHTML = '' + n.catLabel + '' + n.city + '• ' + n.date + '' + n.age + '' + n.title + '' + n.tldr.replace(/\n/g, '
+') + '' + n.text + '' + (n.src || '') + '';
+document.getElementById('modal').style.display = 'flex';
+}
+setInterval(() => {
+const vl = new Date(Date.now() + new Date().getTimezoneOffset()*60000 + 36000000);
+document.getElementById('clock').textContent = 'Владивосток ' + String(vl.getHours()).padStart(2,'0') + ':' + String(vl.getMinutes()).padStart(2,'0');
+}, 5000);
+
+
+`;
+fs.writeFileSync('index.html', page, 'utf8');
+const urls = ['  https://' + HOST + '/1.0'];
+for (const n of news) urls.push('  https://' + HOST + '/news/' + n.id + '.html0.8');
+fs.writeFileSync('sitemap.xml', '\n\n' + urls.join('\n') + '\n', 'utf8');
+}
+async function run() {
+const { weather, rates } = await fetchWeatherAndRates();
+let news = [];
+if (fs.existsSync('news.json')) { try { news = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {} }
+let state = {};
+if (fs.existsSync('tg_state.json')) { try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {} }
+const candidates = [];
+for (const ch of CHANNELS) {
+try {
+const html = await getHttp(['https:', '', 't.me', 's', ch.id].join(SLASH));
+let maxId = state[ch.id] || 0;
+for (const b of html.split('tgme_widget_message_wrap').slice(-5)) {
+const pm = b.match(/data-post="[^"]+/(\d+)"/);
+const num = pm ? Number(pm.at(1)) : 0;
+if (num && state[ch.id] && num <= state[ch.id]) continue;
+if (num > maxId) maxId = num;
+const idx = b.indexOf('tgme_widget_message_text');
+if (idx === -1) continue;
+const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
+if (txt.length < 80 || txt.includes('erid') || txt.includes('#реклама')) continue;
+const im = b.match(/background-image:url'(https?:\/\/[^']+)'/);
+candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
+}
+if (maxId > 0) state[ch.id] = maxId;
+} catch (e) {}
+}
+fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
+let added = 0;
+for (const c of candidates) {
+if (added >= 5) break;
+const ai = await rewriteNews(c.raw);
+if (!ai) continue;
+const vl = new Date(Date.now() + 10 * 3600000);
+const post = {
+id: Date.now() + added,
+date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
+cat: ai.cat || 'city',
+catLabel: ai.catLabel || 'Город и ЖКХ',
+city: ai.city || 'Приморье',
+age: ai.age || '16+',
+title: ai.title,
+tldr: ai.tldr,
+text: ai.text,
+src: c.src
+};
+post.cover = await drawCover(post, c.img);
+news.unshift(post);
+added++;
+}
+news = news.slice(0, 60);
+fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
+buildHtml(news, weather, rates);
+if (added > 0 && INDEXNOW_KEY) {
+try {
+await fetch('yandex.com', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + HOST + '/'] })
+});
+} catch (e) {}
+}
+console.log('Готово. Опубликовано статей: ' + added);
+}
+run();
