@@ -237,10 +237,6 @@ if (fs.existsSync('news.json')) { try { news = JSON.parse(fs.readFileSync('news.
 let state = {};
 if (fs.existsSync('tg_state.json')) { try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {} }
 const candidates = [];
-for (const ch of CHANNELS) {
-try {
-const html = await getHttp(['https:', '', 't.me', 's', ch.id].join(SLASH));
-let maxId = state[ch.id] || 0;
       for (const b of html.split('tgme_widget_message_wrap').slice(-5)) {
         const pm = b.match(new RegExp('data-post="[^"]+' + SLASH + '(\\d+)"'));
         const num = pm ? Number(pm.at(1)) : 0;
@@ -253,3 +249,49 @@ let maxId = state[ch.id] || 0;
         const im = b.match(new RegExp("background-image:url\\('(https?:" + SLASH + SLASH + "[^']+)'\\)"));
         candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
       }
+      if (maxId > 0) state[ch.id] = maxId;
+    } catch (e) {}
+  }
+  fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
+
+  let added = 0;
+  for (const c of candidates) {
+    if (added >= 6) break;
+    const ai = await rewriteNews(c.raw);
+    if (!ai) continue;
+    const vl = new Date(Date.now() + 10 * 3600000);
+    const post = {
+      id: Date.now() + added,
+      date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
+      cat: ai.cat || 'city',
+      catLabel: ai.catLabel || 'Город и ЖКХ',
+      city: ai.city || 'Приморье',
+      age: ai.age || '16+',
+      title: ai.title,
+      tldr: ai.tldr,
+      text: ai.text,
+      src: c.src
+    };
+    post.cover = await drawCover(post, c.img);
+    news.unshift(post);
+    added++;
+  }
+
+  news = news.slice(0, 60);
+  fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
+  buildHtml(news, weather, rates);
+
+  if (added > 0 && INDEXNOW_KEY) {
+    try {
+      const idxUrl = ['https:', '', 'yandex.com', 'indexnow'].join(SLASH);
+      await fetch(idxUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + HOST + '/'] })
+      });
+    } catch (e) {}
+  }
+  console.log('Готово. Опубликовано статей: ' + added);
+}
+
+run();
