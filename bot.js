@@ -181,4 +181,11 @@ function buildHtml(news, weather, rates) {
     const artHtml = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(p.title)} — Прим_Дозор (${esc(p.age)})</title><meta name="description" content="${esc(p.title)}"><link rel="canonical" href="https://${HOST}/news/${p.id}.html"><link rel="stylesheet" href="/style.css"></head><body><header><div class="wrap head-flex"><a href="/" class="logo">ПРИМ_ДОЗОР</a><a href="/" class="pill" style="color:var(--text)">← Все новости</a></div></header><main class="wrap" style="max-width:780px;margin-top:20px"><article class="box" style="padding:22px"><div class="meta"><span class="cat">${esc(p.catLabel)}</span><span>${esc(p.city)}</span><span>• ${esc(p.date)}</span><span>${esc(p.age)}</span></div><h1 style="font-size:24px;line-height:1.3;margin:10px 0 16px">${esc(p.title)}</h1><img src="/${esc(p.cover)}" alt="${esc(p.title)}" style="width:100%;border-radius:10px;margin-bottom:14px"><div class="tldr">${esc(p.tldr).replace(/\n/g, '<br>')}</div><div style="font-size:16px;white-space:pre-line;line-height:1.75">${esc(p.text)}</div><p style="font-size:12px;color:var(--muted);margin-top:14px">${esc(p.src || '')}</p></article></main><footer><div class="wrap">© 2026 Прим_Дозор (18+). Приморский край.</div></footer></body></html>`;
     fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
   }
-
+const cards = news.map((n, i) => {
+const lead = n.text.replace(/\s+/g, ' ').slice(0, 145);
+if (i === 0) {
+return <article class="hero" onclick="openArt('${n.id}')"><img src="./${esc(n.cover)}" alt="${esc(n.title)}"><div class="hero-body"><div class="meta"><span class="cat">${esc(n.catLabel)}</span><span>${esc(n.city)}</span><span>• ${esc(n.date)}</span><span>${esc(n.age)}</span></div><h1>${esc(n.title)}</h1><p class="lead">${esc(lead)}...</p></div></article>;
+}
+return <article class="item" onclick="openArt('${n.id}')"><img src="./${esc(n.cover)}" alt="${esc(n.title)}" loading="lazy"><div><div class="meta"><span class="cat">${esc(n.catLabel)}</span><span>${esc(n.city)}</span><span>• ${esc(n.date)}</span><span>${esc(n.age)}</span></div><h2>${esc(n.title)}</h2><p class="lead">${esc(lead)}...</p></div></article>;
+}).join('');
+const page = `
