@@ -1,4 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://sitemaps.org">
-  <url><loc>https://primdozor.ru/</loc><lastmod>2026-11-21T15:38:34.329Z</lastmod></url>
+  <url><loc>https://primdozor.ru/</loc><lastmod>2026-11-21T16:05:23.282Z</lastmod><changefreq>always</changefreq><priority>1.0</priority></url>
+  <url><loc>https://primdozor.ru/legal.html</loc><lastmod>2026-11-21T16:05:23.282Z</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://primdozor.ru/news/1795275513370.html</loc><lastmod>2026-11-21T15:38:33.368Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795275498778.html</loc><lastmod>2026-11-21T15:38:18.777Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795275473019.html</loc><lastmod>2026-11-21T15:37:53.019Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795274851059.html</loc><lastmod>2026-11-21T15:27:31.057Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795274833529.html</loc><lastmod>2026-11-21T15:27:13.528Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795274806655.html</loc><lastmod>2026-11-21T15:26:46.655Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795265149616.html</loc><lastmod>2026-11-21T12:45:49.615Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795265128847.html</loc><lastmod>2026-11-21T12:45:28.847Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795264277965.html</loc><lastmod>2026-11-21T12:31:17.964Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795264260092.html</loc><lastmod>2026-11-21T12:31:00.092Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795263373796.html</loc><lastmod>2026-11-21T12:16:13.795Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795263318190.html</loc><lastmod>2026-11-21T12:15:18.190Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795261431022.html</loc><lastmod>2026-11-21T11:43:51.021Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795261405853.html</loc><lastmod>2026-11-21T11:43:25.853Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795261211902.html</loc><lastmod>2026-11-21T11:40:11.901Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795261176673.html</loc><lastmod>2026-11-21T11:39:36.673Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795261073716.html</loc><lastmod>2026-11-21T11:37:53.715Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795261051189.html</loc><lastmod>2026-11-21T11:37:31.189Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795260780179.html</loc><lastmod>2026-11-21T11:33:00.178Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795260763430.html</loc><lastmod>2026-11-21T11:32:43.430Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795259870835.html</loc><lastmod>2026-11-21T11:17:50.834Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://primdozor.ru/news/1795259833146.html</loc><lastmod>2026-11-21T11:17:13.146Z</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
 </urlset>
