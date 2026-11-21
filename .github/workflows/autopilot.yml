@@ -1,53 +1,28 @@
 name: PrimDozor Autopilot 24/7
-
 on:
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
-
 concurrency:
-  group: autopilot-main
+  group: autopilot
   cancel-in-progress: true
-
 permissions:
   contents: write
-
 jobs:
-  run-autopilot:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Clean old node_modules from git
-        run: |
-          git rm -rf --cached node_modules || true
-
-      - name: Install dependencies
-        run: npm install canvas
-
-      - name: Run news bot
-        env:
+      - run: npm install canvas
+      - env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
-          MAX_CHAT_ID: ${{ secrets.MAX_CHAT_ID }}
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
         run: node bot.js
-
-      - name: Commit and push updates
-        run: |
+      - run: |
           git config user.name "PrimDozor Bot"
-          git config user.email "actions@github.com"
+          git config user.email "bot@primdozor.ru"
           git add -A
-          if ! git diff --quiet || ! git diff --staged --quiet; then
-            git commit -m "Auto update site & news"
-            git pull --rebase origin main
-            git push
-          fi
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update" && git pull --rebase origin main && git push)
