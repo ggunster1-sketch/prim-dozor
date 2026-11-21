@@ -79,7 +79,7 @@ ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
       <span>• ${esc(post.date)}</span>
       <span class="badge-age">${esc(post.age || '16+')}</span>
     </div>
-    <h1 style="font-size:23px; line-height:1.3; margin:10px 0 14px;">${esc(post.title)}</h1>
+    <h1 style="font-size:22px; line-height:1.3; margin:10px 0 14px;">${esc(post.title)}</h1>
     ${post.cover ? '<img class="hero-img" src="/' + esc(post.cover) + '" alt="' + esc(post.title) + '" style="border-radius:10px; margin-bottom:14px;">' : ''}
     <div class="tldr"><strong>Главное:</strong><br>${post.tldr || ''}</div>
     <div style="font-size:16px;">${paragraphs}</div>
@@ -109,7 +109,7 @@ function buildSite() {
   if (fs.existsSync('weather.json')) {
     try { weather = JSON.parse(fs.readFileSync('weather.json', 'utf8')); } catch (e) {}
   }
-  const w0 = weather[0] || { name: 'Владивосток', now: '🌤 +2°C', morning: '0°C', day: '+3°C', evening: '+1°C', tomorrow: '+4°C' };
+  const w0 = (Array.isArray(weather) && weather) ? weather : { name: 'Владивосток', now: '🌤 +2°C', morning: '0°C', day: '+3°C', evening: '+1°C', tomorrow: '+4°C' };
 
   let rates = { usd: '—', eur: '—', cny: '—', jpy: '—' };
   if (fs.existsSync('rates.json')) {
@@ -133,23 +133,23 @@ function buildSite() {
   const ssrCards = news.slice(0, 20).map((n, idx) => {
     const lead = (n.text || '').replace(/\s+/g, ' ').trim().slice(0, 140);
     if (idx === 0) {
-      return `<article class="hero-card" onclick="openArt('${n.id}')">
-        ${n.cover ? `<img class="hero-img" src="./${esc(n.cover)}" alt="${esc(n.title)}">` : ''}
-        <div class="hero-body">
-          <div class="news-meta"><span class="badge-cat">${esc(n.catLabel)}</span><span>${esc(n.city)}</span><span>• ${esc(n.date)}</span><span class="badge-age">${esc(n.age || '16+')}</span></div>
-          <h2 class="hero-title">${esc(n.title)}</h2>
-          <p class="hero-lead">${esc(lead)}...</p>
-        </div>
-      </article>`;
+      return '<article class="hero-card" onclick="openArt(\'' + n.id + '\')">' +
+        (n.cover ? '<img class="hero-img" src="./' + esc(n.cover) + '" alt="' + esc(n.title) + '">' : '') +
+        '<div class="hero-body">' +
+          '<div class="news-meta"><span class="badge-cat">' + esc(n.catLabel) + '</span><span>' + esc(n.city) + '</span><span>• ' + esc(n.date) + '</span><span class="badge-age">' + esc(n.age || '16+') + '</span></div>' +
+          '<h2 class="hero-title">' + esc(n.title) + '</h2>' +
+          '<p class="hero-lead">' + esc(lead) + '...</p>' +
+        '</div>' +
+      '</article>';
     }
-    return `<article class="news-card" onclick="openArt('${n.id}')">
-      ${n.cover ? `<img class="news-thumb" src="./${esc(n.cover)}" alt="${esc(n.title)}" loading="lazy">` : '<div class="news-thumb"></div>'}
-      <div>
-        <div class="news-meta"><span class="badge-cat">${esc(n.catLabel)}</span><span>${esc(n.city)}</span><span>• ${esc(n.date)}</span><span class="badge-age">${esc(n.age || '16+')}</span></div>
-        <h3 class="news-title">${esc(n.title)}</h3>
-        <p class="news-excerpt">${esc(lead)}...</p>
-      </div>
-    </article>`;
+    return '<article class="news-card" onclick="openArt(\'' + n.id + '\')">' +
+      (n.cover ? '<img class="news-thumb" src="./' + esc(n.cover) + '" alt="' + esc(n.title) + '" loading="lazy">' : '<div class="news-thumb"></div>') +
+      '<div>' +
+        '<div class="news-meta"><span class="badge-cat">' + esc(n.catLabel) + '</span><span>' + esc(n.city) + '</span><span>• ' + esc(n.date) + '</span><span class="badge-age">' + esc(n.age || '16+') + '</span></div>' +
+        '<h3 class="news-title">' + esc(n.title) + '</h3>' +
+        '<p class="news-excerpt">' + esc(lead) + '...</p>' +
+      '</div>' +
+    '</article>';
   }).join('\n');
 
   const indexHtml = `<!DOCTYPE html>
@@ -162,7 +162,7 @@ function buildSite() {
 <meta name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма и Приморского края 24/7: ЧП, ЖКХ, дороги, погода, законы РФ.">
 <link rel="canonical" href="https://${SITE_HOST}/">
 <link rel="manifest" href="/manifest.json">
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/style.css?v=2">
 <script src="/config.js"></script>
 <script type="text/javascript">
 (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
@@ -210,15 +210,9 @@ ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
         <option value="Находка">Находка</option>
         <option value="Артём">Артём</option>
         <option value="Большой Камень">Б. Камень</option>
-      </select>
-      <button class="btn-cta" onclick="openReport()">+ Прислать ЧП</button>
-    </div>
-  </div>
-</header>
++ ЧП
 
-<div class="nav-strip">
-  <div class="wrap">
-    <nav class="tabs">
+
 Главное
 ЧП и 112
 Город и ЖКХ
