@@ -9,47 +9,27 @@
   <script src="config.js"></script>
 </head>
 <body>
-  <div class="top-bar">
-    <div class="container top-flex">
-      <div>
-        <span class="live-pill">● ВЛАДИВОСТОК <span id="clock">00:00</span></span>
-        <span style="margin-left:10px;">
-          <select id="city-sel" onchange="selectWeatherCity(this.selectedIndex)">
-            <option value="0">Владивосток +2°C ☀</option>
-            <option value="1">Большой Камень +1°C 🌤</option>
-            <option value="2">Артём 0°C ☁</option>
-            <option value="3">Уссурийск -2°C ☀</option>
-            <option value="4">Находка +3°C 🌊</option>
-          </select>
-        </span>
-        <span style="margin-left:10px;">🌉 Мосты: <strong style="color:#10b981">Открыты</strong></span>
-      </div>
-      <div id="rates-box">💵 USD: 82.2 ₽ · 💴 CNY: 12.3 ₽ · 🏫 Школы: <strong>Очно</strong></div>
-    </div>
-  </div>
-
+  <!-- Шапка и навигация -->
   <header>
     <div class="container head-flex">
-      <div>
-        <a href="https://primdozor.ru" class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></a>
-        <span style="font-size:12px; color:var(--muted); margin-left:10px;">Независимый надзор Приморья 24/7</span>
-      </div>
-      <div style="display:flex; gap:6px; flex-wrap:wrap;">
-        <a href="https://t.me" target="_blank" rel="noopener" class="btn">✈ Telegram</a>
-        <button type="button" class="btn" onclick="document.body.classList.toggle('big-font')">А+</button>
-        <button type="button" class="btn" onclick="document.body.classList.toggle('dark')">🌓</button>
-        <button type="button" class="btn" onclick="openModal('pub-modal')">✍️ Статья</button>
-        <button type="button" class="btn btn-red" onclick="openModal('rep-modal')">+ ЧП</button>
+      <a href="https://primdozor.ru" class="logo">ПРИМ_ДОЗОР <span>18+</span></a>
+      <div style="display:flex; gap:6px;">
+        <a href="https://t.me" target="_blank" class="btn">✈ Telegram</a>
+        <button type="button" class="btn" onclick="openModal('rep-modal')">+ ЧП</button>
       </div>
     </div>
   </header>
 
+  <!-- Основной контейнер -->
   <div class="container">
-    <main>
-      <div id="feed"></div>
-    </main>
+    <div class="grid">
+      <main>
+        <div id="feed"></div>
+      </main>
+    </div>
   </div>
 
+  <!-- Футер -->
   <footer>
     <div class="container">
       <p><strong>© 2026 Прим_Дозор (18+).</strong> Региональный информационный портал Приморского края.</p>
