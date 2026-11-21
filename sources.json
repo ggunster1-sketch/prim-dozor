@@ -23,6 +23,9 @@
     { "id": "artem_news25", "name": "Артём Новости", "official": false },
     { "id": "bk_news25", "name": "Большой Камень Новости", "official": false },
     { "id": "primamedia", "name": "PrimaMedia", "official": false },
+    { "id": "vostokmedia24", "name": "Восток-Медиа", "official": false },
+    { "id": "deitaru", "name": "Дейта.ру", "official": false },
+    { "id": "kp_vl", "name": "Комсомольская правда Владивосток", "official": false },
     { "id": "otvprimofficial", "name": "ОТВ-Прим", "official": false },
     { "id": "primorye_online", "name": "Приморье Онлайн", "official": false },
     { "id": "pogoda_25_region", "name": "Погода 25 Регион", "official": false },
@@ -30,13 +33,7 @@
     { "id": "primvodokanal", "name": "Примводоканал", "official": true }
   ],
   "rss": [
-    { "url": "https://primamedia.ru", "regional": true, "official": false, "name": "PrimaMedia" },
-    { "url": "https://vostokmedia.com", "regional": true, "official": false, "name": "Восток-Медиа" },
-    { "url": "https://deita.ru", "regional": true, "official": false, "name": "Дейта.ру" },
-    { "url": "https://kp.ru", "regional": true, "official": false, "name": "КП Владивосток" },
-    { "url": "https://aif.ru", "regional": true, "official": false, "name": "АиФ Приморье" },
-    { "url": "https://ria.ru", "regional": false, "official": false, "name": "РИА Новости" },
-    { "url": "https://tass.ru", "regional": false, "official": false, "name": "ТАСС" },
-    { "url": "https://lenta.ru", "regional": false, "official": false, "name": "Лента.ру" }
+    { "url": "https://google.com", "regional": true, "official": false, "name": "Сводка Приморья" },
+    { "url": "https://google.com", "regional": true, "official": false, "name": "Города Приморья" }
   ]
 }
