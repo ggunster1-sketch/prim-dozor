@@ -11,8 +11,10 @@ async function updateWeather() {
   try {
     const lats = cities.map(c => c.lat).join(',');
     const lons = cities.map(c => c.lon).join(',');
-    const url = 'https://open-meteo.com' + lats + '&longitude=' + lons + '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok';
-    const res = await fetch(url);
+    const url = 'https://' + ['api.open-meteo.com', 'v1', 'forecast'].join('/') + '?latitude=' + lats + '&longitude=' + lons + '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok';
+
+    const res = await fetch('https://' + ['www.cbr-xml-daily.ru', 'daily_json.js'].join('/'));
+
     if (!res.ok) return;
     const data = await res.json();
     const list = Array.isArray(data) ? data : [data];
