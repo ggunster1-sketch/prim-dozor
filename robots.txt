@@ -1,3 +1,5 @@
 User-agent: *
 Allow: /
-Sitemap: https://www.primdozor.ru/sitemap.xml
+Disallow: /tg_state.json
+Disallow: /sources.json
+Sitemap: https://primdozor.ru/sitemap.xml
