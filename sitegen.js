@@ -274,15 +274,17 @@ ${seoList}
 
 `;
 fs.writeFileSync('index.html', indexHtml, 'utf8');
-const nowIso = new Date().toISOString();
-const urls = [
-  <url><loc>https://${SITE_HOST}/</loc><lastmod>${nowIso}</lastmod><changefreq>always</changefreq><priority>1.0</priority></url>,
-  <url><loc>https://${SITE_HOST}/legal.html</loc><lastmod>${nowIso}</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
-];
-for (const n of news) {
-urls.push(  <url><loc>https://${SITE_HOST}/news/${n.id}.html</loc><lastmod>${n.isoDate || nowIso}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>);
+  const nowIso = new Date().toISOString();
+  const urls = [
+    '  <url><loc>https://' + SITE_HOST + '/</loc><lastmod>' + nowIso + '</lastmod><changefreq>always</changefreq><priority>1.0</priority></url>',
+    '  <url><loc>https://' + SITE_HOST + '/legal.html</loc><lastmod>' + nowIso + '</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>'
+  ];
+  for (const n of news) {
+    urls.push('  <url><loc>https://' + SITE_HOST + '/news/' + n.id + '.html</loc><lastmod>' + (n.isoDate || nowIso) + '</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>');
+  }
+
+  const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://sitemaps.org">\n' + urls.join('\n') + '\n</urlset>';
+  fs.writeFileSync('sitemap.xml', sitemap, 'utf8');
 }
-const sitemap = <?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://sitemaps.org">\n${urls.join('\n')}\n</urlset>;
-fs.writeFileSync('sitemap.xml', sitemap, 'utf8');
-}
+
 module.exports = { buildSite };
