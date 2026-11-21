@@ -21,7 +21,7 @@ let weatherCache = [];
 function render() {
   const box = document.getElementById('feed');
   if (!box) return;
-  const list = newsData.filter(n => {
+  const list = newsData.filter(function(n) {
     const catOk = curCat === 'all' || n.cat === curCat;
     const cityOk = curCity === 'all' || (n.city && n.city.toLowerCase().includes(curCity.toLowerCase()));
     return catOk && cityOk;
@@ -32,41 +32,43 @@ function render() {
     return;
   }
 
-  box.innerHTML = list.map(n => {
+  box.innerHTML = list.map(function(n) {
     const coverHtml = n.cover
-      ? `<div onclick="openArt('${n.id}')" style="cursor:pointer; margin-bottom:12px; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
-           <img src="./${n.cover}" alt="${n.title}" loading="lazy" style="width:100%; height:auto; display:block;">
-         </div>`
-      : `<div class="card-cover" onclick="openArt('${n.id}')" style="cursor:pointer;">
-           <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.8px; opacity:0.8; margin-bottom:4px;">${n.catLabel} · ${n.city}</div>
-           <div style="font-weight:700; font-size:15px; line-height:1.3;">${n.title}</div>
-         </div>`;
+      ? '<div onclick="openArt(\'' + n.id + '\')" style="cursor:pointer; margin-bottom:12px; border-radius:8px; overflow:hidden; border:1px solid var(--border);">' +
+          '<img src="./' + n.cover + '" alt="' + n.title + '" loading="lazy" style="width:100%; height:auto; display:block;">' +
+        '</div>'
+      : '<div class="card-cover" onclick="openArt(\'' + n.id + '\')" style="cursor:pointer;">' +
+          '<div style="font-size:11px; text-transform:uppercase; letter-spacing:0.8px; opacity:0.8; margin-bottom:4px;">' + n.catLabel + ' · ' + n.city + '</div>' +
+          '<div style="font-weight:700; font-size:15px; line-height:1.3;">' + n.title + '</div>' +
+        '</div>';
 
-    return `
-      <article class="card">
-        ${coverHtml}
-        <div class="meta">
-          <span class="cat-tag">${n.catLabel}</span>
-          <span>📍 ${n.city}</span>
-          <span>🕒 ${n.date}</span>
-          <span class="age-badge">${n.age || '16+'}</span>
-          ${n.erid ? `<span class="erid-badge">Реклама · erid: ${n.erid}</span>` : ''}
-        </div>
-        <h2 onclick="openArt('${n.id}')">${n.title}</h2>
-        <div class="tldr"><strong>Главное за 10 секунд:</strong><br>${n.tldr}</div>
-        <p style="color:var(--muted); font-size:15px; margin-bottom:12px; white-space:pre-line;">${n.text}</p>
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; border-top:1px solid var(--border); padding-top:10px;">
-          <span style="color:var(--muted);">${n.src || ''}</span>
-          <button style="color:var(--blue); font-weight:700;" onclick="openArt('${n.id}')">Читать полностью ➔</button>
-        </div>
-      </article>
-    `;
+    const eridHtml = n.erid ? '<span class="erid-badge">Реклама · erid: ' + n.erid + '</span>' : '';
+
+    return (
+      '<article class="card">' +
+        coverHtml +
+        '<div class="meta">' +
+          '<span class="cat-tag">' + n.catLabel + '</span>' +
+          '<span>📍 ' + n.city + '</span>' +
+          '<span>🕒 ' + n.date + '</span>' +
+          '<span class="age-badge">' + (n.age || '16+') + '</span>' +
+          eridHtml +
+        '</div>' +
+        '<h2 onclick="openArt(\'' + n.id + '\')">' + n.title + '</h2>' +
+        '<div class="tldr"><strong>Главное за 10 секунд:</strong><br>' + n.tldr + '</div>' +
+        '<p style="color:var(--muted); font-size:15px; margin-bottom:12px; white-space:pre-line;">' + n.text + '</p>' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; border-top:1px solid var(--border); padding-top:10px;">' +
+          '<span style="color:var(--muted);">' + (n.src || '') + '</span>' +
+          '<button style="color:var(--blue); font-weight:700;" onclick="openArt(\'' + n.id + '\')">Читать полностью ➔</button>' +
+        '</div>' +
+      '</article>'
+    );
   }).join('');
 }
 
 function setCat(c, btn) {
   curCat = c;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   render();
 }
@@ -77,31 +79,32 @@ function setCity(c) {
 }
 
 function openArt(id) {
-  const n = newsData.find(x => String(x.id) === String(id));
+  const n = newsData.find(function(x) { return String(x.id) === String(id); });
   if (!n) return;
-  const tgUrl = 'https://t.me/prim_dozor';
-  const maxUrl = 'https://max.ru/join/RyxItD9MEitACdZjmI88YZkBI2ps78Qq3iMW0sBJcoE';
+  const tgUrl = 'https://t.me';
+  const maxUrl = 'https://max.ru';
+  const coverImg = n.cover ? '<img src="./' + n.cover + '" alt="' + n.title + '" style="width:100%; border-radius:8px; margin-bottom:14px;">' : '';
+  const srcLine = n.src ? '<p style="font-size:13px; color:var(--muted); margin-bottom:14px;">' + n.src + '</p>' : '';
 
-  document.getElementById('art-body').innerHTML = `
-    <div class="meta" style="margin-top:6px;">
-      <span class="cat-tag">${n.catLabel}</span>
-      <span>📍 ${n.city}</span>
-      <span>🕒 ${n.date}</span>
-      <span class="age-badge">${n.age || '16+'}</span>
-    </div>
-    <h1 style="font-size:22px; line-height:1.3; margin:12px 0;">${n.title}</h1>
-    ${n.cover ? `<img src="./${n.cover}" alt="${n.title}" style="width:100%; border-radius:8px; margin-bottom:14px;">` : ''}
-    <div class="tldr"><strong>Суть кратко:</strong><br>${n.tldr}</div>
-    <p style="line-height:1.75; margin-bottom:16px; white-space:pre-line;">${n.fullText || n.text}</p>
-    ${n.src ? `<p style="font-size:13px; color:var(--muted); margin-bottom:14px;">${n.src}</p>` : ''}
-    <div class="article-socials">
-      <p style="font-weight:700; color:var(--text); margin-bottom:10px;">📲 Оперативные сводки «Прим_Дозор» в мессенджерах:</p>
-      <div style="display:flex; flex-wrap:wrap; gap:8px;">
-        <a href="${tgUrl}" target="_blank" rel="noopener" class="soc-link" style="border-left-color:#229ED9; padding:8px 14px;">✈ Telegram-канал</a>
-        <a href="${maxUrl}" target="_blank" rel="noopener" class="soc-link" style="border-left-color:#0077FF; padding:8px 14px;">💬 Канал в Макс</a>
-      </div>
-    </div>
-  `;
+  document.getElementById('art-body').innerHTML =
+    '<div class="meta" style="margin-top:6px;">' +
+      '<span class="cat-tag">' + n.catLabel + '</span>' +
+      '<span>📍 ' + n.city + '</span>' +
+      '<span>🕒 ' + n.date + '</span>' +
+      '<span class="age-badge">' + (n.age || '16+') + '</span>' +
+    '</div>' +
+    '<h1 style="font-size:22px; line-height:1.3; margin:12px 0;">' + n.title + '</h1>' +
+    coverImg +
+    '<div class="tldr"><strong>Суть кратко:</strong><br>' + n.tldr + '</div>' +
+    '<p style="line-height:1.75; margin-bottom:16px; white-space:pre-line;">' + (n.fullText || n.text) + '</p>' +
+    srcLine +
+    '<div class="article-socials">' +
+      '<p style="font-weight:700; color:var(--text); margin-bottom:10px;">📲 Оперативные сводки «Прим_Дозор» в мессенджерах:</p>' +
+      '<div style="display:flex; flex-wrap:wrap; gap:8px;">' +
+        '<a href="' + tgUrl + '" target="_blank" rel="noopener" class="soc-link" style="border-left-color:#229ED9; padding:8px 14px;">✈ Telegram-канал</a>' +
+        '<a href="' + maxUrl + '" target="_blank" rel="noopener" class="soc-link" style="border-left-color:#0077FF; padding:8px 14px;">💬 Канал в Макс</a>' +
+      '</div>' +
+    '</div>';
   document.getElementById('art-modal').style.display = 'flex';
 }
 
@@ -178,15 +181,15 @@ async function loadOutages() {
     const list = await res.json();
     const box = document.getElementById('outages-list');
     if (box && Array.isArray(list) && list.length > 0) {
-      box.innerHTML = list.map(o =>
-        `<div class="row"><span>${o.district}</span><span style="color:#d97706;font-weight:700;">${o.status}</span></div>`
-      ).join('');
+      box.innerHTML = list.map(function(o) {
+        return '<div class="row"><span>' + o.district + '</span><span style="color:#d97706;font-weight:700;">' + o.status + '</span></div>';
+      }).join('');
     }
   } catch (e) {}
 }
 
 function selectWeatherCity(idx) {
-  const c = weatherCache[idx];
+  const c = weatherCache.at(Number(idx));
   if (!c) return;
   const nEl = document.getElementById('w-city-name');
   const dEl = document.getElementById('w-day');
@@ -207,38 +210,41 @@ async function loadWeather() {
     { name: 'Находка', lat: 42.8241, lon: 132.8928 }
   ];
   try {
-    const lats = cities.map(c => c.lat).join(',');
-    const lons = cities.map(c => c.lon).join(',');
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok`;
+    const lats = cities.map(function(c) { return c.lat; }).join(',');
+    const lons = cities.map(function(c) { return c.lon; }).join(',');
+    const url = 'https://open-meteo.com' + lats + '&longitude=' + lons + '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok';
     const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
     const results = Array.isArray(data) ? data : [data];
 
-    const fmt = (v) => (v > 0 ? '+' : '') + Math.round(v) + '°C';
-    const icon = (code) => {
-      if (code === 0) return '☀';
-      if (code <= 3) return '🌤';
-      if (code >= 71 && code <= 77) return '❄';
-      if (code >= 51) return '🌧';
-      return '☁';
-    };
-
-    const sel = document.getElementById('city-sel');
-    weatherCache = results.map((r, i) => {
-      const h = (r.hourly && r.hourly.temperature_2m) ? r.hourly.temperature_2m : [];
+    const fmt = function(v) {
+if (v === undefined || v === null || Number.isNaN(Number(v))) return '--°C';
+return (v > 0 ? '+' : '') + Math.round(v) + '°C';
+};
+const icon = function(code) {
+if (code === 0) return '☀';
+if (code <= 3) return '🌤';
+if (code >= 71 && code <= 77) return '❄';
+if (code >= 51) return '🌧';
+return '☁';
+};
+const sel = document.getElementById('city-sel');
+weatherCache = results.map(function(r, i) {
+const h = (r.hourly && r.hourly.temperature_2m) ? r.hourly.temperature_2m : [];
 const dMax = (r.daily && r.daily.temperature_2m_max) ? r.daily.temperature_2m_max : [];
 const curT = r.current ? Math.round(r.current.temperature_2m) : 0;
 const curI = r.current ? icon(r.current.weather_code) : '🌤';
-if (sel && sel.options[i]) {
-sel.options[i].textContent = ${cities[i].name} ${fmt(curT)} ${curI};
+const cityObj = cities.at(i);
+if (sel && sel.options.item(i) && cityObj) {
+sel.options.item(i).textContent = cityObj.name + ' ' + fmt(curT) + ' ' + curI;
 }
 return {
-name: cities[i].name,
-morning: h[8] !== undefined ? fmt(h[8]) : fmt(curT),
-day: h[14] !== undefined ? fmt(h[14]) : fmt(curT),
-evening: h[20] !== undefined ? fmt(h[20]) : fmt(curT),
-tomorrow: dMax[1] !== undefined ? fmt(dMax[1]) : fmt(curT)
+name: cityObj ? cityObj.name : 'Приморье',
+morning: h.at(8) !== undefined ? fmt(h.at(8)) : fmt(curT),
+day: h.at(14) !== undefined ? fmt(h.at(14)) : fmt(curT),
+evening: h.at(20) !== undefined ? fmt(h.at(20)) : fmt(curT),
+tomorrow: dMax.at(1) !== undefined ? fmt(dMax.at(1)) : fmt(curT)
 };
 });
 selectWeatherCity(0);
@@ -253,7 +259,7 @@ const usd = (data.Valute.USD.Value / data.Valute.USD.Nominal).toFixed(1);
 const cny = (data.Valute.CNY.Value / data.Valute.CNY.Nominal).toFixed(1);
 const rb = document.getElementById('rates-box');
 if (rb) {
-rb.innerHTML = 💵 USD: ${usd} ₽ · 💴 CNY: ${cny} ₽ · 🏫 Школы: <strong>Очно</strong>;
+rb.innerHTML = '💵 USD: ' + usd + ' ₽ · 💴 CNY: ' + cny + ' ₽ · 🏫 Школы: Очно';
 }
 } catch (e) {}
 }
