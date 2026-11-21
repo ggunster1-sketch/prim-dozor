@@ -44,8 +44,7 @@ async function fetchTelegram(tgList) {
       const res = await fetch(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8'
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
         }
       });
       if (!res.ok) continue;
@@ -55,22 +54,22 @@ async function fetchTelegram(tgList) {
 
       for (const b of blocks) {
         const postM = b.match(/data-post="[^/]+\/(\d+)"/i);
-        const postNum = postM ? Number(postM[1]) : 0;
+        const postNum = postM ? Number(postM.at(1)) : 0;
         if (postNum && state[src.id] && postNum <= state[src.id]) continue;
         if (postNum > maxPostNum) maxPostNum = postNum;
 
         const m = b.match(msgRe);
-        if (!m || !m[1]) continue;
-        const clean = stripTags(m[1]);
+        if (!m || !m.at(1)) continue;
+        const clean = stripTags(m.at(1));
         if (clean.length < 85 || isAdOrSpam(clean)) continue;
 
         const imgM = b.match(/background-image:url\('(https?:\/\/[^']+)'\)/i);
-        const firstSentence = clean.split(/[.!\n]/)[0] || clean;
+        const firstSentence = clean.split(/[.!\n]/).at(0) || clean;
         out.push({
           title: firstSentence.trim().slice(0, 115),
           desc: clean.slice(0, 2600),
           link: postNum ? `https://t.me{src.id}/${postNum}` : '',
-          img: (imgM && imgM[1]) ? imgM[1] : '',
+          img: (imgM && imgM.at(1)) ? imgM.at(1) : '',
           regional: true,
           official: Boolean(src.official),
           sourceName: src.name
@@ -105,15 +104,15 @@ async function fetchFeeds(rssList) {
         const linkM = rawItem.match(/<link[^>]*>([\s\S]*?)<\/link>/i);
         const encM = rawItem.match(/<enclosure[^>]+url=["']([^"']+)["']/i);
 
-        const title = stripTags(titleM ? titleM[1] : '');
-        const desc = stripTags(descM ? descM[1] : '');
+        const title = stripTags(titleM ? titleM.at(1) : '');
+        const desc = stripTags(descM ? descM.at(1) : '');
         if (!title || desc.length < 50 || isAdOrSpam(title + ' ' + desc)) continue;
 
         out.push({
           title: title,
           desc: desc.slice(0, 2600),
-          link: linkM ? stripTags(linkM[1]) : '',
-          img: encM ? encM[1] : '',
+          link: linkM ? stripTags(linkM.at(1)) : '',
+          img: encM ? encM.at(1) : '',
           regional: Boolean(f.regional),
           official: Boolean(f.official),
           sourceName: f.name || ''
