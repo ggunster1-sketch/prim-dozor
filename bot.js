@@ -40,7 +40,6 @@ const MAX_FOOTER_MD =
   '\n\n👉 [telegram прим_дозор](' + TG_URL + ')' +
   '\n\n👉 [прим_дозор в Max](' + MAX_URL + ')';
 
-// Приморские СМИ и федеральные ленты
 const FEEDS = [
   { url: 'https://' + 'www.dv.kp.ru' + '/rss/allsections.xml', regional: true },
   { url: 'https://' + 'vl.aif.ru' + '/rss/all.php', regional: true },
@@ -50,7 +49,6 @@ const FEEDS = [
   { url: 'https://' + 'tass.ru' + '/rss/v2.xml', regional: false }
 ];
 
-// Официальные ведомства и местные Telegram-каналы Приморья (публичный веб-просмотр t.me/s/)
 const TG_SOURCES = [
   { channel: 'mchs_primorye', label: 'МЧС Приморья' },
   { channel: 'primorskyadmin', label: 'Правительство Приморского края' },
@@ -83,7 +81,6 @@ function normalizeRussianText(str) {
     .replace(/\bв украине\b/g, 'на Украине');
 }
 
-// Загрузка полного текста статьи и картинки со страницы первоисточника
 async function enrichArticleFromUrl(articleUrl, fallbackImg) {
   let fullText = '';
   let imageUrl = fallbackImg || '';
@@ -119,7 +116,6 @@ async function enrichArticleFromUrl(articleUrl, fallbackImg) {
   return { fullText, imageUrl };
 }
 
-// Скачивание реального фото новости + наложение водяного знака ПРИМ_ДОЗОР
 async function createBrandedPhoto(post, sourceImageUrl) {
   if (!fs.existsSync('covers')) {
     fs.mkdirSync('covers', { recursive: true });
@@ -148,7 +144,6 @@ async function createBrandedPhoto(post, sourceImageUrl) {
   }
 
   if (!bgDrawn) {
-    // Резервный редакционный фон, если источник не отдал фото
     const grad = ctx.createLinearGradient(0, 0, width, height);
     grad.addColorStop(0, '#141820');
     grad.addColorStop(1, '#232a36');
@@ -173,7 +168,6 @@ async function createBrandedPhoto(post, sourceImageUrl) {
     }
     if (line && y < 520) ctx.fillText(line, 64, y);
   } else {
-    // Лёгкое затемнение нижней части фото для читаемости плашки
     const bottomGrad = ctx.createLinearGradient(0, height - 180, 0, height);
     bottomGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
     bottomGrad.addColorStop(1, 'rgba(10, 12, 16, 0.88)');
@@ -181,7 +175,6 @@ async function createBrandedPhoto(post, sourceImageUrl) {
     ctx.fillRect(0, height - 180, width, 180);
   }
 
-  // Диагональный защитный водяной знак ПРИМ_ДОЗОР по всему кадру
   ctx.save();
   ctx.translate(width / 2, height / 2);
   ctx.rotate(-24 * Math.PI / 180);
@@ -195,7 +188,6 @@ async function createBrandedPhoto(post, sourceImageUrl) {
   }
   ctx.restore();
 
-  // Верхний левый фирменный шильдик ПРИМ_ДОЗОР
   ctx.fillStyle = '#dc2626';
   ctx.fillRect(36, 32, 235, 46);
   ctx.fillStyle = '#ffffff';
@@ -203,14 +195,12 @@ async function createBrandedPhoto(post, sourceImageUrl) {
   ctx.textAlign = 'left';
   ctx.fillText('ПРИМ_ДОЗОР', 56, 63);
 
-  // Плашка города рядом с логотипом
   ctx.fillStyle = 'rgba(15, 18, 24, 0.82)';
   ctx.fillRect(271, 32, 260, 46);
   ctx.fillStyle = '#f1f5f9';
   ctx.font = 'bold 19px sans-serif';
   ctx.fillText((post.city || 'ПРИМОРЬЕ').toUpperCase(), 289, 62);
 
-  // Нижняя строка портала
   ctx.fillStyle = '#dc2626';
   ctx.fillRect(0, height - 10, width, 10);
 
@@ -269,12 +259,13 @@ async function fetchRSS(feedObj) {
     if (!res.ok) return [];
     const xml = await res.text();
     const items = [];
-const itemRegex = new RegExp(LT + 'item' + GT + '([\s\S]?)' + LT + '/item' + GT, 'g');
-const titleCdata = new RegExp(LT + 'title' + GT + LT + '!\[CDATA\[([\s\S]?)\]\]' + GT + LT + '/title' + GT);
-const titlePlain = new RegExp(LT + 'title' + GT + '([\s\S]?)' + LT + '/title' + GT);
-const descCdata = new RegExp(LT + 'description' + GT + LT + '!\[CDATA\[([\s\S]?)\]\]' + GT + LT + '/description' + GT);
-const descPlain = new RegExp(LT + 'description' + GT + '([\s\S]?)' + LT + '/description' + GT);
-const linkPlain = new RegExp(LT + 'link' + GT + '([\s\S]?)' + LT + '/link' + GT);
+    const itemRegex = new RegExp(LT + 'item' + GT + '([\\s\\S]*?)' + LT + '/item' + GT, 'g');
+    const titleCdata = new RegExp(LT + 'title' + GT + LT + '!\\[CDATA\\[([\\s\\S]*?)\\]\\]' + GT + LT + '/title' + GT);
+    const titlePlain = new RegExp(LT + 'title' + GT + '([\\s\\S]*?)' + LT + '/title' + GT);
+    const descCdata = new RegExp(LT + 'description' + GT + LT + '!\\[CDATA\\[([\\s\\S]*?)\\]\\]' + GT + LT + '/description' + GT);
+    const descPlain = new RegExp(LT + 'description' + GT + '([\\s\\S]*?)' + LT + '/description' + GT);
+    const linkPlain = new RegExp(LT + 'link' + GT + '([\\s\\S]*?)' + LT + '/link' + GT);
+
 const matches = xml.matchAll(itemRegex);
 for (const m of matches) {
 const block = m.at(1) || '';
@@ -302,9 +293,9 @@ return items.slice(0, 10);
 return [];
 }
 }
-// Сбор постов из официальных ведомств и местных Telegram-каналов Приморья
 async function fetchRegionalTelegramChannels() {
 const results = [];
+const msgRegex = new RegExp('tgme_widget_message_text[^' + GT + ']' + GT + '([\s\S]?)' + LT + '/div' + GT, 'i');
 for (const src of TG_SOURCES) {
 try {
 const url = 'https://' + 't.me' + '/s/' + src.channel;
@@ -315,7 +306,7 @@ if (!res.ok) continue;
 const html = await res.text();
 const blocks = html.split('tgme_widget_message_wrap').slice(-4);
 for (const b of blocks) {
-const textMatch = b.match(/tgme_widget_message_text[^>]>([\s\S]?)</div>/i);
+const textMatch = b.match(msgRegex);
 const imgMatch = b.match(/background-image:url'(https?:\/\/[^']+)'/i);
 if (!textMatch) continue;
 const clean = stripTags(textMatch.at(1));
@@ -363,7 +354,7 @@ svoRule + blockedNote,
 '  "isOutage": true или false (true если новость про отключение света, воды, отопления или перекрытие дорог в Приморье),',
 '  "outageDistrict": "район или город (например: Владивосток, Чуркин)",',
 '  "outageStatus": "краткий статус (например: Свет до 17:00 или ХВС до 18:00)",',
-'  "needSource": true или false (true ТОЛЬКО если это официальное сообщение ведомства/ведомственного ТГ-канала)',
+'  "needSource": true или false (true ТОЛЬКО если это официальная сводка МВД/СК/МЧС/Минобороны РФ/Прокуратуры/Правительства ПК или прямая цитата; иначе false)',
 '}',
 'Заголовок исходника: ' + rawItem.title,
 'Полный текст исходника: ' + material.slice(0, 2400)
