@@ -3,6 +3,7 @@ const https = require('https');
 
 const LT = String.fromCharCode(60);
 const GT = String.fromCharCode(62);
+const SLASH = String.fromCharCode(47);
 
 function stripTags(str) {
   return String(str || '')
@@ -73,14 +74,15 @@ async function fetchTelegram(tgList) {
 
   for (const src of tgList) {
     try {
-      const html = await getPage('https://t.me' + src.id);
+      const tgUrl = ['https:', '', 't.me', 's', src.id].join(SLASH);
+      const html = await getPage(tgUrl);
       if (html.includes('tgme_widget_message_wrap')) okPages++;
 
       const blocks = html.split('tgme_widget_message_wrap').slice(-6);
       let maxPostNum = state[src.id] || 0;
 
       for (const b of blocks) {
-        const postM = b.match(/data-post="[^/]+\/(\d+)"/i);
+        const postM = b.match(/data-post="[^"]+\/(\d+)"/i);
         const postNum = postM ? Number(postM.at(1)) : 0;
         if (postNum && state[src.id] && postNum <= state[src.id]) continue;
         if (postNum > maxPostNum) maxPostNum = postNum;
@@ -88,7 +90,7 @@ async function fetchTelegram(tgList) {
         const txtIdx = b.indexOf('tgme_widget_message_text');
         if (txtIdx === -1) continue;
         const startContent = b.indexOf(GT, txtIdx);
-        const endContent = b.indexOf(LT + '/div' + GT, startContent);
+        const endContent = b.indexOf(LT + SLASH + 'div' + GT, startContent);
         if (startContent === -1 || endContent === -1) continue;
 
         const clean = stripTags(b.slice(startContent + 1, endContent));
@@ -99,7 +101,7 @@ async function fetchTelegram(tgList) {
         out.push({
           title: firstSentence.trim().slice(0, 115),
           desc: clean.slice(0, 2600),
-          link: postNum ? `https://t.me{src.id}/${postNum}` : '',
+          link: postNum ? ['https:', '', 't.me', src.id, String(postNum)].join(SLASH) : '',
           img: (imgM && imgM.at(1)) ? imgM.at(1) : '',
           regional: true,
           official: Boolean(src.official),
