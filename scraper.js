@@ -4,41 +4,80 @@ const LT = String.fromCharCode(60);
 const GT = String.fromCharCode(62);
 
 function stripTags(str) {
-  return (str || '').replace(new RegExp(LT + '[^' + GT + ']+' + GT, 'g'), ' ').replace(/\s+/g, ' ').trim();
+  return (str || '')
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(new RegExp(LT + '[^' + GT + ']+' + GT, 'g'), ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isAdOrSpam(text) {
+  const low = text.toLowerCase();
+  return (
+    low.includes('erid') ||
+    low.includes('#реклама') ||
+    low.includes('реклама.') ||
+    low.includes('розыгрыш') ||
+    low.includes('промокод') ||
+    low.includes('подписывайся на наш')
+  );
 }
 
 async function fetchTelegram(tgList) {
   const out = [];
+  let state = {};
+  if (fs.existsSync('tg_state.json')) {
+    try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {}
+  }
+
   const msgRe = new RegExp('tgme_widget_message_text[^' + GT + ']*' + GT + '([\\s\\S]*?)' + LT + '/div' + GT, 'i');
+
   for (const src of tgList) {
     try {
-      const url = 'https://' + ['t.me', 's', src.id].join('/');
+      const url = 'https://t.me' + src.id;
       const res = await fetch(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36',
-          'Referer': 'https://' + ['t.me', src.id].join('/')
+          'Referer': 'https://t.me' + src.id
         }
       });
       if (!res.ok) continue;
       const html = await res.text();
-      for (const b of html.split('tgme_widget_message_wrap').slice(-3)) {
+      const blocks = html.split('tgme_widget_message_wrap').slice(-8);
+      let maxPostNum = state[src.id] || 0;
+
+      for (const b of blocks) {
+        const postM = b.match(/data-post="[^/]+\/(\d+)"/i);
+        const postNum = postM ? Number(postM[1]) : 0;
+        if (postNum && state[src.id] && postNum <= state[src.id]) continue;
+        if (postNum > maxPostNum) maxPostNum = postNum;
+
         const m = b.match(msgRe);
         if (!m) continue;
-        const clean = stripTags(m.at(1));
-        if (clean.length < 95 || clean.includes('erid') || clean.includes('#реклама')) continue;
+        const clean = stripTags(m[1]);
+        if (clean.length < 85 || isAdOrSpam(clean)) continue;
+
         const imgM = b.match(/background-image:url\('(https?:\/\/[^']+)'\)/i);
         out.push({
-          title: clean.split(/[.!\n]/).at(0).trim().slice(0, 110),
+          title: clean.split(/[.!\n]/)[0].trim().slice(0, 115),
           desc: clean.slice(0, 2600),
-          link: '',
-          img: imgM ? imgM.at(1) : '',
+          link: postNum ? `https://t.me${src.id}/${postNum}` : '',
+          img: imgM ? imgM[1] : '',
           regional: true,
           official: Boolean(src.official),
           sourceName: src.name
         });
       }
+      if (maxPostNum > 0) state[src.id] = maxPostNum;
     } catch (e) {}
   }
+
+  fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
   console.log('Из пабликов и ведомств Приморья собрано: ' + out.length);
   return out;
 }
@@ -47,25 +86,30 @@ async function fetchFeeds(rssList) {
   const out = [];
   for (const f of rssList) {
     try {
-      const proxy = 'https://' + ['://rss2json.com', 'v1', 'api.json'].join('/') + '?rss_url=' + encodeURIComponent(f.url);
-      const res = await fetch(proxy);
+      const res = await fetch(f.url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
       if (!res.ok) continue;
-      const data = await res.json();
-      if (data.status === 'ok' && Array.isArray(data.items)) {
-        for (const it of data.items.slice(0, 10)) {
-          const title = stripTags(it.title || '');
-          const desc = stripTags(it.description || it.content || '');
-          if (!title || desc.includes('erid')) continue;
-          out.push({
-            title: title,
-            desc: desc.slice(0, 2600),
-            link: it.link || '',
-            img: (it.enclosure && it.enclosure.link) ? it.enclosure.link : (it.thumbnail || ''),
-            regional: Boolean(f.regional),
-            official: false,
-            sourceName: ''
-          });
-        }
+      const xml = await res.text();
+      const items = xml.split(/<item[\s>]/i).slice(1, 11);
+
+      for (const rawItem of items) {
+        const titleM = rawItem.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+        const descM = rawItem.match(/<description[^>]*>([\s\S]*?)<\/description>/i);
+        const linkM = rawItem.match(/<link[^>]*>([\s\S]*?)<\/link>/i);
+        const encM = rawItem.match(/<enclosure[^>]+url=["']([^"']+)["']/i);
+
+        const title = stripTags(titleM ? titleM[1] : '');
+        const desc = stripTags(descM ? descM[1] : '');
+        if (!title || desc.length < 60 || isAdOrSpam(title + ' ' + desc)) continue;
+
+        out.push({
+          title: title,
+          desc: desc.slice(0, 2600),
+          link: linkM ? stripTags(linkM[1]) : '',
+          img: encM ? encM[1] : '',
+          regional: Boolean(f.regional),
+          official: Boolean(f.official),
+          sourceName: f.name || ''
+        });
       }
     } catch (e) {}
   }
