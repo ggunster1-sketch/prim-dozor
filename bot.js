@@ -81,6 +81,20 @@ function normalizeRussianText(str) {
     .replace(/\bв украине\b/g, 'на Украине');
 }
 
+// Смайлы оставляем ТОЛЬКО в самом начале абзацев/строк, убирая их из середины и конца предложений
+function cleanInlineEmojis(text) {
+  if (!text) return '';
+  const emojiRegex = /[\p{Extended_Pictographic}\u2600-\u27BF]/gu;
+  return text.split('\n').map(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return '';
+    const firstMatch = trimmed.match(/^([\p{Extended_Pictographic}\u2600-\u27BF]+\s*)/u);
+    const prefix = firstMatch ? firstMatch.at(1) : '';
+    const rest = trimmed.slice(prefix.length).replace(emojiRegex, '').replace(/\s{2,}/g, ' ').trim();
+    return prefix + rest;
+  }).join('\n');
+}
+
 async function enrichArticleFromUrl(articleUrl, fallbackImg) {
   let fullText = '';
   let imageUrl = fallbackImg || '';
@@ -105,15 +119,27 @@ async function enrichArticleFromUrl(articleUrl, fallbackImg) {
     const paragraphs = [];
     for (const m of html.matchAll(pRegex)) {
       const txt = stripTags(m.at(1) || '');
-      if (txt.length > 60 && !txt.includes('cookie') && !txt.includes('Подписывайтесь')) {
+      if (txt.length > 55 && !txt.includes('cookie') && !txt.includes('Подписывайтесь') && !txt.includes('Читайте также')) {
         paragraphs.push(txt);
       }
-      if (paragraphs.join(' ').length > 2200) break;
+      if (paragraphs.join(' ').length > 2800) break;
     }
     fullText = paragraphs.join('\n\n');
   } catch (e) {}
 
   return { fullText, imageUrl };
+}
+
+function getCategoryPalette(cat) {
+  const palettes = {
+    chp: { c1: '#2a0d0d', c2: '#14171d', accent: '#dc2626', tag: 'ЭКСТРЕННАЯ СВОДКА 112' },
+    svo: { c1: '#141e18', c2: '#12151a', accent: '#16a34a', tag: 'СВО И ЗАЩИТНИКИ ОТЕЧЕСТВА' },
+    law: { c1: '#101a2e', c2: '#13161c', accent: '#2563eb', tag: 'ЗАКОНЫ, СУДЫ И ВЛАСТЬ' },
+    city: { c1: '#1e1b14', c2: '#14171d', accent: '#d97706', tag: 'ГОРОД, ДОРОГИ И ЖКХ' },
+    family: { c1: '#0f2326', c2: '#14171d', accent: '#0891b2', tag: 'ОБЩЕСТВО, СЕМЬЯ И МЕДИЦИНА' },
+    sport: { c1: '#161b29', c2: '#11141a', accent: '#4f46e5', tag: 'СПОРТ ПРИМОРЬЯ И РОССИИ' }
+  };
+  return palettes[cat] || palettes.city;
 }
 
 async function createBrandedPhoto(post, sourceImageUrl) {
@@ -124,6 +150,7 @@ async function createBrandedPhoto(post, sourceImageUrl) {
   const height = 675;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
+  const pal = getCategoryPalette(post.cat);
 
   let bgDrawn = false;
   if (sourceImageUrl && sourceImageUrl.startsWith('http')) {
@@ -145,127 +172,154 @@ async function createBrandedPhoto(post, sourceImageUrl) {
 
   if (!bgDrawn) {
     const grad = ctx.createLinearGradient(0, 0, width, height);
-    grad.addColorStop(0, '#141820');
-    grad.addColorStop(1, '#232a36');
+    grad.addColorStop(0, pal.c1);
+    grad.addColorStop(1, pal.c2);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < width; x += 45) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+
     ctx.fillStyle = '#f8fafc';
-    ctx.font = 'bold 44px sans-serif';
+    ctx.font = 'bold 42px sans-serif';
     ctx.textAlign = 'left';
     const words = (post.title || '').split(' ');
     let line = '';
-    let y = 220;
+    let y = 215;
     for (const w of words) {
       const test = line ? line + ' ' + w : w;
       if (ctx.measureText(test).width > 1060) {
         ctx.fillText(line, 64, y);
         line = w;
-        y += 58;
+        y += 56;
       } else {
         line = test;
       }
     }
-    if (line && y < 520) ctx.fillText(line, 64, y);
+    if (line && y < 500) ctx.fillText(line, 64, y);
   } else {
-    const bottomGrad = ctx.createLinearGradient(0, height - 180, 0, height);
+    const bottomGrad = ctx.createLinearGradient(0, height - 220, 0, height);
     bottomGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    bottomGrad.addColorStop(1, 'rgba(10, 12, 16, 0.88)');
+    bottomGrad.addColorStop(1, 'rgba(10, 12, 16, 0.92)');
     ctx.fillStyle = bottomGrad;
-    ctx.fillRect(0, height - 180, width, 180);
+    ctx.fillRect(0, height - 220, width, 220);
+
+    // Заголовок в нижней части реального фото для максимальной информативности
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 30px sans-serif';
+    ctx.textAlign = 'left';
+    const words = (post.title || '').split(' ');
+    let l1 = '';
+    let l2 = '';
+    for (const w of words) {
+      if (ctx.measureText(l1 + ' ' + w).width < 1100 && !l2) {
+        l1 = l1 ? l1 + ' ' + w : w;
+      } else if (ctx.measureText(l2 + ' ' + w).width < 1100) {
+        l2 = l2 ? l2 + ' ' + w : w;
+      }
+    }
+    if (l2) {
+      ctx.fillText(l1, 36, height - 108);
+      ctx.fillText(l2, 36, height - 70);
+    } else {
+      ctx.fillText(l1, 36, height - 76);
+    }
   }
 
+  // Диагональный водяной знак ПРИМ_ДОЗОР
   ctx.save();
   ctx.translate(width / 2, height / 2);
-  ctx.rotate(-24 * Math.PI / 180);
-  ctx.font = 'bold 42px sans-serif';
-  ctx.fillStyle = bgDrawn ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.05)';
+  ctx.rotate(-22 * Math.PI / 180);
+  ctx.font = 'bold 38px sans-serif';
+  ctx.fillStyle = bgDrawn ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.045)';
   ctx.textAlign = 'center';
-  for (let row = -380; row <= 380; row += 160) {
-    for (let col = -680; col <= 680; col += 460) {
+  for (let row = -360; row <= 360; row += 170) {
+    for (let col = -650; col <= 650; col += 480) {
       ctx.fillText('ПРИМ_ДОЗОР', col, row);
     }
   }
   ctx.restore();
 
-  ctx.fillStyle = '#dc2626';
-  ctx.fillRect(36, 32, 235, 46);
+  // Верхний шильдик бренда и рубрики
+  ctx.fillStyle = pal.accent;
+  ctx.fillRect(36, 30, 235, 44);
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 23px sans-serif';
+  ctx.font = 'bold 22px sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('ПРИМ_ДОЗОР', 56, 63);
+  ctx.fillText('ПРИМ_ДОЗОР', 56, 60);
 
-  ctx.fillStyle = 'rgba(15, 18, 24, 0.82)';
-  ctx.fillRect(271, 32, 260, 46);
+  ctx.fillStyle = 'rgba(15, 18, 24, 0.85)';
+  ctx.fillRect(271, 30, 520, 44);
   ctx.fillStyle = '#f1f5f9';
-  ctx.font = 'bold 19px sans-serif';
-  ctx.fillText((post.city || 'ПРИМОРЬЕ').toUpperCase(), 289, 62);
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText((post.city || 'ПРИМОРЬЕ').toUpperCase() + '  •  ' + pal.tag, 289, 59);
 
-  ctx.fillStyle = '#dc2626';
-  ctx.fillRect(0, height - 10, width, 10);
+  // Нижняя полоса портала
+  ctx.fillStyle = pal.accent;
+  ctx.fillRect(0, height - 8, width, 8);
 
-  ctx.fillStyle = '#e2e8f0';
-  ctx.font = 'bold 20px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU  •  ГЛАВНЫЙ НАДЗОР ПРИМОРЬЯ 24/7', 36, height - 28);
-
-  ctx.fillStyle = '#fca5a5';
-  ctx.textAlign = 'right';
-  ctx.fillText(post.age || '18+', width - 36, height - 28);
-
-  const filePath = 'covers/cover_' + post.id + '.png';
-  fs.writeFileSync(filePath, canvas.toBuffer('image/png'));
-  return filePath;
+  ctx.fillStyle = '#cbd5e1';
+  ctx.font = 'bold 18px sans-serif';
+ctx.fillText('PRIMDOZOR.RU  •  НЕЗАВИСИМЫЙ НАДЗОР ПРИМОРЬЯ 24/7', 36, height - 24);
+ctx.fillStyle = '#fca5a5';
+ctx.textAlign = 'right';
+ctx.fillText(post.age || '18+', width - 36, height - 24);
+const filePath = 'covers/cover_' + post.id + '.png';
+fs.writeFileSync(filePath, canvas.toBuffer('image/png'));
+return filePath;
 }
-
 async function callAI(prompt) {
-  if (!AI_KEY) return null;
-  const endpoints = [
-    { url: 'https://' + 'polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-oss-20b' },
-    { url: 'https://' + 'api.polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-oss-20b' },
-    { url: 'https://' + 'polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-4o-mini' }
-  ];
-
-  for (const ep of endpoints) {
-    try {
-      const res = await fetch(ep.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + AI_KEY
-        },
-        body: JSON.stringify({
-          model: ep.model,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.45
-        })
-      });
-      if (!res.ok) continue;
-      const data = await res.json();
-      const firstChoice = Array.isArray(data.choices) ? data.choices.at(0) : null;
-      const content = firstChoice && firstChoice.message ? firstChoice.message.content.trim() : '';
-      if (content) return content;
-    } catch (e) {}
-  }
-  return null;
+if (!AI_KEY) return null;
+const endpoints = [
+{ url: 'https://' + 'polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-oss-20b' },
+{ url: 'https://' + 'api.polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-oss-20b' },
+{ url: 'https://' + 'polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-4o-mini' }
+];
+for (const ep of endpoints) {
+try {
+const res = await fetch(ep.url, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': 'Bearer ' + AI_KEY
+},
+body: JSON.stringify({
+model: ep.model,
+messages: [{ role: 'user', content: prompt }],
+temperature: 0.45
+})
+});
+if (!res.ok) continue;
+const data = await res.json();
+const firstChoice = Array.isArray(data.choices) ? data.choices.at(0) : null;
+const content = firstChoice && firstChoice.message ? firstChoice.message.content.trim() : '';
+if (content) return content;
+} catch (e) {}
 }
-
+return null;
+}
 async function fetchRSS(feedObj) {
-  try {
-    const res = await fetch(feedObj.url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36'
-      }
-    });
-    if (!res.ok) return [];
-    const xml = await res.text();
-    const items = [];
-    const itemRegex = new RegExp(LT + 'item' + GT + '([\\s\\S]*?)' + LT + '/item' + GT, 'g');
-    const titleCdata = new RegExp(LT + 'title' + GT + LT + '!\\[CDATA\\[([\\s\\S]*?)\\]\\]' + GT + LT + '/title' + GT);
-    const titlePlain = new RegExp(LT + 'title' + GT + '([\\s\\S]*?)' + LT + '/title' + GT);
-    const descCdata = new RegExp(LT + 'description' + GT + LT + '!\\[CDATA\\[([\\s\\S]*?)\\]\\]' + GT + LT + '/description' + GT);
-    const descPlain = new RegExp(LT + 'description' + GT + '([\\s\\S]*?)' + LT + '/description' + GT);
-    const linkPlain = new RegExp(LT + 'link' + GT + '([\\s\\S]*?)' + LT + '/link' + GT);
-
+try {
+const res = await fetch(feedObj.url, {
+headers: {
+'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36'
+}
+});
+if (!res.ok) return [];
+const xml = await res.text();
+const items = [];
+const itemRegex = new RegExp(LT + 'item' + GT + '([\s\S]?)' + LT + '/item' + GT, 'g');
+const titleCdata = new RegExp(LT + 'title' + GT + LT + '!\[CDATA\[([\s\S]?)\]\]' + GT + LT + '/title' + GT);
+const titlePlain = new RegExp(LT + 'title' + GT + '([\s\S]?)' + LT + '/title' + GT);
+const descCdata = new RegExp(LT + 'description' + GT + LT + '!\[CDATA\[([\s\S]?)\]\]' + GT + LT + '/description' + GT);
+const descPlain = new RegExp(LT + 'description' + GT + '([\s\S]?)' + LT + '/description' + GT);
+const linkPlain = new RegExp(LT + 'link' + GT + '([\s\S]?)' + LT + '/link' + GT);
 const matches = xml.matchAll(itemRegex);
 for (const m of matches) {
 const block = m.at(1) || '';
@@ -310,11 +364,11 @@ const textMatch = b.match(msgRegex);
 const imgMatch = b.match(/background-image:url'(https?:\/\/[^']+)'/i);
 if (!textMatch) continue;
 const clean = stripTags(textMatch.at(1));
-if (clean.length < 80) continue;
+if (clean.length < 90) continue;
 const firstLine = clean.split('.').at(0).slice(0, 100);
 results.push({
 title: firstLine,
-desc: clean.slice(0, 1800),
+desc: clean.slice(0, 2200),
 link: '',
 img: imgMatch ? imgMatch.at(1) : '',
 regional: true,
@@ -328,8 +382,8 @@ return results;
 }
 async function rewriteWithAI(rawItem, fullArticleText, blockedCats, allowSvo) {
 const svoRule = allowSvo
-? 'Если новость касается СВО или политики — подавай строго в поддержку России и ВС РФ, пиши строго «на Украине».'
-: 'ВАЖНОЕ ОГРАНИЧЕНИЕ: Новость про СВО/Украину уже выходила недавно! Если эта новость касается Украины, СВО, Зеленского или переговоров по Украине — верни строго слово SKIP. Нам сейчас нужны новости Приморского края, ЖКХ, ЧП, медицины, дорог и законов для граждан.';
+? 'Если новость касается СВО или политики — подавай строго в поддержку России и ВС РФ, награждений наших бойцов, пиши строго «на Украине».'
+: 'ВАЖНОЕ ОГРАНИЧЕНИЕ: Новость про СВО/Украину уже выходила недавно! Если эта новость касается Украины, СВО, Зеленского или переговоров по Украине — верни строго слово SKIP. Нам сейчас нужны новости Приморского края, ЖКХ, ЧП, криминала, медицины, дорог, спорта и законов для граждан.';
 const blockedNote = (blockedCats && blockedCats.length > 0)
 ? '\nИзбегай рубрик [' + blockedCats.join(', ') + '], если это не срочное ЧП в Приморье.'
 : '';
@@ -337,27 +391,29 @@ const material = (fullArticleText && fullArticleText.length > rawItem.desc.lengt
 ? fullArticleText
 : rawItem.desc;
 const prompt = [
-'Ты шеф-редактор крупного городского портала Приморского края «Прим_Дозор» (уровень VL.ru / РБК).',
-'ЗАДАЧА: Написать подробный, содержательный, глубокий и полезный материал для жителей Владивостока и Приморья. Никакой «воды» и коротких отписок — дай все конкретные факты: адреса, улицы, сроки, суммы, номера телефонов, решения судов или ведомств.',
+'Ты главный редактор крупного регионального СМИ «Прим_Дозор» (уровень VL.ru / РБК / НТВ ЧП).',
+'СТИЛЬ И КАЧЕСТВО ТЕКСТА:',
+'- Пиши живым, острым, профессиональным журналистским языком, чтобы читатель дочитывал до конца. Никаких общих фраз и канцелярита!',
+'- Обязательно сохраняй ВСЕ конкретные детали из исходника: улицы, районы, номера домов, суммы штрафов/ущерба, сроки, решения судов, фамилии должностных лиц.',
+'- ПРАВИЛО СМАЙЛОВ: Смайлы ставь ТОЛЬКО в самом начале абзаца (один тематический смайл перед первым словом абзаца). Внутри текста и в конце предложений смайлы ставить ЗАПРЕЩЕНО.',
 svoRule + blockedNote,
-'ПРАВИЛА: Пиши строго «на Украине». Не выдумывай цифры, которых нет в исходнике. Соблюдай УК, КоАП, ГК, 436-ФЗ. Светскую хронику и шоу-бизнес отклоняй словом SKIP.',
+'ПРАВИЛА РФ: Пиши строго «на Украине». Не выдумывай цифры, которых нет в исходнике. Соблюдай УК, КоАП, ГК, 436-ФЗ. Светскую хронику и шоу-бизнес отклоняй словом SKIP.',
 'Верни ответ СТРОГО в формате JSON без markdown:',
 '{',
-'  "title": "Информативный SEO-заголовок с конкретикой (до 90 символов)",',
+'  "title": "Сильный журналистский SEO-заголовок с конкретикой (до 90 символов)",',
 '  "cat": "одно из: chp, svo, law, city, family, sport",',
 '  "catLabel": "одно из: 🚨 ЧП и 112, 🇷🇺 СВО и Защитники, 🏛 Законы и Политика, 🏙 Город и ЖКХ, 👨‍👩‍👧 Семья и Медицина, 🏆 Спорт",',
 '  "city": "город Приморья (Владивосток, Большой Камень, Артём, Уссурийск, Находка, Приморье) или Россия",',
 '  "age": "возрастная маркировка по 436-ФЗ: 0+, 6+, 12+, 16+ или 18+",',
 '  "tldr": "• Главное 1\n• Главное 2\n• Главное 3",',
-'  "tgText": "Развёрнутый, насыщенный фактами пост для Telegram (550–680 символов, 2-3 абзаца с эмодзи, чтобы читатель получил полную картину прямо в ленте)",',
-'  "fullText": "Полная подробная статья для сайта на 3-4 абзаца со всеми деталями, адресами и разъяснениями",',
+'  "fullText": "Полная, развёрнутая журналистская статья на 3-4 содержательных абзаца (900–1300 символов). Каждый абзац начинается с одного тематического эмодзи и разделяется двойным переносом строки \n\n.",',
 '  "isOutage": true или false (true если новость про отключение света, воды, отопления или перекрытие дорог в Приморье),',
-'  "outageDistrict": "район или город (например: Владивосток, Чуркин)",',
+'  "outageDistrict": "город и район (например: Владивосток, Чуркин)",',
 '  "outageStatus": "краткий статус (например: Свет до 17:00 или ХВС до 18:00)",',
-'  "needSource": true или false (true ТОЛЬКО если это официальная сводка МВД/СК/МЧС/Минобороны РФ/Прокуратуры/Правительства ПК или прямая цитата; иначе false)',
+'  "needSource": true или false (true ТОЛЬКО если это официальная сводка ведомства)',
 '}',
 'Заголовок исходника: ' + rawItem.title,
-'Полный текст исходника: ' + material.slice(0, 2400)
+'Полный текст исходника: ' + material.slice(0, 2600)
 ].join('\n');
 const content = await callAI(prompt);
 if (!content || content.includes('SKIP')) return null;
@@ -366,27 +422,26 @@ const cleanJson = content.replace(/^json|$/g, '').trim();
 const parsed = JSON.parse(cleanJson);
 parsed.title = normalizeRussianText(parsed.title);
 parsed.tldr = normalizeRussianText(parsed.tldr).replace(/\n/g, BR_TAG);
-parsed.tgText = normalizeRussianText(parsed.tgText || parsed.fullText);
-parsed.fullText = normalizeRussianText(parsed.fullText || parsed.tgText);
+const cleanedArticle = cleanInlineEmojis(normalizeRussianText(parsed.fullText || parsed.tgText || ''));
+parsed.fullText = cleanedArticle;
+parsed.tgText = cleanedArticle;
 return parsed;
 } catch (e) {
 return null;
 }
 }
+// Отправка ПОЛНОГО поста в Telegram без потери смысла и обрезки
 async function sendToTelegram(news, imagePath) {
 if (!TG_TOKEN) return;
-const cleanTgBody = stripTags((news.tgText || news.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
+const cleanBody = stripTags((news.fullText || news.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
 const header = news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n' + B_OPEN + news.title + B_CLOSE + '\n\n';
-const maxBodyLen = 1015 - header.length - TG_FOOTER_HTML.length;
-const fittedBody = cleanTgBody.length > maxBodyLen
-? cleanTgBody.slice(0, maxBodyLen - 3).trim() + '...'
-: cleanTgBody;
-const fullCaption = header + fittedBody + TG_FOOTER_HTML;
+const fullMessage = header + cleanBody + TG_FOOTER_HTML;
 try {
-if (imagePath && fs.existsSync(imagePath)) {
+// 1. Если весь полный текст вместе с подвалом помещается в 1020 символов — шлём одним постом с фото
+if (imagePath && fs.existsSync(imagePath) && fullMessage.length <= 1020) {
 const form = new FormData();
 form.append('chat_id', TG_CHAT);
-form.append('caption', fullCaption);
+form.append('caption', fullMessage);
 form.append('parse_mode', 'HTML');
 const imgBuffer = fs.readFileSync(imagePath);
 form.append('photo', new Blob([imgBuffer], { type: 'image/png' }), 'cover.png');
@@ -396,23 +451,39 @@ body: form
 });
 const tgData = await res.json();
 if (tgData.ok) {
-console.log('Отправлено в Telegram с фото-обложкой: ' + news.title);
+console.log('Отправлено в Telegram (единый пост с фото): ' + news.title);
 return;
 }
-console.log('Telegram sendPhoto ошибка:', tgData.description);
+}
+// 2. Если статья большая и глубокая (> 1020 символов) — отправляем фото с заголовком + полный текст без обрезки!
+if (imagePath && fs.existsSync(imagePath)) {
+const form = new FormData();
+form.append('chat_id', TG_CHAT);
+form.append('caption', news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n' + B_OPEN + news.title + B_CLOSE);
+form.append('parse_mode', 'HTML');
+const imgBuffer = fs.readFileSync(imagePath);
+form.append('photo', new Blob([imgBuffer], { type: 'image/png' }), 'cover.png');
+await fetch('https://' + 'api.telegram.org' + '/bot' + TG_TOKEN + '/sendPhoto', {
+method: 'POST',
+body: form
+});
 }
 const res = await fetch('https://' + 'api.telegram.org' + '/bot' + TG_TOKEN + '/sendMessage', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
 chat_id: TG_CHAT,
-text: fullCaption,
+text: fullMessage.slice(0, 4090),
 parse_mode: 'HTML',
 disable_web_page_preview: true
 })
 });
 const tgData = await res.json();
-if (tgData.ok) console.log('Отправлено в Telegram (текст): ' + news.title);
+if (tgData.ok) {
+console.log('Отправлено в Telegram (фото + полный текст): ' + news.title);
+} else {
+console.log('Telegram ошибка:', tgData.description);
+}
 } catch (e) {
 console.log('Telegram сбой:', e.message);
 }
@@ -420,7 +491,7 @@ console.log('Telegram сбой:', e.message);
 async function sendToMax(news) {
 if (!MAX_TOKEN || !MAX_CHAT_ID) return;
 const maxApiUrl = 'https://' + 'platform-api.max.ru' + '/messages?chat_id=' + encodeURIComponent(MAX_CHAT_ID);
-const cleanText = stripTags((news.tgText || news.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
+const cleanText = stripTags((news.fullText || news.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
 const bodyText = news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n**' + news.title + '**\n\n' + cleanText + MAX_FOOTER_MD;
 try {
 const res = await fetch(maxApiUrl, {
@@ -600,7 +671,7 @@ age: ai.age || '16+',
 date: timeStr,
 title: ai.title,
 tldr: ai.tldr,
-text: ai.tgText,
+text: ai.fullText,
 fullText: ai.fullText,
 tgText: ai.tgText,
 src: sourceLabel
