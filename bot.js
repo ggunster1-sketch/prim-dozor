@@ -112,7 +112,6 @@ function cleanInlineEmojis(text) {
   }).join('\n');
 }
 
-// Сбор актуальной погоды Приморского края на сервере для мгновенной загрузки на сайте
 async function updateWeatherFile() {
   const cities = [
     { name: 'Владивосток', lat: 43.1155, lon: 131.8855 },
@@ -220,8 +219,9 @@ async function createBrandedPhoto(post, sourceImageUrl) {
   const height = 675;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
-const pal = getCategoryPalette(post.cat);
-let bgDrawn = false;
+  const pal = getCategoryPalette(post.cat);
+
+  let bgDrawn = false;
 if (sourceImageUrl && sourceImageUrl.startsWith('http')) {
 try {
 const imgRes = await fetch(sourceImageUrl, {
@@ -501,7 +501,8 @@ svoRule + blockedNote,
 '  "city": "конкретный город или район Приморья (Владивосток, Большой Камень, Артём, Уссурийск, Находка, Приморье) или Россия",',
 '  "age": "возрастная маркировка по 436-ФЗ: 0+, 6+, 12+, 16+ или 18+",',
 '  "tldr": "• Главное 1\n• Главное 2\n• Главное 3",',
-'  "fullText": "Полная, глубокая журналистская статья на 3-4 содержательных абзаца (950–1400 символов). Каждый абзац начинается с одного тематического эмодзи и разделяется двойным переносом строки \n\n.",',
+'  "tgText": "Ёмкий, насыщенный конкретными фактами пост для Telegram на 3 коротких абзаца (строго 500–580 символов, законченный по смыслу). Каждый абзац начинается с одного смайла.",',
+'  "fullText": "Полная, глубокая журналистская статья для сайта на 3-4 содержательных абзаца (950–1400 символов). Каждый абзац начинается с одного тематического эмодзи и разделяется двойным переносом строки \n\n.",',
 '  "isOutage": true или false (true если новость про отключение света, воды, тепла или перекрытие дорог в Приморье),',
 '  "outageDistrict": "город и район (например: Владивосток, Чуркин)",',
 '  "outageStatus": "краткий статус (например: Свет до 17:00 или ХВС до 18:00)",',
@@ -517,9 +518,8 @@ const cleanJson = content.replace(/^json|$/g, '').trim();
 const parsed = JSON.parse(cleanJson);
 parsed.title = normalizeRussianText(parsed.title);
 parsed.tldr = normalizeRussianText(parsed.tldr).replace(/\n/g, BR_TAG);
-const cleanedArticle = cleanInlineEmojis(normalizeRussianText(parsed.fullText || parsed.tgText || ''));
-parsed.fullText = cleanedArticle;
-parsed.tgText = cleanedArticle;
+parsed.tgText = cleanInlineEmojis(normalizeRussianText(parsed.tgText || parsed.fullText || ''));
+parsed.fullText = cleanInlineEmojis(normalizeRussianText(parsed.fullText || parsed.tgText || ''));
 return parsed;
 } catch (e) {
 return null;
@@ -527,14 +527,21 @@ return null;
 }
 async function sendToTelegram(news, imagePath) {
 if (!TG_TOKEN) return;
-const cleanBody = stripTags((news.fullText || news.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
+const rawBody = stripTags((news.tgText || news.fullText || news.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
 const header = news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n' + B_OPEN + news.title + B_CLOSE + '\n\n';
-const fullMessage = header + cleanBody + TG_FOOTER_HTML;
+const maxBodyLen = 1015 - header.length - TG_FOOTER_HTML.length;
+let fittedBody = rawBody;
+if (fittedBody.length > maxBodyLen) {
+const cut = fittedBody.slice(0, maxBodyLen);
+const lastDot = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('!'), cut.lastIndexOf('?'));
+fittedBody = lastDot > 150 ? cut.slice(0, lastDot + 1) : cut.trim() + '...';
+}
+const singleCaption = header + fittedBody + TG_FOOTER_HTML;
 try {
-if (imagePath && fs.existsSync(imagePath) && fullMessage.length <= 1020) {
+if (imagePath && fs.existsSync(imagePath)) {
 const form = new FormData();
 form.append('chat_id', TG_CHAT);
-form.append('caption', fullMessage);
+form.append('caption', singleCaption);
 form.append('parse_mode', 'HTML');
 const imgBuffer = fs.readFileSync(imagePath);
 form.append('photo', new Blob([imgBuffer], { type: 'image/png' }), 'cover.png');
@@ -544,38 +551,23 @@ body: form
 });
 const tgData = await res.json();
 if (tgData.ok) {
-console.log('Отправлено в Telegram (единый пост с фото): ' + news.title);
+console.log('Отправлено в Telegram (1 единый пост с фото): ' + news.title);
 return;
 }
-}
-if (imagePath && fs.existsSync(imagePath)) {
-const form = new FormData();
-form.append('chat_id', TG_CHAT);
-form.append('caption', news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n' + B_OPEN + news.title + B_CLOSE);
-form.append('parse_mode', 'HTML');
-const imgBuffer = fs.readFileSync(imagePath);
-form.append('photo', new Blob([imgBuffer], { type: 'image/png' }), 'cover.png');
-await fetch(buildUrl(['api.telegram.org', 'bot' + TG_TOKEN, 'sendPhoto']), {
-method: 'POST',
-body: form
-});
+console.log('Telegram sendPhoto ошибка:', tgData.description);
 }
 const res = await fetch(buildUrl(['api.telegram.org', 'bot' + TG_TOKEN, 'sendMessage']), {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
 chat_id: TG_CHAT,
-text: fullMessage.slice(0, 4090),
+text: singleCaption,
 parse_mode: 'HTML',
 disable_web_page_preview: true
 })
 });
 const tgData = await res.json();
-if (tgData.ok) {
-console.log('Отправлено в Telegram (фото + полный текст): ' + news.title);
-} else {
-console.log('Telegram ошибка:', tgData.description);
-}
+if (tgData.ok) console.log('Отправлено в Telegram (единый текст): ' + news.title);
 } catch (e) {
 console.log('Telegram сбой:', e.message);
 }
