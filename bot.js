@@ -7,7 +7,8 @@ const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '';
 const SITE_HOST = 'primdozor.ru';
 
 const FEEDS = [
-  'https://' + 'primamedia.ru' + '/export/new/news_all.rss',
+  'https://' + 'www.dv.kp.ru' + '/rss/allsections.xml',
+  'https://' + 'primpress.ru' + '/rss/news.xml',
   'https://' + 'www.kp.ru' + '/rss/allsections.xml',
   'https://' + 'ria.ru' + '/export/rss2/archive/index.xml',
   'https://' + 'tass.ru' + '/rss/v2.xml',
@@ -71,9 +72,9 @@ async function rewriteWithAI(rawItem) {
 Исходник: ${rawItem.title}. ${rawItem.desc}`;
 
   const endpoints = [
-    { url: 'https://' + 'polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-4o-mini' },
-    { url: 'https://' + 'api.polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-4o-mini' },
-    { url: 'https://' + 'api.vsegpt.ru' + '/v1/chat/completions', model: 'openai/gpt-4o-mini' }
+    { url: 'https://' + 'polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-oss-20b' },
+    { url: 'https://' + 'api.polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-oss-20b' },
+    { url: 'https://' + 'polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-4o-mini' }
   ];
 
   for (const ep of endpoints) {
@@ -168,7 +169,7 @@ async function pingIndexNow() {
       body: JSON.stringify({
         host: 'www.' + SITE_HOST,
         key: INDEXNOW_KEY,
-        keyLocation: 'https://www.${SITE_HOST}/${INDEXNOW_KEY}.txt',
+        keyLocation: 'https://www.' + SITE_HOST + '/' + INDEXNOW_KEY + '.txt',
         urlList: ['https://www.' + SITE_HOST + '/']
       })
     });
