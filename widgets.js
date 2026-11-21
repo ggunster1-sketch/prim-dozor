@@ -25,13 +25,14 @@ async function updateWeather() {
       const d = (r.daily && r.daily.temperature_2m_max) || [];
       const cur = r.current ? Math.round(r.current.temperature_2m) : 0;
       const sign = r.current ? ico(r.current.weather_code) : '🌤';
+      const cObj = cities.at(i) || { name: 'Приморье' };
       return {
-        name: cities[i].name,
+        name: cObj.name,
         now: fmt(cur) + ' ' + sign,
-        morning: h[8] !== undefined ? fmt(h[8]) : fmt(cur),
-        day: h[14] !== undefined ? fmt(h[14]) : fmt(cur),
-        evening: h[20] !== undefined ? fmt(h[20]) : fmt(cur),
-        tomorrow: d[1] !== undefined ? fmt(d[1]) : fmt(cur)
+        morning: h.at(8) !== undefined ? fmt(h.at(8)) : fmt(cur),
+        day: h.at(14) !== undefined ? fmt(h.at(14)) : fmt(cur),
+        evening: h.at(20) !== undefined ? fmt(h.at(20)) : fmt(cur),
+        tomorrow: d.at(1) !== undefined ? fmt(d.at(1)) : fmt(cur)
       };
     });
     fs.writeFileSync('weather.json', JSON.stringify(out, null, 2), 'utf8');
