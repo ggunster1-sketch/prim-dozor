@@ -3,6 +3,8 @@ const fs = require('fs');
 const AI_KEY = process.env.AI_API_KEY;
 const TG_TOKEN = process.env.TG_BOT_TOKEN;
 const TG_CHAT = process.env.TG_CHAT_ID || '@prim_dozor';
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '';
+const SITE_HOST = 'www.primdozor.ru';
 
 const FEEDS = [
   'https://primamedia.ru',
@@ -14,6 +16,7 @@ const FEEDS = [
 async function fetchRSS(url) {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': 'PrimDozorBot/1.0' } });
+    if (!res.ok) return [];
     const xml = await res.text();
     const items = [];
     const matches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
@@ -21,9 +24,14 @@ async function fetchRSS(url) {
       const block = m[1];
       const title = (block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) || block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
       const desc = (block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/) || block.match(/<description>([\s\S]*?)<\/description>/) || [])[1] || '';
-      if (title) items.push({ title: title.trim(), desc: desc.replace(/<[^>]+>/g, '').trim() });
+      if (title) {
+        items.push({
+          title: title.replace(/<[^>]+>/g, '').trim(),
+          desc: desc.replace(/<[^>]+>/g, '').trim()
+        });
+      }
     }
-    return items.slice(0, 4);
+    return items.slice(0, 6);
   } catch (e) {
     return [];
   }
@@ -32,22 +40,23 @@ async function fetchRSS(url) {
 async function rewriteWithAI(rawItem) {
   if (!AI_KEY) return null;
   const prompt = `Ты главный редактор портала «Прим_Дозор» (Владивосток, Приморье, Россия).
-Оцени важность новости от 1 до 10. Если меньше 7 — верни строго слово SKIP.
-Если 7 и выше — перепиши уникальным живым языком в стиле «НТВ ЧП / 112 / Блокнот» с соблюдением всех законов РФ (УК, КоАП, ГК, 436-ФЗ).
+Оцени важность новости от 1 до 10. Приоритет: Приморский край, Владивосток, законы РФ, ЧП, СВО, ЖКХ. Если важность меньше 6 — верни строго слово SKIP.
+Если 6 и выше — перепиши уникальным живым языком в стиле «НТВ ЧП / 112 / Блокнот» со строгим соблюдением законов РФ (УК, КоАП, ГК, 436-ФЗ, без фейков и запрещенных данных).
 Верни ответ СТРОГО в формате JSON без markdown:
 {
   "title": "Цепляющий SEO-заголовок (до 90 символов)",
   "cat": "одно из: chp, svo, law, city, family, sport",
   "catLabel": "одно из: 🚨 ЧП и 112, 🇷🇺 СВО и Защитники, 🏛 Законы и Политика, 🏙 Город и ЖКХ, 👨‍👩‍👧 Семья и Медицина, 🏆 Спорт",
   "city": "город Приморья (Владивосток, Большой Камень, Артём, Уссурийск, Находка) или Россия",
-  "age": "возрастная маркировка: 0+, 6+, 12+, 16+ или 18+",
-  "tldr": "• Пункт 1\\n• Пункт 2",
-  "text": "Полный уникальный текст статьи с эмодзи (2-3 абзаца)",
-  "needSource": true или false (true ТОЛЬКО если это официальная сводка ведомств МВД/СК/МО/МЧС или прямая цитата; для обычного пересказа факта ставь false)
+  "age": "возрастная маркировка по 436-ФЗ: 0+, 6+, 12+, 16+ или 18+",
+  "tldr": "• Пункт 1<br>• Пункт 2",
+  "text": "Полный уникальный текст статьи с уместными эмодзи (2-3 абзаца)",
+  "needSource": true или false (true ТОЛЬКО если это официальная сводка МВД/СК/МО/МЧС/Прокуратуры или прямая цитата; для обычного пересказа фактов ставь false)
 }
 Исходник: ${rawItem.title}. ${rawItem.desc}`;
 
   const endpoints = [
+    { url: 'https://polza.ai', model: 'openai/gpt-4o-mini' },
     { url: 'https://polza.ai', model: 'openai/gpt-4o-mini' },
     { url: 'https://vsegpt.ru', model: 'openai/gpt-4o-mini' }
   ];
@@ -56,8 +65,15 @@ async function rewriteWithAI(rawItem) {
     try {
       const res = await fetch(ep.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AI_KEY}` },
-        body: JSON.stringify({ model: ep.model, messages: [{ role: 'user', content: prompt }], temperature: 0.7 })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AI_KEY}`
+        },
+        body: JSON.stringify({
+          model: ep.model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7
+        })
       });
       if (!res.ok) continue;
       const data = await res.json();
@@ -72,12 +88,53 @@ async function rewriteWithAI(rawItem) {
 
 async function sendToTelegram(news) {
   if (!TG_TOKEN) return;
-  const caption = `${news.catLabel} | ${news.city} (${news.age})\n\n<b>${news.title}</b>\n\n${news.text}\n\n🌐 Полная картина: https://primdozor.ru\n📲 Мы в Макс: https://max.ru\n✈️ Подписаться: @prim_dozor`;
+  const caption = `${news.catLabel} | ${news.city} (${news.age})\n\n<b>${news.title}</b>\n\n${news.text}\n\n🌐 Полная картина: https://www.primdozor.ru\n💬 Мы в Макс: https://max.ru\n✈️ Подписаться: @prim_dozor`;
   try {
     await fetch(`https://telegram.org{TG_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: TG_CHAT, text: caption, parse_mode: 'HTML', disable_web_page_preview: true })
+      body: JSON.stringify({
+        chat_id: TG_CHAT,
+        text: caption,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      })
+    });
+  } catch (e) {}
+}
+
+function updateSitemap() {
+  const nowIso = new Date().toISOString();
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://sitemaps.org">
+  <url>
+    <loc>https://${SITE_HOST}/</loc>
+    <lastmod>${nowIso}</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://${SITE_HOST}/legal.html</loc>
+    <lastmod>${nowIso}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>`;
+  fs.writeFileSync('sitemap.xml', xml, 'utf8');
+}
+
+async function pingIndexNow() {
+  if (!INDEXNOW_KEY) return;
+  try {
+    await fetch('https://yandex.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({
+        host: SITE_HOST,
+        key: INDEXNOW_KEY,
+        keyLocation: `https://${SITE_HOST}/${INDEXNOW_KEY}.txt`,
+        urlList: [`https://${SITE_HOST}/`]
+      })
     });
   } catch (e) {}
 }
@@ -107,6 +164,7 @@ async function run() {
 
     const post = {
       id: Date.now() + added,
+      isoDate: new Date().toISOString(),
       rawTitle: item.title,
       cat: ai.cat || 'city',
       catLabel: ai.catLabel || '🏙 Город и ЖКХ',
@@ -125,6 +183,8 @@ async function run() {
   }
 
   fs.writeFileSync('news.json', JSON.stringify(existing.slice(0, 60), null, 2), 'utf8');
+  updateSitemap();
+  if (added > 0) await pingIndexNow();
   console.log(`Опубликовано новых материалов: ${added}`);
 }
 
