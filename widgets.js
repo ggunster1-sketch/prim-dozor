@@ -11,7 +11,7 @@ async function updateWeather() {
   try {
     const lats = cities.map(c => c.lat).join(',');
     const lons = cities.map(c => c.lon).join(',');
-    const url = 'https://' + ['://open-meteo.com', 'v1', 'forecast'].join('/') + '?latitude=' + lats + '&longitude=' + lons + '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok';
+    const url = 'https://open-meteo.com' + lats + '&longitude=' + lons + '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok';
     const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
@@ -25,14 +25,14 @@ async function updateWeather() {
       const d = (r.daily && r.daily.temperature_2m_max) || [];
       const cur = r.current ? Math.round(r.current.temperature_2m) : 0;
       const sign = r.current ? ico(r.current.weather_code) : '🌤';
-      const cObj = cities.at(i) || { name: 'Приморье' };
+      const cObj = cities[i] || { name: 'Приморье' };
       return {
         name: cObj.name,
         now: fmt(cur) + ' ' + sign,
-        morning: h.at(8) !== undefined ? fmt(h.at(8)) : fmt(cur),
-        day: h.at(14) !== undefined ? fmt(h.at(14)) : fmt(cur),
-        evening: h.at(20) !== undefined ? fmt(h.at(20)) : fmt(cur),
-        tomorrow: d.at(1) !== undefined ? fmt(d.at(1)) : fmt(cur)
+        morning: h[8] !== undefined ? fmt(h[8]) : fmt(cur),
+        day: h[14] !== undefined ? fmt(h[14]) : fmt(cur),
+        evening: h[20] !== undefined ? fmt(h[20]) : fmt(cur),
+        tomorrow: d[1] !== undefined ? fmt(d[1]) : fmt(cur)
       };
     });
     fs.writeFileSync('weather.json', JSON.stringify(out, null, 2), 'utf8');
@@ -42,12 +42,14 @@ async function updateWeather() {
 
 async function updateRates() {
   try {
-    const res = await fetch('https://' + ['www.cbr-xml-daily.ru', 'daily_json.js'].join('/'));
+    const res = await fetch('https://cbr-xml-daily.ru');
     if (!res.ok) return;
     const data = await res.json();
     const out = {
       usd: (data.Valute.USD.Value / data.Valute.USD.Nominal).toFixed(1),
-      cny: (data.Valute.CNY.Value / data.Valute.CNY.Nominal).toFixed(1)
+      eur: (data.Valute.EUR.Value / data.Valute.EUR.Nominal).toFixed(1),
+      cny: (data.Valute.CNY.Value / data.Valute.CNY.Nominal).toFixed(1),
+      jpy: ((data.Valute.JPY.Value / data.Valute.JPY.Nominal) * 100).toFixed(1)
     };
     fs.writeFileSync('rates.json', JSON.stringify(out, null, 2), 'utf8');
     console.log('Курсы ЦБ РФ обновлены.');
