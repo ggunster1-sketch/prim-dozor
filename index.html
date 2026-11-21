@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Прим_Дозор — Главные новости Владивостока, Приморья и России 24/7</title>
+  <meta name="description" content="Оперативные новости Владивостока, Приморского края и России 24/7: ЧП, криминал, ЖКХ, погода, мосты, законы РФ и сводки.">
   <meta name="yandex-verification" content="0dc10018fffed4cc" />
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
@@ -26,7 +27,7 @@
         </span>
         <span style="margin-left:10px;">🌉 Мосты: <strong style="color:#10b981">Открыты</strong></span>
       </div>
-      <div>💵 USD: 98.4 ₽ · 💴 CNY: 13.6 ₽ · 🏫 Школы: <strong>Очно</strong></div>
+      <div id="rates-box">💵 USD: 98.4 ₽ · 💴 CNY: 13.6 ₽ · 🏫 Школы: <strong>Очно</strong></div>
     </div>
   </div>
 
@@ -37,8 +38,8 @@
         <div id="season-txt" style="font-size:12px; color:var(--muted); margin-top:4px;">Главный надзор Приморья и России 24/7</div>
       </div>
       <div style="display:flex; gap:8px;">
-        <button class="btn" onclick="document.body.classList.toggle('big-font')">А+</button>
-        <button class="btn" onclick="document.body.classList.toggle('light')">🌓</button>
+        <button class="btn" title="Увеличить шрифт" onclick="document.body.classList.toggle('big-font')">А+</button>
+        <button class="btn" title="Ночная графитовая тема" onclick="document.body.classList.toggle('dark')">🌓</button>
         <button class="btn btn-red" onclick="document.getElementById('rep-modal').style.display='flex'">+ Прислать ЧП</button>
       </div>
     </div>
@@ -52,10 +53,10 @@
     <div class="socials">
       <div style="font-size:14px; font-weight:700; color:var(--muted);">📲 Читайте «Прим_Дозор» там, где вам удобно (нажмите для перехода):</div>
       <div class="soc-grid">
-        <a id="s-tg" href="https://t.me" target="_blank" class="soc-link" style="background:#0088cc;">✈️ Telegram</a>
-        <a id="s-max" href="https://max.ru" target="_blank" class="soc-link" style="background:linear-gradient(135deg,#6366f1,#ec4899);">💬 Мессенджер Макс</a>
-        <a id="s-dzen" href="https://dzen.ru" target="_blank" class="soc-link" style="background:#1e293b; border:1px solid #475569;">⭐ Яндекс Дзен</a>
-        <a id="s-vk" href="https://vk.com" target="_blank" class="soc-link" style="background:#0077ff;">🌐 ВКонтакте</a>
+        <a id="s-tg" href="https://t.me" target="_blank" rel="noopener" class="soc-link">✈️ Telegram</a>
+        <a id="s-max" href="https://max.ru" target="_blank" rel="noopener" class="soc-link">💬 Мессенджер Макс</a>
+        <a id="s-dzen" href="https://dzen.ru" target="_blank" rel="noopener" class="soc-link">⭐ Яндекс Дзен</a>
+        <a id="s-vk" href="https://vk.com" target="_blank" rel="noopener" class="soc-link">🌐 ВКонтакте</a>
       </div>
     </div>
 
@@ -85,25 +86,25 @@
         </div>
         <div class="box">
           <h3>💡 Радар отключений ЖКХ</h3>
-          <div class="row"><span>Владивосток (Чуркин)</span><span style="color:#f59e0b;font-weight:700;">Свет до 17:00</span></div>
-          <div class="row"><span>Большой Камень</span><span style="color:#10b981;font-weight:700;">Штатно</span></div>
-          <div class="row"><span>Уссурийск (Центр)</span><span style="color:#f59e0b;font-weight:700;">ХВС до 16:00</span></div>
-          <div class="row"><span>Находка / Артём</span><span style="color:#10b981;font-weight:700;">Без аварий</span></div>
+          <div class="row"><span>Владивосток (Чуркин)</span><span style="color:#d97706;font-weight:700;">Свет до 17:00</span></div>
+          <div class="row"><span>Большой Камень</span><span style="color:var(--green);font-weight:700;">Штатно</span></div>
+          <div class="row"><span>Уссурийск (Центр)</span><span style="color:#d97706;font-weight:700;">ХВС до 16:00</span></div>
+          <div class="row"><span>Находка / Артём</span><span style="color:var(--green);font-weight:700;">Без аварий</span></div>
         </div>
         <div class="box">
           <h3>🌊 Морской и таёжный радар</h3>
           <div class="row"><span>Вода (Амурский зал.)</span><span>+4°C</span></div>
-          <div class="row"><span>Пожары в лесах</span><span style="color:#10b981;font-weight:700;">1 класс (Низкая)</span></div>
+          <div class="row"><span>Пожары в лесах</span><span style="color:var(--green);font-weight:700;">1 класс (Низкая)</span></div>
           <div class="row"><span>Сезон / Клёв</span><span>Навага, корюшка</span></div>
         </div>
       </aside>
 
       <main>
-        <div id="ad-slot" class="card" style="display:none; border-color:#3b82f6;">
+        <div id="ad-slot" class="card" style="display:none; border-color:var(--blue);">
           <div id="ad-mark" style="font-size:11px; color:var(--muted); margin-bottom:6px;"></div>
           <h3 id="ad-t" style="margin-bottom:6px;"></h3>
           <p id="ad-d" style="font-size:14px; color:var(--muted); margin-bottom:10px;"></p>
-          <a id="ad-btn" href="#" class="btn" style="background:#3b82f6; color:#fff; display:inline-block;"></a>
+          <a id="ad-btn" href="#" class="btn btn-red" style="display:inline-block;"></a>
         </div>
         <div id="feed"></div>
       </main>
@@ -111,10 +112,10 @@
       <aside>
         <div class="box">
           <h3>☎️ Службы края в 1 клик</h3>
-          <div class="row"><span>Служба спасения</span><a href="tel:112" style="color:#f59e0b;font-weight:700;">112</a></div>
-          <div class="row"><span>Полиция (УМВД)</span><a href="tel:102" style="color:#60a5fa;font-weight:700;">102</a></div>
-          <div class="row"><span>ЕДДС Владивостока</span><a href="tel:84232222333" style="color:#60a5fa;font-weight:700;">222-23-33</a></div>
-          <div class="row"><span>Примводоканал</span><a href="tel:84232005777" style="color:#60a5fa;font-weight:700;">200-57-77</a></div>
+          <div class="row"><span>Служба спасения</span><a href="tel:112" style="color:var(--red);font-weight:700;">112</a></div>
+          <div class="row"><span>Полиция (УМВД)</span><a href="tel:102" style="color:var(--blue);font-weight:700;">102</a></div>
+          <div class="row"><span>ЕДДС Владивостока</span><a href="tel:84232222333" style="color:var(--blue);font-weight:700;">222-23-33</a></div>
+          <div class="row"><span>Примводоканал</span><a href="tel:84232005777" style="color:var(--blue);font-weight:700;">200-57-77</a></div>
         </div>
         <div class="box">
           <h3>📅 Авто-сводки 24/7</h3>
@@ -148,20 +149,20 @@
     <div class="modal-box">
       <button class="btn" style="float:right;" onclick="document.getElementById('rep-modal').style.display='none'">✕</button>
       <h3 style="margin-bottom:10px;">📢 Прислать новость / Народный контроль</h3>
-      <form onsubmit="event.preventDefault(); alert('Сообщение принято редакцией Прим_Дозор!'); document.getElementById('rep-modal').style.display='none';">
-        <input class="input" placeholder="Город или район Приморья" required>
-        <textarea class="input" rows="4" placeholder="Опишите ситуацию..." required></textarea>
+      <form onsubmit="event.preventDefault(); alert('Сообщение отправлено в редакцию!'); document.getElementById('rep-modal').style.display='none';">
+        <input class="input" type="text" placeholder="Город или район (например, Владивосток, Чуркин)" required>
+        <textarea class="input" rows="4" placeholder="Опишите происшествие или проблему ЖКХ..." required></textarea>
         <label style="display:flex; gap:8px; font-size:12px; color:var(--muted); margin-bottom:12px;">
           <input type="checkbox" required> Согласен на обработку персональных данных (152-ФЗ)
         </label>
-        <button type="submit" class="btn btn-red" style="width:100%;">Отправить в редакцию</button>
+        <button class="btn btn-red" type="submit">Отправить в редакцию</button>
       </form>
     </div>
   </div>
 
   <div id="cookie-box" class="cookie">
     <span>Мы используем файлы cookie и Яндекс.Метрику для работы сайта. Продолжая просмотр, вы соглашаетесь с Политикой конфиденциальности.</span>
-    <button class="btn" style="background:#10b981; color:#fff; border:none;" onclick="localStorage.setItem('ck','1');document.getElementById('cookie-box').style.display='none'">Согласен</button>
+    <button class="btn btn-red" onclick="localStorage.setItem('ck','1'); document.getElementById('cookie-box').style.display='none'">Согласен</button>
   </div>
 
 </body>
