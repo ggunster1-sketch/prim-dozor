@@ -4,7 +4,7 @@ const LT = String.fromCharCode(60);
 const GT = String.fromCharCode(62);
 
 function stripTags(str) {
-  return (str || '')
+  return String(str || '')
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
     .replace(new RegExp(LT + '[^' + GT + ']+' + GT, 'g'), ' ')
     .replace(/&quot;/g, '"')
@@ -12,6 +12,7 @@ function stripTags(str) {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -42,13 +43,14 @@ async function fetchTelegram(tgList) {
       const url = 'https://t.me' + src.id;
       const res = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36',
-          'Referer': 'https://t.me' + src.id
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8'
         }
       });
       if (!res.ok) continue;
       const html = await res.text();
-      const blocks = html.split('tgme_widget_message_wrap').slice(-8);
+      const blocks = html.split('tgme_widget_message_wrap').slice(-6);
       let maxPostNum = state[src.id] || 0;
 
       for (const b of blocks) {
@@ -58,16 +60,17 @@ async function fetchTelegram(tgList) {
         if (postNum > maxPostNum) maxPostNum = postNum;
 
         const m = b.match(msgRe);
-        if (!m) continue;
+        if (!m || !m[1]) continue;
         const clean = stripTags(m[1]);
         if (clean.length < 85 || isAdOrSpam(clean)) continue;
 
         const imgM = b.match(/background-image:url\('(https?:\/\/[^']+)'\)/i);
+        const firstSentence = clean.split(/[.!\n]/)[0] || clean;
         out.push({
-          title: clean.split(/[.!\n]/)[0].trim().slice(0, 115),
+          title: firstSentence.trim().slice(0, 115),
           desc: clean.slice(0, 2600),
-          link: postNum ? `https://t.me${src.id}/${postNum}` : '',
-          img: imgM ? imgM[1] : '',
+          link: postNum ? `https://t.me{src.id}/${postNum}` : '',
+          img: (imgM && imgM[1]) ? imgM[1] : '',
           regional: true,
           official: Boolean(src.official),
           sourceName: src.name
@@ -86,10 +89,15 @@ async function fetchFeeds(rssList) {
   const out = [];
   for (const f of rssList) {
     try {
-      const res = await fetch(f.url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const res = await fetch(f.url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+          'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+        }
+      });
       if (!res.ok) continue;
       const xml = await res.text();
-      const items = xml.split(/<item[\s>]/i).slice(1, 11);
+      const items = xml.split(/<item[\s>]/i).slice(1, 10);
 
       for (const rawItem of items) {
         const titleM = rawItem.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -99,7 +107,7 @@ async function fetchFeeds(rssList) {
 
         const title = stripTags(titleM ? titleM[1] : '');
         const desc = stripTags(descM ? descM[1] : '');
-        if (!title || desc.length < 60 || isAdOrSpam(title + ' ' + desc)) continue;
+        if (!title || desc.length < 50 || isAdOrSpam(title + ' ' + desc)) continue;
 
         out.push({
           title: title,
