@@ -13,9 +13,21 @@ const ADMIN_URL = 'https://' + 't.me' + '/prim_dozor?direct';
 const TG_URL = 'https://' + 't.me' + '/prim_dozor';
 const MAX_URL = 'https://' + 'max.ru' + '/join/RyxItD9MEitACdZjmI88YZkBI2ps78Qq3iMW0sBJcoE';
 
-const TG_FOOTER_HTML = `\n\n🌐 Читайте новости на нашем <a href="${SITE_URL}">сайте</a>\n\n🔎 Прим_Дозор — жестко фиксируем то, что другие пытаются скрыть.\n\n📲 Вопросы : <a href="${ADMIN_URL}">связь с админом</a>\n\n🤝 Сотрудничество: prim_dozor@internet.ru\n\n👉 <a href="${TG_URL}">telegram прим_дозор</a>\n\n👉 <a href="${MAX_URL}">прим_дозор в Max</a>`;
+const TG_FOOTER_HTML =
+  '\n\n🌐 Читайте новости на нашем <a href="' + SITE_URL + '">сайте</a>' +
+  '\n\n🔎 Прим_Дозор — жестко фиксируем то, что другие пытаются скрыть.' +
+  '\n\n📲 Вопросы : <a href="' + ADMIN_URL + '">связь с админом</a>' +
+  '\n\n🤝 Сотрудничество: prim_dozor@internet.ru' +
+  '\n\n👉 <a href="' + TG_URL + '">telegram прим_дозор</a>' +
+  '\n\n👉 <a href="' + MAX_URL + '">прим_дозор в Max</a>';
 
-const MAX_FOOTER_MD = `\n\n🌐 Читайте новости на нашем [сайте](${SITE_URL})\n\n🔎 Прим_Дозор — жестко фиксируем то, что другие пытаются скрыть.\n\n📲 Вопросы : [связь с админом](${ADMIN_URL})\n\n🤝 Сотрудничество: prim_dozor@internet.ru\n\n👉 [telegram прим_дозор](${TG_URL})\n\n👉 [прим_дозор в Max](${MAX_URL})`;
+const MAX_FOOTER_MD =
+  '\n\n🌐 Читайте новости на нашем [сайте](' + SITE_URL + ')' +
+  '\n\n🔎 Прим_Дозор — жестко фиксируем то, что другие пытаются скрыть.' +
+  '\n\n📲 Вопросы : [связь с админом](' + ADMIN_URL + ')' +
+  '\n\n🤝 Сотрудничество: prim_dozor@internet.ru' +
+  '\n\n👉 [telegram прим_дозор](' + TG_URL + ')' +
+  '\n\n👉 [прим_дозор в Max](' + MAX_URL + ')';
 
 const FEEDS = [
   'https://' + 'www.dv.kp.ru' + '/rss/allsections.xml',
@@ -99,33 +111,31 @@ async function fetchRSS(url) {
   }
 }
 
-async function rewriteWithAI(rawItem, blockedCats = []) {
-  const blockedNote = blockedCats.length > 0
-    ? `\nВАЖНО: Рубрики [${blockedCats.join(', ')}] уже опубликованы только что! Если эта новость относится к ним — верни строго слово SKIP, нам нужно разнообразие других рубрик.`
+async function rewriteWithAI(rawItem, blockedCats) {
+  const blockedNote = (blockedCats && blockedCats.length > 0)
+    ? '\nВАЖНО: Рубрики [' + blockedCats.join(', ') + '] уже опубликованы только что! Если эта новость относится к ним — верни строго слово SKIP, нам нужно разнообразие других рубрик.'
     : '';
 
-  const prompt = `Ты главный редактор информационного портала «Прим_Дозор» (Владивосток, Приморский край, Россия).
-
-ЗАДАЧА:
-Освещать ВСЕ стороны жизни Приморья и России: происшествия (ЧП и 112), ЖКХ и благоустройство, новые законы и выплаты, медицину и семью, спорт, а также СВО. Не зацикливайся только на военной теме — нам нужна живая, сбалансированная картина дня.${blockedNote}
-
-ЖЕСТКИЕ ПРАВИЛА РЕДАКЦИИ:
-1. ПОЗИЦИЯ ПО РФ И СВО: Материалы о России и СВО подаются в государственном патриотическом ключе, с опорой на официальные данные ведомств РФ. Запрещено ретранслировать враждебную пропаганду.
-2. НОРМА РУССКОГО ЯЗЫКА: Пиши строго «на Украине» (никогда не пиши «в Украине»).
-3. ЗАКОНЫ РФ И ТОЧНОСТЬ: Не выдумывай цифры и факты. Соблюдай УК, КоАП, ГК, 436-ФЗ. Если новость пустая (светские сплетни, шоу-бизнес, гороскопы) — верни строго слово SKIP.
-
-Верни ответ СТРОГО в формате JSON без markdown:
-{
-  "title": "Точный информативный SEO-заголовок (до 90 символов)",
-  "cat": "одно из: chp, svo, law, city, family, sport",
-  "catLabel": "одно из: 🚨 ЧП и 112, 🇷🇺 СВО и Защитники, 🏛 Законы и Политика, 🏙 Город и ЖКХ, 👨‍👩‍👧 Семья и Медицина, 🏆 Спорт",
-  "city": "город Приморья (Владивосток, Большой Камень, Артём, Уссурийск, Находка) или Россия",
-  "age": "возрастная маркировка по 436-ФЗ: 0+, 6+, 12+, 16+ или 18+",
-  "tldr": "• Краткий факт 1<br>• Краткий факт 2",
-  "text": "Полный уникальный текст статьи в спокойном, уверенном редакционном стиле с уместными эмодзи (2-3 абзаца)",
-  "needSource": true или false (true ТОЛЬКО если это официальная сводка Минобороны РФ/МВД/СК/МЧС/Прокуратуры/Правительства или прямая цитата; для обычного пересказа факта ставь false)
-}
-Исходник: ${rawItem.title}. ${rawItem.desc}`;
+  const prompt = [
+    'Ты главный редактор информационного портала «Прим_Дозор» (Владивосток, Приморский край, Россия).',
+    'ЗАДАЧА: Освещать ВСЕ стороны жизни Приморья и России: происшествия (ЧП и 112), ЖКХ и благоустройство, новые законы и выплаты, медицину и семью, спорт, а также СВО. Не зацикливайся только на военной теме — нам нужна живая, сбалансированная картина дня.' + blockedNote,
+    'ЖЕСТКИЕ ПРАВИЛА РЕДАКЦИИ:',
+    '1. ПОЗИЦИЯ ПО РФ И СВО: Материалы о России и СВО подаются в государственном патриотическом ключе, с опорой на официальные данные ведомств РФ. Запрещено ретранслировать враждебную пропаганду.',
+    '2. НОРМА РУССКОГО ЯЗЫКА: Пиши строго «на Украине» (никогда не пиши «в Украине»).',
+    '3. ЗАКОНЫ РФ И ТОЧНОСТЬ: Не выдумывай цифры и факты. Соблюдай УК, КоАП, ГК, 436-ФЗ. Если новость пустая (светские сплетни, шоу-бизнес, гороскопы) — верни строго слово SKIP.',
+    'Верни ответ СТРОГО в формате JSON без markdown:',
+    '{',
+    '  "title": "Точный информативный SEO-заголовок (до 90 символов)",',
+    '  "cat": "одно из: chp, svo, law, city, family, sport",',
+    '  "catLabel": "одно из: 🚨 ЧП и 112, 🇷🇺 СВО и Защитники, 🏛 Законы и Политика, 🏙 Город и ЖКХ, 👨‍👩‍👧 Семья и Медицина, 🏆 Спорт",',
+    '  "city": "город Приморья (Владивосток, Большой Камень, Артём, Уссурийск, Находка) или Россия",',
+    '  "age": "возрастная маркировка по 436-ФЗ: 0+, 6+, 12+, 16+ или 18+",',
+    '  "tldr": "• Краткий факт 1<br>• Краткий факт 2",',
+    '  "text": "Полный уникальный текст статьи в спокойном, уверенном редакционном стиле с уместными эмодзи (2-3 абзаца)",',
+    '  "needSource": true или false (true ТОЛЬКО если это официальная сводка Минобороны РФ/МВД/СК/МЧС/Прокуратуры/Правительства или прямая цитата; для обычного пересказа факта ставь false)',
+    '}',
+    'Исходник: ' + rawItem.title + '. ' + rawItem.desc
+  ].join('\n');
 
   const content = await callAI(prompt);
   if (!content || content.includes('SKIP')) return null;
@@ -145,7 +155,7 @@ async function sendToTelegram(news) {
   if (!TG_TOKEN) return;
   const tgApiUrl = 'https://' + 'api.telegram.org' + '/bot' + TG_TOKEN + '/sendMessage';
   const cleanText = (news.text || '').replace(/<br\s*\/?>/gi, '\n');
-  const caption = `${news.catLabel} | ${news.city} (${news.age})\n\n<b>${news.title}</b>\n\n${cleanText}${TG_FOOTER_HTML}`;
+  const caption = news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n<b>' + news.title + '</b>\n\n' + cleanText + TG_FOOTER_HTML;
 
   try {
     const res = await fetch(tgApiUrl, {
@@ -173,7 +183,7 @@ async function sendToMax(news) {
   if (!MAX_TOKEN || !MAX_CHAT_ID) return;
   const maxApiUrl = 'https://' + 'platform-api.max.ru' + '/messages?chat_id=' + encodeURIComponent(MAX_CHAT_ID);
   const cleanText = (news.text || '').replace(/<br\s*\/?>/gi, '\n');
-  const bodyText = `${news.catLabel} | ${news.city} (${news.age})\n\n**${news.title}**\n\n${cleanText}${MAX_FOOTER_MD}`;
+  const bodyText = news.catLabel + ' | ' + news.city + ' (' + news.age + ')\n\n**' + news.title + '**\n\n' + cleanText + MAX_FOOTER_MD;
 
   try {
     const res = await fetch(maxApiUrl, {
@@ -221,18 +231,16 @@ async function syncManualTelegramPosts(existing) {
       const rawText = (postObj.text || postObj.caption || '').trim();
       if (!rawText) continue;
 
-      if (rawText.includes('жестко фиксируем то, что другие пытаются скрыть') || postObj.from?.is_bot) continue;
+      if (rawText.includes('жестко фиксируем то, что другие пытаются скрыть') || (postObj.from && postObj.from.is_bot)) continue;
 
       const cleanBody = rawText.split('🌐 Читайте новости на нашем').at(0).trim();
       if (!cleanBody || existing.some(e => e.tgMsgId === postObj.message_id)) continue;
 
-      const lines = cleanBody.split('\n').map(l => l.trim()).filter(Boolean);
-      const rawTitle = lines.at(0) ? lines.at(0).slice(0, 95) : 'Новость редакции Прим_Дозор';
-      const bodyWithoutTitle = lines.length > 1 ? lines.slice(1).join('\n\n') : cleanBody;
-
-      const nowVl = new Date(Date.now() + 10 * 3600000);
-
-    const timeStr = Сегодня, ${String(nowVl.getUTCHours()).padStart(2, '0')}:${String(nowVl.getUTCMinutes()).padStart(2, '0')};
+const lines = cleanBody.split('\n').map(l => l.trim()).filter(Boolean);
+const rawTitle = lines.at(0) ? lines.at(0).slice(0, 95) : 'Новость редакции Прим_Дозор';
+const bodyWithoutTitle = lines.length > 1 ? lines.slice(1).join('\n\n') : cleanBody;
+const nowVl = new Date(Date.now() + 10 * 3600000);
+const timeStr = 'Сегодня, ' + String(nowVl.getUTCHours()).padStart(2, '0') + ':' + String(nowVl.getUTCMinutes()).padStart(2, '0');
 const manualPost = {
 id: Date.now() + synced,
 tgMsgId: postObj.message_id,
@@ -261,7 +269,23 @@ return synced;
 }
 function updateSitemap() {
 const nowIso = new Date().toISOString();
-const xml = <?xml version="1.0" encoding="UTF-8"?> <urlset xmlns="http://sitemaps.org"> <url> <loc>https://${SITE_HOST}/</loc> <lastmod>${nowIso}</lastmod> <changefreq>hourly</changefreq> <priority>1.0</priority> </url> <url> <loc>https://${SITE_HOST}/legal.html</loc> <lastmod>${nowIso}</lastmod> <changefreq>monthly</changefreq> <priority>0.5</priority> </url> </urlset>;
+const xml = [
+'',
+'',
+'  ',
+'    https://' + SITE_HOST + '/',
+'    ' + nowIso + '',
+'    hourly',
+'    1.0',
+'  ',
+'  ',
+'    https://' + SITE_HOST + '/legal.html',
+'    ' + nowIso + '',
+'    monthly',
+'    0.5',
+'  ',
+''
+].join('\n');
 fs.writeFileSync('sitemap.xml', xml, 'utf8');
 }
 async function pingIndexNow() {
@@ -307,7 +331,7 @@ if (existing.some(e => e.rawTitle === item.title)) continue;
 const ai = await rewriteWithAI(item, blockedCats);
 if (!ai) continue;
 const nowVl = new Date(Date.now() + 10 * 3600000);
-const timeStr = Сегодня, ${String(nowVl.getUTCHours()).padStart(2, '0')}:${String(nowVl.getUTCMinutes()).padStart(2, '0')};
+const timeStr = 'Сегодня, ' + String(nowVl.getUTCHours()).padStart(2, '0') + ':' + String(nowVl.getUTCMinutes()).padStart(2, '0');
 const post = {
 id: Date.now() + added + manualSynced,
 isoDate: new Date().toISOString(),
@@ -331,6 +355,6 @@ added++;
 fs.writeFileSync('news.json', JSON.stringify(existing.slice(0, 60), null, 2), 'utf8');
 updateSitemap();
 if (added + manualSynced > 0) await pingIndexNow();
-console.log(Готово. Ручных постов перенесено: ${manualSynced}, автоновостей: ${added});
+console.log('Готово. Ручных постов перенесено: ' + manualSynced + ', автоновостей: ' + added);
 }
 run();
