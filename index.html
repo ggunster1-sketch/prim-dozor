@@ -4,48 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="yandex-verification" content="0dc10018fffed4cc">
-<title>Прим_Дозор — Новости Владивостока и Приморского края 24/7 (18+)</title>
-<meta name="description" content="Главные новости Владивостока, Уссурийска, Находки, Артёма и Приморского края 24/7: ЧП, ЖКХ, дороги, погода, законы РФ.">
-<link rel="canonical" href="https://primdozor.ru/">
-<link rel="manifest" href="/manifest.json">
-<link rel="stylesheet" href="/style.css">
-<script src="/config.js"></script>
-<script type="text/javascript">
-(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}
-k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
-ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
-</script>
+<title>Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)</title>
+<meta name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма и Приморского края 24/7: ЧП, ЖКХ, дороги, погода, курсы валют, законы РФ.">
+<link rel="canonical" href="https://primdozor.ru">
+<link rel="stylesheet" href="/style.css?v=6">
+<script type="text/javascript">(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://yandex.ru","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});</script>
 </head>
 <body>
 
-<div class="top-bar">
-  <div class="container top-flex">
-    <div style="display:flex; align-items:center; gap:8px;">
-      <span class="live-pill">● <span id="clock">--:--</span></span>
-      <select id="city-sel" onchange="selectWeatherCity(this.value)" aria-label="Город погоды">
+<div class="infobar">
+  <div class="wrap infobar-inner">
+    <div class="infobar-left">
+      <span class="live-dot"></span>
+      <strong id="clock">Владивосток</strong>
+      <select class="city-select" id="w-sel" onchange="setWeather(this.value)">
         <option value="0">Владивосток</option>
-        <option value="1">Б. Камень</option>
-        <option value="2">Артём</option>
-        <option value="3">Уссурийск</option>
-        <option value="4">Находка</option>
+        <option value="1">Уссурийск</option>
+        <option value="2">Находка</option>
+        <option value="3">Артём</option>
+        <option value="4">Большой Камень</option>
       </select>
-      <span id="w-top-now" style="font-weight:700; color:#fff;">--°C</span>
+      <strong id="w-top">-8°C ☀</strong>
     </div>
-    <div style="display:flex; align-items:center; gap:8px;">
-      <span id="rates-top" class="hide-mob">$-- | ¥--</span>
-      <button onclick="toggleBigFont()" style="color:#fff; font-weight:700; border:1px solid #4b5563; padding:1px 6px; border-radius:4px;">А+</button>
-      <button onclick="toggleTheme()" id="theme-btn" style="color:#fff;">🌙</button>
+    <div class="infobar-right">
+      <span class="hide-mob">$82.2 | €90.3 | ¥12.3</span>
+      <button class="icon-btn" onclick="document.body.classList.toggle('big-font')">А+</button>
+      <button class="icon-btn" onclick="document.body.classList.toggle('dark')">🌙</button>
     </div>
   </div>
 </div>
 
-<header>
-  <div class="container head-flex">
-    <a href="/" class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></a>
-    <div class="head-controls">
-      <select onchange="setCity(this.value)" aria-label="Город" style="background:var(--bg); color:var(--text); border:1px solid var(--border); padding:6px 8px;">
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="/" class="brand"><span class="brand-mark">ПРИМ_ДОЗОР</span><span class="brand-age">18+</span></a>
+    <div class="header-actions">
+      <select class="filter-city" onchange="filterCity(this.value)">
         <option value="all">Весь край</option>
         <option value="Владивосток">Владивосток</option>
         <option value="Уссурийск">Уссурийск</option>
@@ -53,78 +46,78 @@ ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
         <option value="Артём">Артём</option>
         <option value="Большой Камень">Б. Камень</option>
       </select>
-      <button class="btn btn-red" onclick="openReport()">+ ЧП</button>
+      <a href="https://t.me" target="_blank" rel="noopener" class="btn-cta">+ Прислать ЧП</a>
     </div>
   </div>
 </header>
 
-<div class="search-bar">
-  <div class="container">
-    <input id="search-input" class="input" type="search" placeholder="Поиск по новостям Приморья..." oninput="setSearch(this.value)">
+<div class="nav-strip">
+  <div class="wrap">
+    <nav class="tabs">
+      <button class="tab active" onclick="filterCat('all',this)">Главное</button>
+      <button class="tab" onclick="filterCat('chp',this)">ЧП и 112</button>
+      <button class="tab" onclick="filterCat('city',this)">Город и ЖКХ</button>
+      <button class="tab" onclick="filterCat('law',this)">Законы и Власть</button>
+      <button class="tab" onclick="filterCat('svo',this)">СВО</button>
+      <button class="tab" onclick="filterCat('family',this)">Общество</button>
+      <button class="tab" onclick="filterCat('sport',this)">Спорт</button>
+    </nav>
   </div>
 </div>
 
-<div class="container">
-  <div class="soc-strip">
-    <a href="https://t.me/prim_dozor" target="_blank" rel="noopener" class="soc-chip">✈ Telegram</a>
-    <a href="https://max.ru" target="_blank" rel="noopener" class="soc-chip">💬 МАКС</a>
-    <a href="https://dzen.ru" target="_blank" rel="noopener" class="soc-chip">🔥 Дзен</a>
-    <a href="https://vk.com" target="_blank" rel="noopener" class="soc-chip">🌐 ВК</a>
+<div class="wrap layout" style="margin-top:18px">
+  <main id="feed"><article class="hero-card" data-id="1795285877347" onclick="openArt(this.dataset.id)"><img class="hero-img" src="./covers/c_1795285877347.jpg" alt="Владивостокская женщина обвинила знакомых в изнасиловании и распространении видео"><div class="hero-body"><div class="news-meta"><span class="badge-cat">ЧП и 112</span><span>Владивосток</span><span>• Сегодня, 04:31</span><span class="badge-age">18+</span></div><h2 class="hero-title">Владивостокская женщина обвинила знакомых в изнасиловании и распространении видео</h2><p class="hero-lead">Жительница Владивостока обратилась в правоохранительные органы с обвинениями в адрес троих знакомых, которых она обвиняет в групповом изнасилован...</p></div></article><article class="news-card" data-id="1795285871495" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./covers/c_1795285871495.jpg" alt="В Приморье священник разыскивается за сексуальные домогательства" loading="lazy"><div><div class="news-meta"><span class="badge-cat">ЧП и 112</span><span>Владивосток</span><span>• Сегодня, 04:31</span><span class="badge-age">18+</span></div><h3 class="news-title">В Приморье священник разыскивается за сексуальные домогательства</h3><p class="news-excerpt">В Приморском крае разразился скандал, связанный с настоятелем храма в селе Владимиро-Александровское, Андреем Гречишниковым, который объявлен в р...</p></div></article><article class="news-card" data-id="1795285865309" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./covers/c_1795285865309.jpg" alt="Семья из Приморья оспаривает налог на выигрыш в казино" loading="lazy"><div><div class="news-meta"><span class="badge-cat">Законы и Власть</span><span>Владивосток</span><span>• Сегодня, 04:31</span><span class="badge-age">18+</span></div><h3 class="news-title">Семья из Приморья оспаривает налог на выигрыш в казино</h3><p class="news-excerpt">Жители Приморского края столкнулись с неожиданной проблемой: им пришёл налог на выигрыш в казино, который они, по их словам, никогда не получали....</p></div></article><article class="news-card" data-id="1795285859511" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./covers/c_1795285859511.jpg" alt="Владивостокская мэрия не нашла банк для кредита в 400 млн рублей" loading="lazy"><div><div class="news-meta"><span class="badge-cat">Город и ЖКХ</span><span>Владивосток</span><span>• Сегодня, 04:30</span><span class="badge-age">0+</span></div><h3 class="news-title">Владивостокская мэрия не нашла банк для кредита в 400 млн рублей</h3><p class="news-excerpt">Администрация Владивостока столкнулась с трудностями в поиске банка, готового предоставить кредит в размере 400 миллионов рублей. Мэрия планирова...</p></div></article><article class="news-card" data-id="1795285852960" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./covers/c_1795285852960.jpg" alt="Рыбаки рискуют на тонком льду в Тавричанке" loading="lazy"><div><div class="news-meta"><span class="badge-cat">Спорт</span><span>Тавричанка</span><span>• Сегодня, 04:30</span><span class="badge-age">0+</span></div><h3 class="news-title">Рыбаки рискуют на тонком льду в Тавричанке</h3><p class="news-excerpt">В Тавричанке, расположенной в Приморском крае, стартовал сезон подлёдной рыбалки, несмотря на то, что лёд ещё не успел окрепнуть. На тонкой ледян...</p></div></article><article class="news-card" data-id="1795285840096" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./covers/c_1795285840096.jpg" alt="Автопарковка беспилотника: 868 попыток за ночь" loading="lazy"><div><div class="news-meta"><span class="badge-cat">Город и ЖКХ</span><span>Владивосток</span><span>• Сегодня, 04:30</span><span class="badge-age">0+</span></div><h3 class="news-title">Автопарковка беспилотника: 868 попыток за ночь</h3><p class="news-excerpt">Недавний случай с беспилотным электромобилем в Китае привлек внимание общественности, когда автомобиль 868 раз пытался припарковаться, пока его в...</p></div></article></main>
+  <aside>
+    <div class="widget">
+      <div class="widget-title">Погода: <span id="w-name">Владивосток</span></div>
+      <div class="w-row"><span>Сейчас</span><strong id="w-now">-8°C ☀</strong></div>
+      <div class="w-row"><span>Утром</span><strong id="w-m">-8°C</strong></div>
+      <div class="w-row"><span>Днём</span><strong id="w-d">-4°C</strong></div>
+      <div class="w-row"><span>Вечером</span><strong id="w-e">-2°C</strong></div>
+      <div class="w-row"><span>Завтра</span><strong id="w-t">+4°C</strong></div>
+    </div>
+    <div class="widget">
+      <div class="widget-title">Курсы ЦБ РФ</div>
+      <div class="w-row"><span>Доллар (USD)</span><strong>82.2 ₽</strong></div>
+      <div class="w-row"><span>Евро (EUR)</span><strong>90.3 ₽</strong></div>
+      <div class="w-row"><span>Юань (CNY)</span><strong>12.3 ₽</strong></div>
+      <div class="w-row"><span>100 Иен (JPY)</span><strong>51.5 ₽</strong></div>
+    </div>
+    <div class="widget">
+      <div class="widget-title">Экстренные службы края</div>
+      <div class="w-row"><span>Служба спасения</span><strong>112</strong></div>
+      <div class="w-row"><span>ГИБДД Приморья</span><strong>231-09-08</strong></div>
+      <div class="w-row"><span>ЕДДС Владивостока</span><strong>222-23-33</strong></div>
+      <div class="w-row"><span>Примводоканал</span><strong>200-5-777</strong></div>
+    </div>
+    <div class="widget">
+      <div class="widget-title">Каналы редакции</div>
+      <div class="w-row"><a href="https://t.me" target="_blank">✈ Telegram-канал ЧП</a><strong>→</strong></div>
+      <div class="w-row"><a href="https://max.ru" target="_blank">💬 Канал в МАКС</a><strong>→</strong></div>
+    </div>
+  </aside>
+</div>
+
+<div id="modal" class="modal" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <strong style="color:var(--red)">ПРИМ_ДОЗОР • 18+</strong>
+      <button class="soc-pill" onclick="document.getElementById('modal').style.display='none'">✕ Закрыть</button>
+    </div>
+    <div id="m-body"></div>
   </div>
+</div>
 
-  <nav class="tabs">
-    <button class="tab active" onclick="setCat('all', this)">Главное</button>
-    <button class="tab" onclick="setCat('chp', this)">🚨 ЧП</button>
-    <button class="tab" onclick="setCat('city', this)">🏙 Город и ЖКХ</button>
-    <button class="tab" onclick="setCat('law', this)">🏛 Власть</button>
-    <button class="tab" onclick="setCat('svo', this)">🇷🇺 СВО</button>
-    <button class="tab" onclick="setCat('family', this)">👨‍👩‍👧 Общество</button>
-    <button class="tab" onclick="setCat('sport', this)">🏆 Спорт</button>
-  </nav>
+<div id="ck" class="cookie-bar">
+  <span>🍪 Используем cookie и Яндекс.Метрику (152-ФЗ).</span>
+  <button class="btn-cta" onclick="localStorage.setItem('ck','1');document.getElementById('ck').style.display='none'">ОК</button>
+</div>
 
-  <div class="grid">
-    <aside class="side-left">
-      <div class="box">
-        <h3>Погода: <span id="w-city-name">Владивосток</span></h3>
-        <div class="row"><span>Сейчас</span><strong id="w-now">--°C</strong></div>
-        <div class="row"><span>Утром</span><strong id="w-morning">--°C</strong></div>
-        <div class="row"><span>Днём</span><strong id="w-day">--°C</strong></div>
-        <div class="row"><span>Вечером</span><strong id="w-evening">--°C</strong></div>
-        <div class="row"><span>Завтра</span><strong id="w-tomorrow">--°C</strong></div>
-Отключения ЖКХ
+<footer class="site-footer">
+  <div class="wrap">© 2026 Прим_Дозор (18+). Региональный портал Приморского края. <a href="/legal.html" style="text-decoration:underline;">Правовая информация и 152-ФЗ</a></div>
+</footer>
 
-Сети краяШтатно
-
-
-Загрузка ленты...
-Курсы ЦБ РФ
-USD-- ₽
-EUR-- ₽
-CNY-- ₽
-100 JPY-- ₽
-Экстренные службы
-Служба спасения112
-ГИБДД Приморья231-09-08
-ЕДДС Владивостока222-23-33
-Примводоканал200-5-777
-О портале (18+)
-
-Возрастная маркировка 18+ (436-ФЗ). Информационный портал Приморского края.
-
-Политика 152-ФЗ и правила →
-
-
-
-
-ПРИМ_ДОЗОР • 18+
-✕ Закрыть
-
-
-
-🍪 Мы используем cookie и Яндекс.Метрику (152-ФЗ). Подробнее
-ОК
-© 2026 Прим_Дозор (18+). Приморский край. Правовая информация и 152-ФЗ
-
-<li><a href="/news/1795279172394.html">Федеральный МРОТ растёт: как изменятся зарплаты и пособия с 1 января 2027 года</a> — Россия</li><li><a href="/news/1795279142264.html">Погиб работник железной дороги в Приморском крае при падении укладочного крана</a> — Владивосток</li><li><a href="/news/1795279115343.html">⚖️ Жительницу Приморья будут судить за истязание и угрозу ножом десятилетней дочери</a> — Хасанский округ, Приморский край</li><li><a href="/news/1795278268078.html">Жительница Комсомольска обвинена в убийстве в Владивостоке: назначено заключение</a> — Владивосток</li><li><a href="/news/1795278227671.html">Прокуратура проверяет пожар в цехе по переработке сои в Уссурийском округе</a> — Село Степное, Уссурийский округ, Приморский край</li><li><a href="/news/1795278213644.html">Прокуратура проверит жалобы на отопление во Владивостоке</a> — Владивосток</li><li><a href="/news/1795278059277.html">Ветеран МВД завоевал 9 золотых медалей и 4 мировых рекорда на Кубке мира по силовому</a> — Благовещенск, Приморский край</li><li><a href="/news/1795275513370.html">Ключевые объекты Находки в фокусе: от удобрений до новых фасадов</a> — Находка</li><li><a href="/news/1795275498778.html">Четыре новых объекта здравоохранения планируем построить во Владивостоке и Уссурийске</a> — Владивосток, Уссурийск</li><li><a href="/news/1795275473019.html">Полиция Приморья призывает граждан к ответственности за нарушение родительских обязанностей</a> — Приморский край</li><li><a href="/news/1795274851059.html">Владивосток обсудил строительство технопарка, кампуса ДВФУ и центра «Океан‑2»</a> — Владивосток</li><li><a href="/news/1795274833529.html">⚡️ Во Владивостоке завершено расследование дела о бывшем руководителе организации</a> — Владивосток</li><li><a href="/news/1795274806655.html">Владивосток: доследственная проверка по факту смерти мужчины после медицинской помощи</a> — Владивосток</li><li><a href="/news/1795265149616.html">Владивосток: ВТБ разместит новогоднюю ёлку в центре города</a> — Владивосток</li><li><a href="/news/1795265128847.html">Владивостокские школьники «прикрыли» профессии криминалиста, оператора БПЛА и пожарного</a> — Владивосток</li><li><a href="/news/1795264277965.html">Владивосток: 7 мифов о похудении в спортзале, которые развенчал местный тренер</a> — Владивосток</li><li><a href="/news/1795264260092.html">«ОСТОРОЖНО – ОСТРЫЙ УМ!» – еженедельная рубрика мудростей от «Комсомолки» и «СОКРАТ»</a> — Владивосток</li><li><a href="/news/1795263373796.html">Трамп установил жесткий срок для переговоров по Украине, а Сакс отмечает влияние ВПК США</a> — Россия</li><li><a href="/news/1795263318190.html">Киев готовится: 37 млн долларов на уличные туалеты в условиях черного вырубки</a> — Россия</li><li><a href="/news/1795261431022.html">Лантратова направит гуманитарную помощь пострадавшим от украинского удара в Луганске</a> — Россия</li>
-
-
+<script>window.NEWS=[{"id":1795285877347,"date":"Сегодня, 04:31","cat":"chp","catLabel":"ЧП и 112","city":"Владивосток","age":"18+","title":"Владивостокская женщина обвинила знакомых в изнасиловании и распространении видео","tldr":"• Женщина подала заявление в полицию • Инцидент произошёл в 2018 году","text":"Жительница Владивостока обратилась в правоохранительные органы с обвинениями в адрес троих знакомых, которых она обвиняет в групповом изнасиловании и распространении интимного видео. По словам пострадавшей, инцидент произошёл ещё в 2018 году, когда её бывший партнёр пригласил её на встречу. Женщина утверждает, что во время встречи её принудили к сексуальным действиям, а затем записали это на видео. После этого, по её словам, видео было распространено среди знакомых, что нанесло ей значительный моральный ущерб. В настоящее время следственные органы начали проверку по данному факту, и женщина надеется на справедливое разбирательство. Ситуация вызывает широкий резонанс в обществе, и многие жители Владивостока выражают поддержку пострадавшей.","src":"","cover":"covers/c_1795285877347.jpg"},{"id":1795285871495,"date":"Сегодня, 04:31","cat":"chp","catLabel":"ЧП и 112","city":"Владивосток","age":"18+","title":"В Приморье священник разыскивается за сексуальные домогательства","tldr":"• Священник из села Владимиро-Александровское объявлен в розыск • Подозревается в домогательствах к детям","text":"В Приморском крае разразился скандал, связанный с настоятелем храма в селе Владимиро-Александровское, Андреем Гречишниковым, который объявлен в розыск. Семья девочки, ставшей жертвой домогательств, подала заявление в правоохранительные органы. По предварительным данным, священник подозревается в совершении насильственных действий сексуального характера, и не исключено, что его жертвами могли стать не только дети.\n\nСогласно информации, в деле есть четыре свидетеля, которые готовы подтвердить факты домогательств. После того как Гречишников узнал о намерении семьи подать заявление, он исчез вместе с супругой, предварительно сняв деньги со своих банковских счетов. В настоящее время его местонахождение неизвестно, и правоохранительные органы активно занимаются его поисками.\n\nПолиция и Следственный комитет России продолжают расследование данного дела. Родные пострадавшей девочки надеются, что огласка поможет не только в поисках священника, но и в выявлении других возможных жертв, которые могли молчать о своих переживаниях в течение многих лет.","src":"","cover":"covers/c_1795285871495.jpg"},{"id":1795285865309,"date":"Сегодня, 04:31","cat":"law","catLabel":"Законы и Власть","city":"Владивосток","age":"18+","title":"Семья из Приморья оспаривает налог на выигрыш в казино","tldr":"• Семья получила налог за несуществующий выигрыш • Обращение в ФНС и прокуратуру","text":"Жители Приморского края столкнулись с неожиданной проблемой: им пришёл налог на выигрыш в казино, который они, по их словам, никогда не получали. В сентябре 2026 года супруге пришло уведомление о начислении налога в размере 48 тысяч рублей за выигрыш, который якобы был получен в 2021 году в казино «Шамбала». Семья утверждает, что хотя и посещала это заведение, но не выигрывала указанной суммы.\n\nМужчина уже платил налог в 2022 году в размере 8 тысяч рублей за свои предыдущие визиты в казино, но теперь не понимает, откуда взялась новая сумма. Он обратился в Федеральную налоговую службу (ФНС) с просьбой разъяснить ситуацию и запросил у казино детализацию выигрышей. По словам его жены, сотрудники казино признали возможность сбоя в системе, но до сих пор не предоставили необходимые документы, хотя прошло уже более месяца.\n\nСемья не намерена оставлять ситуацию без внимания и ищет других посетителей казино, которые могли столкнуться с аналогичными начислениями. Они планируют совместно обратиться к юристу и в прокуратуру для защиты своих прав. Позиция казино и налоговых органов пока остается неизвестной.","src":"","cover":"covers/c_1795285865309.jpg"},{"id":1795285859511,"date":"Сегодня, 04:30","cat":"city","catLabel":"Город и ЖКХ","city":"Владивосток","age":"0+","title":"Владивостокская мэрия не нашла банк для кредита в 400 млн рублей","tldr":"• Мэрия искала кредит на 400 млн рублей • Аукцион не состоялся из-за отсутствия заявок","text":"Администрация Владивостока столкнулась с трудностями в поиске банка, готового предоставить кредит в размере 400 миллионов рублей. Мэрия планировала открыть кредитную линию на три года, чтобы покрыть дефицит городского бюджета. За использование этих средств власти были готовы заплатить до 180 миллионов рублей в виде процентов. Однако, несмотря на такое щедрое предложение, ни один банк не проявил интереса к участию в аукционе, что привело к его отмене. \n\nОтсутствие заявок на аукцион ставит городские власти в сложное положение, так как теперь им необходимо искать альтернативные способы для закрытия бюджетной дыры. В условиях финансовой нестабильности и высоких требований к кредитам, мэрия Владивостока оказалась без необходимых ресурсов для решения актуальных проблем. \n\nВ дальнейшем городским властям предстоит разработать новые стратегии для привлечения финансирования и повышения бюджетной устойчивости. Важно найти эффективные решения, чтобы обеспечить выполнение социальных обязательств и развитие городской инфраструктуры.","src":"","cover":"covers/c_1795285859511.jpg"},{"id":1795285852960,"date":"Сегодня, 04:30","cat":"sport","catLabel":"Спорт","city":"Тавричанка","age":"0+","title":"Рыбаки рискуют на тонком льду в Тавричанке","tldr":"• В Тавричанке начался сезон подлёдной рыбалки • Рыбаки игнорируют опасность","text":"В Тавричанке, расположенной в Приморском крае, стартовал сезон подлёдной рыбалки, несмотря на то, что лёд ещё не успел окрепнуть. На тонкой ледяной корке уже можно увидеть первых рыбаков, которые, похоже, предпочитают ранний улов риску для своей безопасности. Ситуация вызывает беспокойство, так как выход на неокрепший лёд может быть смертельно опасен. Внешне лёд может казаться прочным, однако его структура не всегда способна выдержать вес человека.\n\nМестные жители и специалисты по безопасности настоятельно призывают рыбаков проявлять осторожность и не выходить на лёд до тех пор, пока он не станет достаточно крепким. Важно помнить, что каждую зиму происходят несчастные случаи, связанные с падением людей под лёд, и многие из них могли бы быть предотвращены, если бы рыбаки более ответственно подходили к оценке условий.\n\nНесмотря на предупреждения, некоторые рыбаки продолжают игнорировать риски, надеясь на удачу. С приближением весны количество таких смельчаков может возрасти, что вызывает дополнительные опасения у местных властей и спасательных служб. Важно, чтобы все участники зимней рыбалки осознавали риски и принимали меры предосторожности, чтобы избежать трагедий.","src":"","cover":"covers/c_1795285852960.jpg"},{"id":1795285840096,"date":"Сегодня, 04:30","cat":"city","catLabel":"Город и ЖКХ","city":"Владивосток","age":"0+","title":"Автопарковка беспилотника: 868 попыток за ночь","tldr":"• Беспилотный электромобиль сделал 868 попыток парковки • Владелец спал во время этого процесса","text":"Недавний случай с беспилотным электромобилем в Китае привлек внимание общественности, когда автомобиль 868 раз пытался припарковаться, пока его владелец мирно спал. Это событие подняло вопросы о надежности и эффективности систем автоматической парковки, которые становятся все более распространенными в современных автомобилях. В течение ночи система парковки неоднократно активировала одну и ту же функцию, что оставляет много вопросов о причинах такого поведения.\n\nНесмотря на высокие технологии, которые используются в беспилотных автомобилях, подобные инциденты подчеркивают необходимость дальнейших исследований и улучшений в области автоматизации. Как показал этот случай, даже самые современные системы могут столкнуться с непредвиденными ситуациями, которые могут привести к неэффективности или даже сбоям в работе.\n\nВладельцы беспилотных автомобилей должны быть внимательны и осведомлены о возможных проблемах, связанных с автоматическими системами. Этот случай также ставит под сомнение уровень доверия, который пользователи могут оказать технологиям, которые еще не достигли полной зрелости. Важно помнить, что технологии продолжают развиваться, и подобные инциденты могут стать стимулом для улучшения существующих систем.","src":"","cover":"covers/c_1795285840096.jpg"}];window.WEATHER=[{"name":"Владивосток","now":"-8°C ☀","morning":"-8°C","day":"-4°C","evening":"-2°C","tomorrow":"+4°C"},{"name":"Уссурийск","now":"-13°C ☀","morning":"-14°C","day":"-4°C","evening":"-7°C","tomorrow":"+3°C"},{"name":"Находка","now":"-14°C ☀","morning":"-14°C","day":"-2°C","evening":"-7°C","tomorrow":"+6°C"},{"name":"Артём","now":"-16°C ☀","morning":"-19°C","day":"-5°C","evening":"-10°C","tomorrow":"+4°C"},{"name":"Большой Камень","now":"-12°C ☁","morning":"-12°C","day":"-4°C","evening":"-7°C","tomorrow":"+5°C"}];</script>
+<script src="/app.js?v=6"></script>
+</body>
+</html>
