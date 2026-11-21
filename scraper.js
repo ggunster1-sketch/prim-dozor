@@ -1,4 +1,5 @@
 const fs = require('fs');
+const https = require('https');
 
 const LT = String.fromCharCode(60);
 const GT = String.fromCharCode(62);
@@ -15,6 +16,37 @@ function stripTags(str) {
     .replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function getPage(url, redirects = 0) {
+  return new Promise((resolve, reject) => {
+    if (redirects > 4) return reject(new Error('Too many redirects'));
+    const req = https.get(url, {
+      family: 4,
+      timeout: 9000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ru-RU,ru;q=0.9'
+      }
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        const nextUrl = res.headers.location.startsWith('http') ? res.headers.location : new URL(res.headers.location, url).href;
+        res.resume();
+        return resolve(getPage(nextUrl, redirects + 1));
+      }
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error('HTTP ' + res.statusCode));
+      }
+      let data = '';
+      res.setEncoding('utf8');
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => resolve(data));
+    });
+    req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+    req.on('error', reject);
+  });
 }
 
 function isAdOrSpam(text) {
@@ -37,16 +69,11 @@ async function fetchTelegram(tgList) {
   }
 
   let okPages = 0;
+  let firstErr = '';
+
   for (const src of tgList) {
     try {
-      const url = 'https://t.me' + src.id;
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
-        }
-      });
-      if (!res.ok) continue;
-      const html = await res.text();
+      const html = await getPage('https://t.me' + src.id);
       if (html.includes('tgme_widget_message_wrap')) okPages++;
 
       const blocks = html.split('tgme_widget_message_wrap').slice(-6);
@@ -80,11 +107,13 @@ async function fetchTelegram(tgList) {
         });
       }
       if (maxPostNum > 0) state[src.id] = maxPostNum;
-    } catch (e) {}
+    } catch (e) {
+      if (!firstErr) firstErr = src.id + ': ' + e.message;
+    }
   }
 
   fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
-  console.log('Telegram каналов доступно: ' + okPages + ', постов собрано: ' + out.length);
+  console.log('Telegram каналов доступно: ' + okPages + ', постов собрано: ' + out.length + (firstErr ? ' (пример ошибки: ' + firstErr + ')' : ''));
   return out;
 }
 
@@ -92,16 +121,7 @@ async function fetchFeeds(rssList) {
   const out = [];
   for (const f of rssList) {
     try {
-      const res = await fetch(f.url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
-        }
-      });
-      if (!res.ok) {
-        console.log('RSS недоступен (' + res.status + '): ' + f.name);
-        continue;
-      }
-      const xml = await res.text();
+      const xml = await getPage(f.url);
       const items = xml.split(/<item[\s>]/i).slice(1, 12);
 
       for (const rawItem of items) {
@@ -125,7 +145,7 @@ async function fetchFeeds(rssList) {
         });
       }
     } catch (e) {
-      console.log('RSS ошибка (' + f.name + '): ' + e.message);
+      console.log('RSS (' + f.name + '): ' + e.message);
     }
   }
   console.log('Из RSS-лент собрано: ' + out.length);
@@ -133,7 +153,12 @@ async function fetchFeeds(rssList) {
 }
 
 async function collectAllNews() {
-  const cfg = JSON.parse(fs.readFileSync('sources.json', 'utf8'));
+  let cfg = { tg: [], rss: [] };
+  try {
+    cfg = JSON.parse(fs.readFileSync('sources.json', 'utf8'));
+  } catch (e) {
+    console.log('Ошибка чтения sources.json: ' + e.message);
+  }
   const tgItems = await fetchTelegram(cfg.tg || []);
   const rssItems = await fetchFeeds(cfg.rss || []);
   return tgItems.concat(rssItems);
