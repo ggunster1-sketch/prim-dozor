@@ -63,7 +63,8 @@ async function fetchWeatherAndRates() {
     { name: 'Большой Камень', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' }
   ];
   try {
-    const wRaw = await getHttp('https://open-meteo.com');
+    const wUrl = ['https:', '', 'api.open-meteo.com', 'v1', 'forecast?latitude=43.1155,43.7972,42.8241,43.3592,43.1128&longitude=131.8855,131.9517,132.8928,132.1892,132.3481&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'].join(SLASH);
+    const wRaw = await getHttp(wUrl);
     const list = JSON.parse(wRaw);
     const fmt = v => (v > 0 ? '+' : '') + Math.round(v) + '°C';
     const ico = c => c === 0 ? '☀' : c <= 3 ? '🌤' : (c >= 71 && c <= 77) ? '❄' : c >= 51 ? '🌧' : '☁';
@@ -71,17 +72,18 @@ async function fetchWeatherAndRates() {
       weather = list.map((r, i) => ({
         name: weather[i].name,
         now: fmt(r.current.temperature_2m) + ' ' + ico(r.current.weather_code),
-        morning: fmt(r.hourly.temperature_2m),
-        day: fmt(r.hourly.temperature_2m),
-        evening: fmt(r.hourly.temperature_2m),
-        tomorrow: fmt(r.daily.temperature_2m_max)
+        morning: fmt(r.hourly.temperature_2m.at(8)),
+        day: fmt(r.hourly.temperature_2m.at(14)),
+        evening: fmt(r.hourly.temperature_2m.at(20)),
+        tomorrow: fmt(r.daily.temperature_2m_max.at(1))
       }));
     }
   } catch (e) {}
 
   let rates = { usd: '98.5', eur: '104.2', cny: '13.6', jpy: '64.5' };
   try {
-    const rRaw = await getHttp('https://cbr-xml-daily.ru');
+    const rUrl = ['https:', '', 'www.cbr-xml-daily.ru', 'daily_json.js'].join(SLASH);
+    const rRaw = await getHttp(rUrl);
     const d = JSON.parse(rRaw).Valute;
     rates = {
       usd: (d.USD.Value / d.USD.Nominal).toFixed(1),
@@ -106,7 +108,8 @@ async function rewriteNews(raw) {
   ].join('\n');
 
   try {
-    const res = await fetch('https://polza.ai', {
+    const aiUrl = ['https:', '', 'polza.ai', 'api', 'v1', 'chat', 'completions'].join(SLASH);
+    const res = await fetch(aiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
       body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.4 })
@@ -173,7 +176,8 @@ async function drawCover(post, imgUrl) {
 
 function buildHtml(news, weather, rates) {
   if (!fs.existsSync('news')) fs.mkdirSync('news', { recursive: true });
-  const w0 = weather;
+  const w0 = weather.at(0) || { name: 'Владивосток', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' };
+  const ymUrl = ['https:', '', 'mc.yandex.ru', 'metrika', 'tag.js'].join(SLASH);
 
   for (const p of news) {
     const artHtml = [
@@ -181,16 +185,17 @@ function buildHtml(news, weather, rates) {
       '<title>' + esc(p.title) + ' — Прим_Дозор (' + esc(p.age) + ')</title>',
       '<meta name="description" content="' + esc(p.title) + '">',
       '<link rel="canonical" href="https://' + HOST + '/news/' + p.id + '.html">',
-      '<link rel="stylesheet" href="/style.css"></head><body>',
-      '<header><div class="wrap head-flex"><a href="/" class="logo">ПРИМ_ДОЗОР</a><a href="/" class="pill" style="color:var(--text)">← Все новости</a></div></header>',
-      '<main class="wrap" style="max-width:780px;margin-top:20px"><article class="box" style="padding:22px">',
-      '<div class="meta"><span class="cat">' + esc(p.catLabel) + '</span><span>' + esc(p.city) + '</span><span>• ' + esc(p.date) + '</span><span>' + esc(p.age) + '</span></div>',
+      '<link rel="stylesheet" href="/style.css?v=4"></head><body>',
+      '<header class="site-header"><div class="wrap header-inner"><a href="/" class="brand"><span class="brand-mark">ПРИМ_ДОЗОР</span><span class="brand-age">18+</span></a><a href="/" class="soc-pill">← Все новости</a></div></header>',
+      '<main class="wrap" style="max-width:780px;margin-top:20px"><article class="widget" style="padding:22px">',
+      '<div class="news-meta"><span class="badge-cat">' + esc(p.catLabel) + '</span><span>' + esc(p.city) + '</span><span>• ' + esc(p.date) + '</span><span class="badge-age">' + esc(p.age) + '</span></div>',
       '<h1 style="font-size:24px;line-height:1.3;margin:10px 0 16px">' + esc(p.title) + '</h1>',
-      '<img src="/' + esc(p.cover) + '" alt="' + esc(p.title) + '" style="width:100%;border-radius:10px;margin-bottom:14px">',
-      '<div class="tldr">' + esc(p.tldr).replace(/\n/g, '<br>') + '</div>',
-      '<div style="font-size:16px;white-space:pre-line;line-height:1.75">' + esc(p.text) + '</div>',
-      '<p style="font-size:12px;color:var(--muted);margin-top:14px">' + esc(p.src || '') + '</p></article></main>',
-      '<footer><div class="wrap">© 2026 Прим_Дозор (18+). Приморский край.</div></footer></body></html>'
+'',
+'' + esc(p.tldr).replace(/\n/g, '
+') + '',
+'' + esc(p.text) + '',
+'' + esc(p.src || '') + '',
+'© 2026 Прим_Дозор (18+). Приморский край.'
 ].join('');
 fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
 }
@@ -207,7 +212,7 @@ const page = [
 'Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)',
 '',
 '',
-'(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","yandex.ru","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});',
+'(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","' + ymUrl + '","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});',
 '',
 'Владивосток',
 '' + weather.map((w, idx) => '' + esc(w.name) + '').join('') + '',
@@ -229,15 +234,9 @@ const page = [
 '',
 'ПРИМ_ДОЗОР • 18+✕ Закрыть',
 '🍪 Используем cookie и Яндекс.Метрику (152-ФЗ).ОК',
-'© 2026 Прим_Дозор (18+). Региональный портал Приморского края. Соблюдение 152-ФЗ, 436-ФЗ и ГК РФ.',
-'const NEWS=' + JSON.stringify(news) + ';const WEATHER=' + JSON.stringify(weather) + ';let cCat="all",cCity="all";if(localStorage.getItem("ck"))document.getElementById("ck").style.display="none";',
-'function setWeather(i){const w=WEATHER[i];if(!w)return;document.getElementById("w-top").textContent=w.now;document.getElementById("w-name").textContent=w.name;document.getElementById("w-now").textContent=w.now;document.getElementById("w-m").textContent=w.morning;document.getElementById("w-d").textContent=w.day;document.getElementById("w-e").textContent=w.evening;document.getElementById("w-t").textContent=w.tomorrow;}',
-'function renderFeed(){const list=NEWS.filter(n=>(cCat==="all"||n.cat===cCat)&&(cCity==="all"||n.city.includes(cCity)));document.getElementById("feed").innerHTML=list.map((n,i)=>{const lead=n.text.replace(/\s+/g," ").slice(0,145);return i===0?"<article class=\"hero\" onclick=\"openArt('"+n.id+"')\"><img src=\"./"+n.cover+"\"><div class=\"hero-body\"><div class=\"meta\"><span class=\"cat\">"+n.catLabel+""+n.city+"• "+n.date+""+n.age+""+n.title+"<p class=\"lead\">"+lead+"...":"<article class=\"item\" onclick=\"openArt('"+n.id+"')\"><img src=\"./"+n.cover+"\"><div class=\"meta\"><span class=\"cat\">"+n.catLabel+""+n.city+"• "+n.date+""+n.age+""+n.title+"<p class=\"lead\">"+lead+"...";}).join("");}',
-'function filterCat(c,btn){cCat=c;document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderFeed();}',
-'function filterCity(c){cCity=c;renderFeed();}',
-'function openArt(id){const n=NEWS.find(x=>String(x.id)===String(id));if(!n)return;document.getElementById("m-body").innerHTML="<div class=\"meta\"><span class=\"cat\">"+n.catLabel+""+n.city+"• "+n.date+""+n.age+"<h1 style=\"font-size:21px;margin:8px 0 12px\">"+n.title+"<img src=\"./"+n.cover+"\" style=\"width:100%;border-radius:10px;margin-bottom:12px\"><div class=\"tldr\">"+n.tldr.replace(/\n/g,"
-")+"<p style=\"white-space:pre-line;line-height:1.7;margin-bottom:14px\">"+n.text+"<p style=\"font-size:12px;color:var(--muted)\">"+(n.src||"")+"";document.getElementById("modal").style.display="flex";}',
-'setInterval(()=>{const vl=new Date(Date.now()+new Date().getTimezoneOffset()*60000+36000000);document.getElementById("clock").textContent="Владивосток "+String(vl.getHours()).padStart(2,"0")+":"+String(vl.getMinutes()).padStart(2,"0");},5000);'
+'© 2026 Прим_Дозор (18+). Региональный портал Приморского края. Правовая информация и 152-ФЗ',
+'window.NEWS=' + JSON.stringify(news) + ';window.WEATHER=' + JSON.stringify(weather) + ';',
+''
 ].join('');
 fs.writeFileSync('index.html', page, 'utf8');
 const urls = ['  https://' + HOST + '/1.0'];
@@ -298,7 +297,8 @@ fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
 buildHtml(news, weather, rates);
 if (added > 0 && INDEXNOW_KEY) {
 try {
-await fetch('yandex.com', {
+const idxUrl = ['https:', '', 'yandex.com', 'indexnow'].join(SLASH);
+await fetch(idxUrl, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + HOST + '/'] })
