@@ -7,28 +7,33 @@ const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '';
 const SITE_HOST = 'primdozor.ru';
 
 const FEEDS = [
-  'https://primamedia.ru',
-  'https://kp.ru',
-  'https://ria.ru',
-  'https://tass.ru'
+  'https://' + 'primamedia.ru' + '/export/new/news_all.rss',
+  'https://' + 'www.kp.ru' + '/rss/allsections.xml',
+  'https://' + 'ria.ru' + '/export/rss2/archive/index.xml',
+  'https://' + 'tass.ru' + '/rss/v2.xml',
+  'https://' + 'lenta.ru' + '/rss/news'
 ];
 
 async function fetchRSS(url) {
   try {
-    const res = await fetch(url, { headers: { 'User-Agent': 'PrimDozorBot/1.0' } });
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36'
+      }
+    });
     if (!res.ok) {
-      console.log(`RSS ошибка ${res.status}: ${url}`);
+      console.log('RSS статус ' + res.status + ': ' + url);
       return [];
     }
     const xml = await res.text();
     const items = [];
     const matches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
     for (const m of matches) {
-      const block = m[1];
+      const block = m;
       const titleMatch = block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) || block.match(/<title>([\s\S]*?)<\/title>/);
       const descMatch = block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/) || block.match(/<description>([\s\S]*?)<\/description>/);
-      const title = titleMatch ? titleMatch[1] : '';
-      const desc = descMatch ? descMatch[1] : '';
+      const title = titleMatch ? titleMatch : '';
+      const desc = descMatch ? descMatch : '';
       if (title) {
         items.push({
           title: title.replace(/<[^>]+>/g, '').trim(),
@@ -36,22 +41,22 @@ async function fetchRSS(url) {
         });
       }
     }
-    console.log(`RSS получено (${items.length}): ${url}`);
+    console.log('RSS получено (' + items.length + '): ' + url);
     return items.slice(0, 6);
   } catch (e) {
-    console.log(`RSS сбой: ${url}`, e.message);
+    console.log('RSS сбой: ' + url, e.message);
     return [];
   }
 }
 
 async function rewriteWithAI(rawItem) {
   if (!AI_KEY) {
-    console.log('ОШИБКА: Не задан секрет AI_API_KEY');
+    console.log('ОШИБКА: Не задан AI_API_KEY');
     return null;
   }
   const prompt = `Ты главный редактор портала «Прим_Дозор» (Владивосток, Приморье, Россия).
-Оцени важность новости от 1 до 10. Приоритет: Приморский край, Владивосток, законы РФ, ЧП, СВО, ЖКХ. Если важность меньше 6 — верни строго слово SKIP.
-Если 6 и выше — перепиши уникальным живым языком в стиле «НТВ ЧП / 112 / Блокнот» со строгим соблюдением законов РФ (УК, КоАП, ГК, 436-ФЗ, без фейков и запрещенных данных).
+Оцени важность новости от 1 до 10. Приоритет: Приморский край, Владивосток, законы РФ, ЧП, СВО, ЖКХ. Если важность меньше 5 — верни строго слово SKIP.
+Если 5 и выше — перепиши уникальным живым языком в стиле «НТВ ЧП / 112 / Блокнот» со строгим соблюдением законов РФ (УК, КоАП, ГК, 436-ФЗ, без фейков и запрещенных данных).
 Верни ответ СТРОГО в формате JSON без markdown:
 {
   "title": "Цепляющий SEO-заголовок (до 90 символов)",
@@ -66,9 +71,9 @@ async function rewriteWithAI(rawItem) {
 Исходник: ${rawItem.title}. ${rawItem.desc}`;
 
   const endpoints = [
-    { url: 'https://polza.ai', model: 'openai/gpt-4o-mini' },
-    { url: 'https://polza.ai', model: 'openai/gpt-4o-mini' },
-    { url: 'https://vsegpt.ru', model: 'openai/gpt-4o-mini' }
+    { url: 'https://' + 'polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-4o-mini' },
+    { url: 'https://' + 'api.polza.ai' + '/api/v1/chat/completions', model: 'openai/gpt-4o-mini' },
+    { url: 'https://' + 'api.vsegpt.ru' + '/v1/chat/completions', model: 'openai/gpt-4o-mini' }
   ];
 
   for (const ep of endpoints) {
@@ -77,7 +82,7 @@ async function rewriteWithAI(rawItem) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${AI_KEY}`
+          'Authorization': 'Bearer ' + AI_KEY
         },
         body: JSON.stringify({
           model: ep.model,
@@ -86,16 +91,16 @@ async function rewriteWithAI(rawItem) {
         })
       });
       if (!res.ok) {
-        console.log(`AI статус ${res.status} на ${ep.url}`);
+        console.log('AI статус ' + res.status + ' на ' + ep.url);
         continue;
       }
       const data = await res.json();
-      const content = data.choices?.[0]?.message?.content?.trim();
+      const content = data.choices?.?.message?.content?.trim();
       if (!content || content.includes('SKIP')) return null;
       const cleanJson = content.replace(/^```json|```$/g, '').trim();
       return JSON.parse(cleanJson);
     } catch (e) {
-      console.log(`AI ошибка на ${ep.url}:`, e.message);
+      console.log('AI ошибка на ' + ep.url + ':', e.message);
     }
   }
   return null;
@@ -103,12 +108,16 @@ async function rewriteWithAI(rawItem) {
 
 async function sendToTelegram(news) {
   if (!TG_TOKEN) {
-    console.log('ОШИБКА: Не задан секрет TG_BOT_TOKEN');
+    console.log('ОШИБКА: Не задан TG_BOT_TOKEN');
     return;
   }
-  const caption = `${news.catLabel} | ${news.city} (${news.age})\n\n<b>${news.title}</b>\n\n${news.text}\n\n🌐 Полная картина: https://www.primdozor.ru\n💬 Мы в Макс: https://max.ru\n✈️ Подписаться: @prim_dozor`;
+  const tgApiUrl = 'https://' + 'api.telegram.org' + '/bot' + TG_TOKEN + '/sendMessage';
+  const maxLink = 'https://' + 'max.ru' + '/join/RyxItD9MEitACdZjmI88YZkBI2ps78Qq3iMW0sBJcoE';
+  const siteLink = 'https://' + 'www.primdozor.ru';
+  const caption = `${news.catLabel} | ${news.city} (${news.age})\n\n<b>${news.title}</b>\n\n${news.text}\n\n🌐 Полная картина: ${siteLink}\n💬 Мы в Макс: ${maxLink}\n✈️ Подписаться: @prim_dozor`;
+
   try {
-    const res = await fetch(`https://telegram.org{TG_TOKEN}/sendMessage`, {
+    const res = await fetch(tgApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -119,7 +128,11 @@ async function sendToTelegram(news) {
       })
     });
     const tgData = await res.json();
-    if (!tgData.ok) console.log('Telegram ошибка:', tgData.description);
+    if (tgData.ok) {
+      console.log('Отправлено в Telegram: ' + news.title);
+    } else {
+      console.log('Telegram ошибка:', tgData.description);
+    }
   } catch (e) {
     console.log('Telegram сбой:', e.message);
   }
@@ -148,14 +161,14 @@ function updateSitemap() {
 async function pingIndexNow() {
   if (!INDEXNOW_KEY) return;
   try {
-    await fetch('https://yandex.com', {
+    await fetch('https://' + 'yandex.com' + '/indexnow', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify({
-        host: `www.${SITE_HOST}`,
+        host: 'www.' + SITE_HOST,
         key: INDEXNOW_KEY,
-        keyLocation: `https://www.${SITE_HOST}/${INDEXNOW_KEY}.txt`,
-        urlList: [`https://www.${SITE_HOST}/`]
+        keyLocation: 'https://www.' + SITE_HOST + '/' + INDEXNOW_KEY + '.txt',
+        urlList: ['https://www.' + SITE_HOST + '/']
       })
     });
   } catch (e) {}
@@ -172,7 +185,7 @@ async function run() {
     const items = await fetchRSS(f);
     candidates = candidates.concat(items);
   }
-  console.log(`Всего кандидатов из RSS: ${candidates.length}`);
+  console.log('Всего кандидатов из RSS: ' + candidates.length);
 
   let added = 0;
   for (const item of candidates) {
@@ -208,7 +221,7 @@ async function run() {
   fs.writeFileSync('news.json', JSON.stringify(existing.slice(0, 60), null, 2), 'utf8');
   updateSitemap();
   if (added > 0) await pingIndexNow();
-  console.log(`Опубликовано новых материалов: ${added}`);
+  console.log('Опубликовано новых материалов: ' + added);
 }
 
 run();
