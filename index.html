@@ -4,19 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Прим_Дозор — Главные новости Владивостока, Приморья и России 24/7</title>
-  <meta name="description" content="Оперативные новости Владивостока, Приморского края и России 24/7: ЧП, криминал, ЖКХ, отключения света и воды, погода, мосты, законы РФ.">
-  <meta name="yandex-verification" content="4ff5849c5d803c0e" />
-  <meta name="yandex-verification" content="0dc10018fffed4cc" />
+  <meta name="description" content="Оперативные новости Владивостока, Приморского края и России 24/7: ЧП, криминал, ЖКХ, погода, мосты, законы РФ.">
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
 </head>
 <body>
-
   <div class="top-bar">
     <div class="container top-flex">
       <div>
         <span class="live-pill">● ВЛАДИВОСТОК <span id="clock">00:00</span></span>
-        <span style="margin-left:10px;">Город:
+        <span style="margin-left:10px;">
           <select id="city-sel" onchange="selectWeatherCity(this.selectedIndex)">
             <option value="0">Владивосток +2°C ☀</option>
             <option value="1">Большой Камень +1°C 🌤</option>
@@ -35,167 +32,29 @@
     <div class="container head-flex">
       <div>
         <a href="https://primdozor.ru" class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></a>
-        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Главный надзор Приморья и России 24/7</div>
+        <span style="font-size:12px; color:var(--muted); margin-left:10px;">Независимый надзор Приморья 24/7</span>
       </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <a href="https://t.me" target="_blank" rel="noopener" class="btn">✈ Telegram</a>
         <button type="button" class="btn" onclick="document.body.classList.toggle('big-font')">А+</button>
         <button type="button" class="btn" onclick="document.body.classList.toggle('dark')">🌓</button>
-        <button type="button" class="btn" onclick="openModal('adv-modal')">📢 Реклама и тендеры</button>
-        <button type="button" class="btn btn-red" onclick="openModal('rep-modal')">+ Прислать ЧП</button>
+        <button type="button" class="btn" onclick="openModal('pub-modal')">✍️ Статья</button>
+        <button type="button" class="btn btn-red" onclick="openModal('rep-modal')">+ ЧП</button>
       </div>
     </div>
   </header>
 
-  <div class="ticker">
-    <div class="container"><span class="ticker-tag">⚡ МОЛНИЯ</span><span id="holiday-ticker">Оперативные сводки Приморья, законы РФ, отключения ЖКХ и новости 24/7</span></div>
-  </div>
-
   <div class="container">
-    <div class="box" style="margin-top:14px; border-left:4px solid var(--red); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <div>
-        <strong id="season-title">🍂 Осень в Приморском крае</strong>
-        <div id="season-desc" style="font-size:13px; color:var(--muted); margin-top:2px;">Контроль запуска отопления в городах и сёлах края, дорожная обстановка и осенняя путина.</div>
-      </div>
-      <span id="holiday-badge" class="cat-tag">Приморье 24/7</span>
-    </div>
-
-    <div class="socials">
-      <div style="font-size:14px; font-weight:700; color:var(--muted);">📲 Читайте «Прим_Дозор» там, где вам удобно:</div>
-      <div class="soc-grid">
-        <a href="https://t.me" target="_blank" rel="noopener" class="soc-link">✈️ Telegram</a>
-        <a href="https://max.ru" target="_blank" rel="noopener" class="soc-link">💬 Мессенджер Макс</a>
-        <a href="https://dzen.ru" target="_blank" rel="noopener" class="soc-link">⭐ Яндекс Дзен</a>
-        <a href="https://vk.com" target="_blank" rel="noopener" class="soc-link">🌐 ВКонтакте</a>
-      </div>
-    </div>
-
-    <div class="tabs">
-      <button type="button" class="tab active" onclick="setCat('all', this)">🔥 Главное</button>
-      <button type="button" class="tab" onclick="setCat('chp', this)">🚨 ЧП и 112</button>
-      <button type="button" class="tab" onclick="setCat('city', this)">🏙 Город и ЖКХ</button>
-      <button type="button" class="tab" onclick="setCat('law', this)">🏛 Законы и Политика</button>
-      <button type="button" class="tab" onclick="setCat('svo', this)">🇷🇺 СВО и Защитники</button>
-      <button type="button" class="tab" onclick="setCat('family', this)">👨‍👩‍👧 Семья и Медицина</button>
-      <button type="button" class="tab" onclick="setCat('sport', this)">🏆 Спорт и Афиша</button>
-    </div>
-    <div class="grid">
-      <aside>
-        <div class="box">
-          <h3>📍 Города края и РФ</h3>
-          <div style="display:flex; flex-wrap:wrap; gap:6px;">
-            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('all', 0)">Все</button>
-            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Владивосток', 0)">Владивосток</button>
-            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Большой Камень', 1)">Большой Камень</button>
-            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Артём', 2)">Артём</button>
-            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Уссурийск', 3)">Уссурийск</button>
-            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Находка', 4)">Находка</button>
-            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Приморье', 0)">Весь край</button>
-            <button type="button" class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Россия', 0)">Россия</button>
-          </div>
-        </div>
-
-        <div class="box">
-          <h3>🌤 Погода: <span id="w-city-name">Владивосток</span></h3>
-          <div class="row"><span>Утро / День</span><strong id="w-day">0°C / +3°C</strong></div>
-          <div class="row"><span>Вечер</span><strong id="w-eve">+1°C</strong></div>
-          <div class="row"><span>Завтра (днём)</span><strong id="w-tom">+4°C</strong></div>
-        </div>
-
-        <div class="box">
-          <h3>💡 Радар отключений ЖКХ</h3>
-          <div id="outages-list">
-            <div class="row" style="cursor:pointer;" onclick="setCat('city', null)"><span>Владивосток (Чуркин)</span><span style="color:#d97706;font-weight:700;">Плановые работы</span></div>
-            <div class="row" style="cursor:pointer;" onclick="setCat('city', null)"><span>Большой Камень</span><span style="color:var(--green);font-weight:700;">Штатно</span></div>
-            <div class="row" style="cursor:pointer;" onclick="setCat('city', null)"><span>Уссурийск / Находка</span><span style="color:var(--green);font-weight:700;">Без аварий</span></div>
-            <div class="row" style="cursor:pointer;" onclick="setCat('city', null)"><span>Артём</span><span style="color:var(--green);font-weight:700;">Сети штатно</span></div>
-          </div>
-        </div>
-      </aside>
-
-      <main>
-        <div id="feed"></div>
-      </main>
-
-      <aside>
-        <div class="box">
-          <h3>☎️ Службы и больницы края</h3>
-          <div class="row"><span>Служба спасения</span><a href="tel:112" style="color:var(--red);font-weight:700;">112</a></div>
-          <div class="row"><span>Полиция (УМВД)</span><a href="tel:102" style="color:var(--blue);font-weight:700;">102</a></div>
-          <div class="row"><span>Скорая помощь</span><a href="tel:103" style="color:var(--red);font-weight:700;">103</a></div>
-          <div class="row"><span>Единая справка больниц ПК</span><a href="tel:122" style="color:var(--blue);font-weight:700;">122</a></div>
-          <div class="row"><span>ЕДДС Владивостока</span><a href="tel:84232222333" style="color:var(--blue);font-weight:700;">222-23-33</a></div>
-          <div class="row"><span>ЕДДС Артёма</span><a href="tel:84233742533" style="color:var(--blue);font-weight:700;">4-25-33</a></div>
-          <div class="row"><span>ЕДДС Уссурийска</span><a href="tel:84234321112" style="color:var(--blue);font-weight:700;">32-11-12</a></div>
-          <div class="row"><span>ЕДДС Находки</span><a href="tel:84236692151" style="color:var(--blue);font-weight:700;">69-21-51</a></div>
-          <div class="row"><span>ЕДДС Большого Камня</span><a href="tel:84233551555" style="color:var(--blue);font-weight:700;">5-15-55</a></div>
-          <div class="row"><span>Примводоканал (аварии)</span><a href="tel:84232005777" style="color:var(--blue);font-weight:700;">200-57-77</a></div>
-          <div class="row"><span>Свет: ДРСК / ВПЭС</span><a href="tel:88001000397" style="color:var(--blue);font-weight:700;">8-800-1000-397</a></div>
-        </div>
-
-        <div class="box">
-          <h3>🎭 Бесплатная афиша и спорт</h3>
-          <div class="row" style="cursor:pointer;" onclick="setCat('sport', null)"><span>Набережная Спортивная</span><span style="color:var(--blue);">Прогулки, спорт</span></div>
-          <div class="row" style="cursor:pointer;" onclick="setCat('sport', null)"><span>Музеи и выставки</span><span style="color:var(--blue);">Дни открытых дверей</span></div>
-          <div class="row" style="cursor:pointer;" onclick="setCat('sport', null)"><span>КСК «Фетисов Арена»</span><span style="color:var(--blue);">Матчи ХК «Адмирал»</span></div>
-          <div class="row" style="cursor:pointer;" onclick="setCat('sport', null)"><span>СК «Олимпиец»</span><span style="color:var(--blue);">Баскетбол / Волейбол</span></div>
-        </div>
-
-        <div class="box" style="border-style:dashed;">
-          <h3>💼 Реклама и тендеры</h3>
-          <p style="font-size:13px; color:var(--muted); margin-bottom:10px;">Нативные публикации и баннеры с маркировкой erid (38-ФЗ).</p>
-          <button type="button" class="btn" style="width:100%;" onclick="openModal('adv-modal')">Оставить заявку</button>
-        </div>
-      </aside>
-    </div>
+    <main>
+      <div id="feed"></div>
+    </main>
   </div>
 
   <footer>
     <div class="container">
       <p><strong>© 2026 Прим_Дозор (18+).</strong> Региональный информационный портал Приморского края.</p>
-      <p style="margin-top:8px;">
-        <a href="legal.html" style="text-decoration:underline; margin-right:12px;">Политика конфиденциальности (152-ФЗ)</a>
-        <a href="legal.html#rules" style="text-decoration:underline; margin-right:12px;">Правила публикации</a>
-        <a href="mailto:prim_dozor@internet.ru" style="text-decoration:underline;">Редакция: prim_dozor@internet.ru</a>
-      </p>
     </div>
   </footer>
-
-  <div id="art-modal" class="modal" onclick="if(event.target===this)closeModal('art-modal')">
-    <div class="modal-box">
-      <button type="button" class="btn" style="float:right;" onclick="closeModal('art-modal')">✕ Закрыть</button>
-      <div id="art-body"></div>
-    </div>
-  </div>
-
-  <div id="rep-modal" class="modal" onclick="if(event.target===this)closeModal('rep-modal')">
-    <div class="modal-box">
-      <button type="button" class="btn" style="float:right;" onclick="closeModal('rep-modal')">✕</button>
-      <h3 style="margin-bottom:10px;">📢 Прислать новость / Народный контроль</h3>
-      <form onsubmit="event.preventDefault(); alert('Отправлено в редакцию!'); closeModal('rep-modal');">
-        <input class="input" type="text" placeholder="Город или село" required>
-        <textarea class="input" rows="4" placeholder="Опишите ЧП или аварию ЖКХ..." required></textarea>
-        <button class="btn btn-red" type="submit">Отправить</button>
-      </form>
-    </div>
-  </div>
-
-  <div id="adv-modal" class="modal" onclick="if(event.target===this)closeModal('adv-modal')">
-    <div class="modal-box">
-      <button type="button" class="btn" style="float:right;" onclick="closeModal('adv-modal')">✕</button>
-      <h3 style="margin-bottom:10px;">💼 Реклама и тендеры</h3>
-      <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Почта: <strong>prim_dozor@internet.ru</strong></p>
-      <form onsubmit="event.preventDefault(); alert('Заявка принята!'); closeModal('adv-modal');">
-        <input class="input" type="text" placeholder="Компания или ведомство" required>
-        <input class="input" type="text" placeholder="Телефон или Telegram" required>
-        <button class="btn btn-red" type="submit">Отправить заявку</button>
-      </form>
-    </div>
-  </div>
-
-  <div id="cookie-box" class="cookie">
-    <span>Мы используем файлы cookie и Яндекс.Метрику.</span>
-    <button type="button" class="btn btn-red" onclick="acceptCookies()">Согласен</button>
-  </div>
 
   <script src="app.js"></script>
 </body>
