@@ -179,7 +179,7 @@ async function loadOutages() {
     const res = await fetch('./outages.json?v=' + Date.now());
     if (!res.ok) return;
     const list = await res.json();
-        const box = document.getElementById('outages-list');
+            const box = document.getElementById('outages-list');
     if (box && Array.isArray(list)) {
       box.innerHTML = list.map(function(o) {
         return '<div class="row"><span>' + o.district + '</span><strong>' + o.status + '</strong></div>';
@@ -188,11 +188,24 @@ async function loadOutages() {
   } catch (e) {}
 }
 
+function openModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'flex'; }
+function closeModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
+function acceptCookies() { localStorage.setItem('ck', '1'); closeModal('cookie-box'); }
+function selectWeatherCity(idx) {
+  var sel = document.getElementById('city-sel');
+  if (sel) sel.selectedIndex = Number(idx);
+  var names = ['Владивосток', 'Большой Камень', 'Артём', 'Уссурийск', 'Находка'];
+  var nEl = document.getElementById('w-city-name');
+  if (nEl && names[idx]) nEl.textContent = names[idx];
+}
+
 window.addEventListener('DOMContentLoaded', function() {
+  if (localStorage.getItem('ck')) closeModal('cookie-box');
   updateClock();
   setInterval(updateClock, 10000);
   updateSeasonAndHolidays();
   loadNews();
   loadOutages();
 });
+
 
