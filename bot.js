@@ -1,45 +1,14 @@
 const fs = require('fs');
 const { createCanvas, loadImage } = require('canvas');
 const { runWidgets } = require('./widgets');
-const { collectAllNews, stripTags } = require('./scraper');
-const { editArticle, normalizeText } = require('./editor');
+const { collectAllNews } = require('./scraper');
+const { editArticle } = require('./editor');
+const { buildSite } = require('./sitegen');
 
-const TG_TOKEN = (process.env.TG_BOT_TOKEN || '').trim().replace(/^bot/i, '');
-const TG_CHAT = (process.env.TG_CHAT_ID || '@prim_dozor').trim();
-const MAX_TOKEN = (process.env.MAX_BOT_TOKEN || '').trim();
-const MAX_CHAT_ID = (process.env.MAX_CHAT_ID || '').trim();
 const INDEXNOW_KEY = (process.env.INDEXNOW_KEY || '').trim();
 const SITE_HOST = 'primdozor.ru';
-
 const LT = String.fromCharCode(60);
 const GT = String.fromCharCode(62);
-const BR_TAG = LT + 'br' + GT;
-const B_OPEN = LT + 'b' + GT;
-const B_CLOSE = LT + '/b' + GT;
-
-function buildUrl(parts) { return 'https://' + parts.join('/'); }
-function makeLink(url, label) { return LT + 'a href="' + url + '"' + GT + label + LT + '/a' + GT; }
-
-const SITE_URL = buildUrl(['primdozor.ru']);
-const ADMIN_URL = buildUrl(['t.me', 'prim_dozor?direct']);
-const TG_URL = buildUrl(['t.me', 'prim_dozor']);
-const MAX_URL = buildUrl(['max.ru', 'join', 'RyxItD9MEitACdZjmI88YZkBI2ps78Qq3iMW0sBJcoE']);
-
-const TG_FOOTER_HTML =
-  '\n\n🌐 Читайте новости на нашем ' + makeLink(SITE_URL, 'сайте') +
-  '\n\n🔎 Прим_Дозор — жестко фиксируем то, что другие пытаются скрыть.' +
-  '\n\n📲 Вопросы : ' + makeLink(ADMIN_URL, 'связь с админом') +
-  '\n\n🤝 Сотрудничество: prim_dozor@internet.ru' +
-  '\n\n👉 ' + makeLink(TG_URL, 'telegram прим_дозор') +
-  '\n\n👉 ' + makeLink(MAX_URL, 'прим_дозор в Max');
-
-const MAX_FOOTER_MD =
-  '\n\n🌐 Читайте новости на нашем [сайте](' + SITE_URL + ')' +
-  '\n\n🔎 Прим_Дозор — жестко фиксируем то, что другие пытаются скрыть.' +
-  '\n\n📲 Вопросы : [связь с админом](' + ADMIN_URL + ')' +
-  '\n\n🤝 Сотрудничество: prim_dozor@internet.ru' +
-  '\n\n👉 [telegram прим_дозор](' + TG_URL + ')' +
-  '\n\n👉 [прим_дозор в Max](' + MAX_URL + ')';
 
 const PRIM_KEYS = ['примор', 'владивосток', 'уссурийск', 'находк', 'артём', 'артем', 'большой камен', 'большом камн', 'дальневосточ', 'дфо', 'кожемяко', 'шестаков', 'чуркин', 'русский мост', 'золотой мост', 'хасан', 'спасск', 'лесозаводск', 'дальнегорск', 'фокино', 'партизанск', 'арсеньев'];
 const UKR_KEYS = ['украин', 'киев', 'зеленск', 'всу', 'донбасс', 'харьков', 'одесс', 'сво'];
@@ -116,51 +85,10 @@ async function makeCover(post, imgUrl) {
   return file;
 }
 
-async function sendTelegram(post, imgPath) {
-  if (!TG_TOKEN) return;
-  const raw = stripTags((post.tgText || post.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
-  const head = post.catLabel + ' | ' + post.city + ' (' + post.age + ')\n\n' + B_OPEN + post.title + B_CLOSE + '\n\n';
-  const limit = 1015 - head.length - TG_FOOTER_HTML.length;
-  let body = raw;
-  if (body.length > limit) {
-    const cut = body.slice(0, limit);
-    const dot = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('!'), cut.lastIndexOf('?'));
-    body = dot > 140 ? cut.slice(0, dot + 1) : cut.trim() + '...';
-  }
-  const caption = head + body + TG_FOOTER_HTML;
-
-  try {
-    if (imgPath && fs.existsSync(imgPath)) {
-      const form = new FormData();
-      form.append('chat_id', TG_CHAT);
-      form.append('caption', caption);
-      form.append('parse_mode', 'HTML');
-      form.append('photo', new Blob([fs.readFileSync(imgPath)], { type: 'image/png' }), 'cover.png');
-      const r = await fetch(buildUrl(['api.telegram.org', 'bot' + TG_TOKEN, 'sendPhoto']), { method: 'POST', body: form });
-      const d = await r.json();
-      if (d.ok) { console.log('В Telegram отправлен 1 единый пост: ' + post.title); return; }
-    }
-    await fetch(buildUrl(['api.telegram.org', 'bot' + TG_TOKEN, 'sendMessage']), {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: TG_CHAT, text: caption, parse_mode: 'HTML', disable_web_page_preview: true })
-    });
-  } catch (e) {}
-}
-
-async function sendMax(post) {
-  if (!MAX_TOKEN || !MAX_CHAT_ID) return;
-  const clean = stripTags((post.fullText || post.text || '').replace(new RegExp(BR_TAG, 'gi'), '\n'));
-  const text = post.catLabel + ' | ' + post.city + ' (' + post.age + ')\n\n**' + post.title + '**\n\n' + clean + MAX_FOOTER_MD;
-  try {
-    await fetch(buildUrl(['platform-api.max.ru', 'messages']) + '?chat_id=' + encodeURIComponent(MAX_CHAT_ID), {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': MAX_TOKEN },
-      body: JSON.stringify({ text: text, format: 'markdown' })
-    });
-  } catch (e) {}
-}
-
 async function run() {
   await runWidgets();
+  buildSite();
+
   let existing = [];
   if (fs.existsSync('news.json')) {
     try { existing = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
@@ -180,7 +108,7 @@ async function run() {
   let added = 0;
 
   for (const item of candidates) {
-    if (added >= 2) break;
+    if (added >= 3) break;
     if (existing.some(e => e.rawTitle === item.title)) continue;
     const isUkr = UKR_KEYS.some(k => (item.title + ' ' + item.desc).toLowerCase().includes(k));
     if (isUkr && !allowSvo) continue;
@@ -203,7 +131,6 @@ async function run() {
       tldr: ai.tldr,
       text: ai.fullText,
       fullText: ai.fullText,
-      tgText: ai.tgText,
       src: (item.official && item.sourceName) ? 'По официальным данным: ' + item.sourceName : ''
     };
 
@@ -213,28 +140,26 @@ async function run() {
     existing.unshift(post);
     blocked.push(post.cat);
     if (post.cat === 'svo' || isUkr) allowSvo = false;
-
-    await sendTelegram(post, post.cover);
-    await sendMax(post);
     added++;
   }
 
-  fs.writeFileSync('news.json', JSON.stringify(existing.slice(0, 60), null, 2), 'utf8');
+  fs.writeFileSync('news.json', JSON.stringify(existing.slice(0, 80), null, 2), 'utf8');
   if (newOutages.length > 0) {
     let out = [];
-if (fs.existsSync('outages.json')) { try { out = JSON.parse(fs.readFileSync('outages.json', 'utf8')); } catch (e) {} }
-fs.writeFileSync('outages.json', JSON.stringify(newOutages.concat(out).slice(0, 6), null, 2), 'utf8');
+    if (fs.existsSync('outages.json')) { try { out = JSON.parse(fs.readFileSync('outages.json', 'utf8')); } catch (e) {} }
+    fs.writeFileSync('outages.json', JSON.stringify(newOutages.concat(out).slice(0, 6), null, 2), 'utf8');
+  }
+  const xml = LT + '?xml version="1.0" encoding="UTF-8"?' + GT + '\n' + LT + 'urlset xmlns="http://sitemaps.org"' + GT + '\n  ' + LT + 'url' + GT + LT + 'loc' + GT + 'https://' + SITE_HOST + '/' + LT + '/loc' + GT + LT + 'lastmod' + GT + new Date().toISOString() + LT + '/lastmod' + GT + LT + '/url' + GT + '\n' + LT + '/urlset' + GT;
+  fs.writeFileSync('sitemap.xml', xml, 'utf8');
+  if (added > 0 && INDEXNOW_KEY) {
+    try {
+      await fetch('https://' + ['yandex.com', 'indexnow'].join('/'), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host: SITE_HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + SITE_HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + SITE_HOST + '/'] })
+      });
+    } catch (e) {}
+  }
+  console.log('Готово. На сайт добавлено полных статей: ' + added);
 }
-const xml = LT + '?xml version="1.0" encoding="UTF-8"?' + GT + '\n' + LT + 'urlset xmlns="sitemaps.org"' + GT + '\n  ' + LT + 'url' + GT + LT + 'loc' + GT + 'https://' + SITE_HOST + '/' + LT + '/loc' + GT + LT + 'lastmod' + GT + new Date().toISOString() + LT + '/lastmod' + GT + LT + '/url' + GT + '\n' + LT + '/urlset' + GT;
-fs.writeFileSync('sitemap.xml', xml, 'utf8');
-if (added > 0 && INDEXNOW_KEY) {
-try {
-await fetch(buildUrl(['yandex.com', 'indexnow']), {
-method: 'POST', headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ host: SITE_HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + SITE_HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + SITE_HOST + '/'] })
-});
-} catch (e) {}
-}
-console.log('Готово. Опубликовано новых материалов: ' + added);
-}
+
 run();
