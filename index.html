@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Прим_Дозор — Главные новости Владивостока, Приморья и России 24/7</title>
-  <meta name="description" content="Оперативные новости Владивостока, Приморского края и России 24/7: ЧП, криминал, ЖКХ, отключения света и воды, погода, мосты, законы РФ и сводки.">
+  <meta name="description" content="Оперативные новости Владивостока, Приморского края и России 24/7: ЧП, криминал, ЖКХ, отключения света и воды, погода, мосты, законы РФ.">
   <meta name="yandex-verification" content="4ff5849c5d803c0e" />
   <meta name="yandex-verification" content="0dc10018fffed4cc" />
   <link rel="stylesheet" href="style.css">
@@ -35,11 +35,11 @@
     <div class="container head-flex">
       <div>
         <a href="https://primdozor.ru" class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></a>
-        <div id="season-txt" style="font-size:12px; color:var(--muted); margin-top:4px;">Главный надзор Приморья и России 24/7</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Главный надзор Приморья и России 24/7</div>
       </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="btn" title="Увеличить шрифт" onclick="document.body.classList.toggle('big-font')">А+</button>
-        <button type="button" class="btn" title="Ночная тема" onclick="document.body.classList.toggle('dark')">🌓</button>
+        <button type="button" class="btn" onclick="document.body.classList.toggle('big-font')">А+</button>
+        <button type="button" class="btn" onclick="document.body.classList.toggle('dark')">🌓</button>
         <button type="button" class="btn" onclick="openModal('adv-modal')">📢 Реклама и тендеры</button>
         <button type="button" class="btn btn-red" onclick="openModal('rep-modal')">+ Прислать ЧП</button>
       </div>
@@ -60,7 +60,7 @@
     </div>
 
     <div class="socials">
-      <div style="font-size:14px; font-weight:700; color:var(--muted);">📲 Читайте «Прим_Дозор» там, где вам удобно (нажмите для перехода):</div>
+      <div style="font-size:14px; font-weight:700; color:var(--muted);">📲 Читайте «Прим_Дозор» там, где вам удобно:</div>
       <div class="soc-grid">
         <a href="https://t.me" target="_blank" rel="noopener" class="soc-link">✈️ Telegram</a>
         <a href="https://max.ru" target="_blank" rel="noopener" class="soc-link">💬 Мессенджер Макс</a>
@@ -78,7 +78,6 @@
       <button type="button" class="tab" onclick="setCat('family', this)">👨‍👩‍👧 Семья и Медицина</button>
       <button type="button" class="tab" onclick="setCat('sport', this)">🏆 Спорт и Афиша</button>
     </div>
-
     <div class="grid">
       <aside>
         <div class="box">
@@ -111,13 +110,6 @@
             <div class="row" style="cursor:pointer;" onclick="setCat('city', null)"><span>Артём</span><span style="color:var(--green);font-weight:700;">Сети штатно</span></div>
           </div>
         </div>
-
-        <div class="box">
-          <h3>🌊 Морской и таёжный радар</h3>
-          <div class="row"><span>Вода (Амурский зал.)</span><span>+4°C</span></div>
-          <div class="row"><span>Пожары в лесах</span><span style="color:var(--green);font-weight:700;">1 класс (Низкая)</span></div>
-          <div class="row"><span>Сезон / Клёв</span><span>Навага, корюшка</span></div>
-        </div>
       </aside>
 
       <main>
@@ -127,7 +119,7 @@
       <aside>
         <div class="box">
           <h3>☎️ Службы и больницы края</h3>
-          <div class="row"><span>Единая служба спасения</span><a href="tel:112" style="color:var(--red);font-weight:700;">112</a></div>
+          <div class="row"><span>Служба спасения</span><a href="tel:112" style="color:var(--red);font-weight:700;">112</a></div>
           <div class="row"><span>Полиция (УМВД)</span><a href="tel:102" style="color:var(--blue);font-weight:700;">102</a></div>
           <div class="row"><span>Скорая помощь</span><a href="tel:103" style="color:var(--red);font-weight:700;">103</a></div>
           <div class="row"><span>Единая справка больниц ПК</span><a href="tel:122" style="color:var(--blue);font-weight:700;">122</a></div>
@@ -148,151 +140,63 @@
           <div class="row" style="cursor:pointer;" onclick="setCat('sport', null)"><span>СК «Олимпиец»</span><span style="color:var(--blue);">Баскетбол / Волейбол</span></div>
         </div>
 
-💼 Реклама и тендеры
-Размещение нативных публикаций, спецпроектов и баннеров с маркировкой erid (38-ФЗ).
-Оставить заявку
+        <div class="box" style="border-style:dashed;">
+          <h3>💼 Реклама и тендеры</h3>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:10px;">Нативные публикации и баннеры с маркировкой erid (38-ФЗ).</p>
+          <button type="button" class="btn" style="width:100%;" onclick="openModal('adv-modal')">Оставить заявку</button>
+        </div>
+      </aside>
+    </div>
+  </div>
 
+  <footer>
+    <div class="container">
+      <p><strong>© 2026 Прим_Дозор (18+).</strong> Региональный информационный портал Приморского края.</p>
+      <p style="margin-top:8px;">
+        <a href="legal.html" style="text-decoration:underline; margin-right:12px;">Политика конфиденциальности (152-ФЗ)</a>
+        <a href="legal.html#rules" style="text-decoration:underline; margin-right:12px;">Правила публикации</a>
+        <a href="mailto:prim_dozor@internet.ru" style="text-decoration:underline;">Редакция: prim_dozor@internet.ru</a>
+      </p>
+    </div>
+  </footer>
 
+  <div id="art-modal" class="modal" onclick="if(event.target===this)closeModal('art-modal')">
+    <div class="modal-box">
+      <button type="button" class="btn" style="float:right;" onclick="closeModal('art-modal')">✕ Закрыть</button>
+      <div id="art-body"></div>
+    </div>
+  </div>
 
-© 2026 Прим_Дозор (18+). Региональный информационный портал Приморского края.
+  <div id="rep-modal" class="modal" onclick="if(event.target===this)closeModal('rep-modal')">
+    <div class="modal-box">
+      <button type="button" class="btn" style="float:right;" onclick="closeModal('rep-modal')">✕</button>
+      <h3 style="margin-bottom:10px;">📢 Прислать новость / Народный контроль</h3>
+      <form onsubmit="event.preventDefault(); alert('Отправлено в редакцию!'); closeModal('rep-modal');">
+        <input class="input" type="text" placeholder="Город или село" required>
+        <textarea class="input" rows="4" placeholder="Опишите ЧП или аварию ЖКХ..." required></textarea>
+        <button class="btn btn-red" type="submit">Отправить</button>
+      </form>
+    </div>
+  </div>
 
-Политика конфиденциальности (152-ФЗ)
-Правила публикации и авторские права
-Редакция: prim_dozor@internet.ru
+  <div id="adv-modal" class="modal" onclick="if(event.target===this)closeModal('adv-modal')">
+    <div class="modal-box">
+      <button type="button" class="btn" style="float:right;" onclick="closeModal('adv-modal')">✕</button>
+      <h3 style="margin-bottom:10px;">💼 Реклама и тендеры</h3>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Почта: <strong>prim_dozor@internet.ru</strong></p>
+      <form onsubmit="event.preventDefault(); alert('Заявка принята!'); closeModal('adv-modal');">
+        <input class="input" type="text" placeholder="Компания или ведомство" required>
+        <input class="input" type="text" placeholder="Телефон или Telegram" required>
+        <button class="btn btn-red" type="submit">Отправить заявку</button>
+      </form>
+    </div>
+  </div>
 
+  <div id="cookie-box" class="cookie">
+    <span>Мы используем файлы cookie и Яндекс.Метрику.</span>
+    <button type="button" class="btn btn-red" onclick="acceptCookies()">Согласен</button>
+  </div>
 
-✕ Закрыть
-
-
-✕
-📢 Прислать новость / Народный контроль
-
-
-Отправить в редакцию
-
-
-✕
-💼 Реклама, спецпроекты и тендеры
-Почта отдела рекламы: prim_dozor@internet.ru или прямой чат с администратором в Telegram.
-
-
-
-Отправить заявку
-
-
-Мы используем файлы cookie и Яндекс.Метрику для работы сайта. Продолжая просмотр, вы соглашаетесь с Политикой конфиденциальности.
-Согласен
-var newsData = [{
-id: 1,
-cat: 'chp',
-catLabel: '🚨 ЧП и 112',
-city: 'Владивосток',
-age: '16+',
-date: 'Сегодня',
-title: 'Оперативный мониторинг дорог, мостов и коммунальных сетей Приморья 24/7',
-tldr: '• Золотой и Русский мосты открыты в штатном режиме.
-• Аварийные бригады ВПЭС и Примводоканала дежурят круглосуточно.',
-text: '🚨 Оперативные службы Приморского края контролируют обстановку на магистралях и объектах ЖКХ.\n\n🏙 Сообщить о нечищеных дорогах, прорыве труб или отключениях света можно через кнопку «Прислать ЧП» или в наш Telegram-канал.',
-src: 'Редакция «Прим_Дозор»'
-}];
-var curCat = 'all';
-var curCity = 'all';
-var weatherCache = [
-{ name: 'Владивосток', now: '+2°C ☀', morning: '0°C', day: '+3°C', evening: '+1°C', tomorrow: '+4°C' },
-{ name: 'Большой Камень', now: '+1°C 🌤', morning: '-1°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' },
-{ name: 'Артём', now: '0°C ☁', morning: '-2°C', day: '+2°C', evening: '-1°C', tomorrow: '+3°C' },
-{ name: 'Уссурийск', now: '-2°C ☀', morning: '-5°C', day: '+1°C', evening: '-3°C', tomorrow: '+2°C' },
-{ name: 'Находка', now: '+3°C 🌊', morning: '+1°C', day: '+4°C', evening: '+2°C', tomorrow: '+5°C' }
-];
-function openModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'flex'; }
-function closeModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
-function acceptCookies() { localStorage.setItem('ck', '1'); closeModal('cookie-box'); }
-function selectWeatherCity(idx) {
-var c = weatherCache[Number(idx)] || weatherCache[0];
-var sel = document.getElementById('city-sel');
-if (sel) sel.selectedIndex = Number(idx);
-document.getElementById('w-city-name').textContent = c.name;
-document.getElementById('w-day').textContent = c.morning + ' / ' + c.day;
-document.getElementById('w-eve').textContent = c.evening;
-document.getElementById('w-tom').textContent = c.tomorrow;
-}
-function setCat(c, btn) {
-curCat = c;
-document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-if (btn) btn.classList.add('active');
-render();
-}
-function setCity(c, wIdx) {
-curCity = c;
-if (wIdx !== undefined) selectWeatherCity(wIdx);
-render();
-}
-function openArt(id) {
-var n = newsData.find(function(x) { return String(x.id) === String(id); });
-if (!n) return;
-var coverImg = n.cover ? '' : '';
-document.getElementById('art-body').innerHTML =
-'' + n.catLabel + '📍 ' + n.city + '🕒 ' + n.date + '' + (n.age || '16+') + '' +
-'' + n.title + '' +
-coverImg +
-'Суть кратко:
-' + n.tldr + '' +
-'' + (n.fullText || n.text) + '' +
-'📲 Читайте «Прим_Дозор» в мессенджерах:' +
-'✈ Telegram💬 Макс';
-openModal('art-modal');
-}
-function render() {
-var box = document.getElementById('feed');
-if (!box) return;
-var list = newsData.filter(function(n) {
-var catOk = curCat === 'all' || n.cat === curCat;
-var cityOk = curCity === 'all' || (n.city && n.city.toLowerCase().indexOf(curCity.toLowerCase()) !== -1);
-return catOk && cityOk;
-});
-if (list.length === 0) {
-box.innerHTML = 'В этой рубрике пока нет свежих публикаций. Нажмите «🔥 Главное» или «Все» города.';
-return;
-}
-box.innerHTML = list.map(function(n) {
-var cover = n.cover
-? ''
-: '' + n.catLabel + ' · ' + n.city + '' + n.title + '';
-return '' + cover +
-'' + n.catLabel + '📍 ' + n.city + '🕒 ' + n.date + '' + (n.age || '16+') + '' +
-'' + n.title + '' +
-'Главное за 10 секунд:
-' + n.tldr + '' +
-'' + n.text + '' +
-'' + (n.src || '') + 'Читать полностью ➔' +
-'';
-}).join('');
-}
-function updateClock() {
-var now = new Date();
-var vl = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 36000000);
-var el = document.getElementById('clock');
-if (el) el.textContent = String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
-}
-(function init() {
-if (localStorage.getItem('ck')) closeModal('cookie-box');
-updateClock();
-setInterval(updateClock, 10000);
-render();
-fetch('./news.json?v=' + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
-if (Array.isArray(d) && d.length > 0) { newsData = d; render(); }
-}).catch(function() {});
-fetch('./weather.json?v=' + Date.now()).then(function(r) { return r.json(); }).then(function(w) {
-if (Array.isArray(w) && w.length > 0) {
-weatherCache = w;
-var sel = document.getElementById('city-sel');
-w.forEach(function(item, idx) { if (sel && sel.options[idx]) sel.options[idx].textContent = item.name + ' ' + item.now; });
-selectWeatherCity(0);
-}
-}).catch(function() {});
-fetch('cbr-xml-daily.ru').then(function(r) { return r.json(); }).then(function(d) {
-var usd = (d.Valute.USD.Value / d.Valute.USD.Nominal).toFixed(1);
-var cny = (d.Valute.CNY.Value / d.Valute.CNY.Nominal).toFixed(1);
-document.getElementById('rates-box').innerHTML = '💵 USD: ' + usd + ' ₽ · 💴 CNY: ' + cny + ' ₽ · 🏫 Школы: Очно';
-}).catch(function() {});
-})();
+  <script src="app.js"></script>
+</body>
+</html>
