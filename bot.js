@@ -4,8 +4,6 @@ const { createCanvas, loadImage } = require('canvas');
 
 const AI_KEY = (process.env.AI_API_KEY || '').trim();
 const INDEXNOW_KEY = (process.env.INDEXNOW_KEY || '').trim();
-const TG_BOT_TOKEN = (process.env.TG_BOT_TOKEN || '').trim();
-const TG_CHAT_ID = (process.env.TG_CHAT_ID || '').trim();
 const HOST = 'primdozor.ru';
 const SLASH = String.fromCharCode(47);
 const LT = String.fromCharCode(60);
@@ -178,127 +176,69 @@ function buildHtml(news, weather, rates) {
   const w0 = weather;
 
   for (const p of news) {
-    const artHtml = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(p.title)} — Прим_Дозор (${esc(p.age)})</title><meta name="description" content="${esc(p.title)}"><link rel="canonical" href="https://${HOST}/news/${p.id}.html"><link rel="stylesheet" href="/style.css"></head><body><header><div class="wrap head-flex"><a href="/" class="logo">ПРИМ_ДОЗОР</a><a href="/" class="pill" style="color:var(--text)">← Все новости</a></div></header><main class="wrap" style="max-width:780px;margin-top:20px"><article class="box" style="padding:22px"><div class="meta"><span class="cat">${esc(p.catLabel)}</span><span>${esc(p.city)}</span><span>• ${esc(p.date)}</span><span>${esc(p.age)}</span></div><h1 style="font-size:24px;line-height:1.3;margin:10px 0 16px">${esc(p.title)}</h1><img src="/${esc(p.cover)}" alt="${esc(p.title)}" style="width:100%;border-radius:10px;margin-bottom:14px"><div class="tldr">${esc(p.tldr).replace(/\n/g, '<br>')}</div><div style="font-size:16px;white-space:pre-line;line-height:1.75">${esc(p.text)}</div><p style="font-size:12px;color:var(--muted);margin-top:14px">${esc(p.src || '')}</p></article></main><footer><div class="wrap">© 2026 Прим_Дозор (18+). Приморский край.</div></footer></body></html>`;
-    fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
-  }
+    const artHtml = [
+      '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
+      '<title>' + esc(p.title) + ' — Прим_Дозор (' + esc(p.age) + ')</title>',
+      '<meta name="description" content="' + esc(p.title) + '">',
+      '<link rel="canonical" href="https://' + HOST + '/news/' + p.id + '.html">',
+      '<link rel="stylesheet" href="/style.css"></head><body>',
+      '<header><div class="wrap head-flex"><a href="/" class="logo">ПРИМ_ДОЗОР</a><a href="/" class="pill" style="color:var(--text)">← Все новости</a></div></header>',
+      '<main class="wrap" style="max-width:780px;margin-top:20px"><article class="box" style="padding:22px">',
+      '<div class="meta"><span class="cat">' + esc(p.catLabel) + '</span><span>' + esc(p.city) + '</span><span>• ' + esc(p.date) + '</span><span>' + esc(p.age) + '</span></div>',
+      '<h1 style="font-size:24px;line-height:1.3;margin:10px 0 16px">' + esc(p.title) + '</h1>',
+      '<img src="/' + esc(p.cover) + '" alt="' + esc(p.title) + '" style="width:100%;border-radius:10px;margin-bottom:14px">',
+      '<div class="tldr">' + esc(p.tldr).replace(/\n/g, '<br>') + '</div>',
+      '<div style="font-size:16px;white-space:pre-line;line-height:1.75">' + esc(p.text) + '</div>',
+      '<p style="font-size:12px;color:var(--muted);margin-top:14px">' + esc(p.src || '') + '</p></article></main>',
+      '<footer><div class="wrap">© 2026 Прим_Дозор (18+). Приморский край.</div></footer></body></html>'
+].join('');
+fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
+}
 const cards = news.map((n, i) => {
 const lead = n.text.replace(/\s+/g, ' ').slice(0, 145);
 if (i === 0) {
-return <article class="hero" onclick="openArt('${n.id}')"><img src="./${esc(n.cover)}" alt="${esc(n.title)}"><div class="hero-body"><div class="meta"><span class="cat">${esc(n.catLabel)}</span><span>${esc(n.city)}</span><span>• ${esc(n.date)}</span><span>${esc(n.age)}</span></div><h1>${esc(n.title)}</h1><p class="lead">${esc(lead)}...</p></div></article>;
+return '' + esc(n.catLabel) + '' + esc(n.city) + '• ' + esc(n.date) + '' + esc(n.age) + '' + esc(n.title) + '' + esc(lead) + '...';
 }
-return <article class="item" onclick="openArt('${n.id}')"><img src="./${esc(n.cover)}" alt="${esc(n.title)}" loading="lazy"><div><div class="meta"><span class="cat">${esc(n.catLabel)}</span><span>${esc(n.city)}</span><span>• ${esc(n.date)}</span><span>${esc(n.age)}</span></div><h2>${esc(n.title)}</h2><p class="lead">${esc(lead)}...</p></div></article>;
+return '' + esc(n.catLabel) + '' + esc(n.city) + '• ' + esc(n.date) + '' + esc(n.age) + '' + esc(n.title) + '' + esc(lead) + '...';
 }).join('');
-const page = `
-Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)
-Владивосток
-
-${weather.map((w, idx) => <option value="\({idx}">\){esc(w.name)}</option>).join('')}
-
-${esc(w0.now)}
-
-
-$${esc(rates.usd)} | €${esc(rates.eur)} | ¥${esc(rates.cny)}
-А+
-🌙
-
-
-ПРИМ_ДОЗОР18+
-
-
-Весь край
-Владивосток
-Уссурийск
-Находка
-Артём
-Б. Камень
-
-+ Прислать ЧП
-
-
-Главное
-ЧП и 112
-Город и ЖКХ
-Законы и Власть
-СВО
-Общество
-Спорт
-
-${cards}
-
-
-Погода: ${esc(w0.name)}
-Сейчас${esc(w0.now)}
-Утром${esc(w0.morning)}
-Днём${esc(w0.day)}
-Вечером${esc(w0.evening)}
-Завтра${esc(w0.tomorrow)}
-
-
-Курсы ЦБ РФ
-Доллар (USD)${esc(rates.usd)} ₽
-Евро (EUR)${esc(rates.eur)} ₽
-Юань (CNY)${esc(rates.cny)} ₽
-100 Иен (JPY)${esc(rates.jpy)} ₽
-
-
-Экстренные службы края
-Служба спасения112
-ГИБДД Приморья231-09-08
-ЕДДС Владивостока222-23-33
-Примводоканал200-5-777
-
-
-Каналы редакции
-✈ Telegram-канал ЧП→
-💬 Канал в МАКС→
-
-
-ПРИМ_ДОЗОР • 18+
-✕ Закрыть
-
-
-
-🍪 Используем cookie и Яндекс.Метрику (152-ФЗ).
-ОК
-© 2026 Прим_Дозор (18+). Региональный портал Приморского края. Соблюдение 152-ФЗ, 436-ФЗ и ГК РФ.
-const NEWS = ${JSON.stringify(news)};
-const WEATHER = ${JSON.stringify(weather)};
-let cCat = 'all', cCity = 'all';
-if (localStorage.getItem('ck')) document.getElementById('ck').style.display = 'none';
-function setWeather(i) {
-const w = WEATHER[i]; if (!w) return;
-document.getElementById('w-top').textContent = w.now;
-document.getElementById('w-name').textContent = w.name;
-document.getElementById('w-now').textContent = w.now;
-document.getElementById('w-m').textContent = w.morning;
-document.getElementById('w-d').textContent = w.day;
-document.getElementById('w-e').textContent = w.evening;
-document.getElementById('w-t').textContent = w.tomorrow;
-}
-function renderFeed() {
-const list = NEWS.filter(n => (cCat === 'all' || n.cat === cCat) && (cCity === 'all' || n.city.includes(cCity)));
-document.getElementById('feed').innerHTML = list.map((n, i) => {
-const lead = n.text.replace(/\s+/g, ' ').slice(0, 145);
-return i === 0
-? '' + n.catLabel + '' + n.city + '• ' + n.date + '' + n.age + '' + n.title + '' + lead + '...'
-: '' + n.catLabel + '' + n.city + '• ' + n.date + '' + n.age + '' + n.title + '' + lead + '...';
-}).join('');
-}
-function filterCat(c, btn) { cCat = c; document.querySelectorAll('.tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderFeed(); }
-function filterCity(c) { cCity = c; renderFeed(); }
-function openArt(id) {
-const n = NEWS.find(x => String(x.id) === String(id)); if (!n) return;
-document.getElementById('m-body').innerHTML = '' + n.catLabel + '' + n.city + '• ' + n.date + '' + n.age + '' + n.title + '' + n.tldr.replace(/\n/g, '
-') + '' + n.text + '' + (n.src || '') + '';
-document.getElementById('modal').style.display = 'flex';
-}
-setInterval(() => {
-const vl = new Date(Date.now() + new Date().getTimezoneOffset()*60000 + 36000000);
-document.getElementById('clock').textContent = 'Владивосток ' + String(vl.getHours()).padStart(2,'0') + ':' + String(vl.getMinutes()).padStart(2,'0');
-}, 5000);
-
-
-`;
+const page = [
+'',
+'',
+'Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)',
+'',
+'',
+'(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","yandex.ru","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});',
+'',
+'Владивосток',
+'' + weather.map((w, idx) => '' + esc(w.name) + '').join('') + '',
+'' + esc(w0.now) + '',
+'$' + esc(rates.usd) + ' | €' + esc(rates.eur) + ' | ¥' + esc(rates.cny) + '',
+'А+🌙',
+'ПРИМ_ДОЗОР18+',
+'',
+'Весь крайВладивостокУссурийскНаходкаАртёмБ. Камень',
+'+ Прислать ЧП',
+'',
+'ГлавноеЧП и 112Город и ЖКХЗаконы и ВластьСВООбществоСпорт',
+'',
+'' + cards + '',
+'Погода: ' + esc(w0.name) + 'Сейчас' + esc(w0.now) + 'Утром' + esc(w0.morning) + 'Днём' + esc(w0.day) + 'Вечером' + esc(w0.evening) + 'Завтра' + esc(w0.tomorrow) + '',
+'Курсы ЦБ РФДоллар (USD)' + esc(rates.usd) + ' ₽Евро (EUR)' + esc(rates.eur) + ' ₽Юань (CNY)' + esc(rates.cny) + ' ₽100 Иен (JPY)' + esc(rates.jpy) + ' ₽',
+'Экстренные службы краяСлужба спасения112ГИБДД Приморья231-09-08ЕДДС Владивостока222-23-33Примводоканал200-5-777',
+'Каналы редакции✈ Telegram-канал ЧП→💬 Канал в МАКС→',
+'',
+'ПРИМ_ДОЗОР • 18+✕ Закрыть',
+'🍪 Используем cookie и Яндекс.Метрику (152-ФЗ).ОК',
+'© 2026 Прим_Дозор (18+). Региональный портал Приморского края. Соблюдение 152-ФЗ, 436-ФЗ и ГК РФ.',
+'const NEWS=' + JSON.stringify(news) + ';const WEATHER=' + JSON.stringify(weather) + ';let cCat="all",cCity="all";if(localStorage.getItem("ck"))document.getElementById("ck").style.display="none";',
+'function setWeather(i){const w=WEATHER[i];if(!w)return;document.getElementById("w-top").textContent=w.now;document.getElementById("w-name").textContent=w.name;document.getElementById("w-now").textContent=w.now;document.getElementById("w-m").textContent=w.morning;document.getElementById("w-d").textContent=w.day;document.getElementById("w-e").textContent=w.evening;document.getElementById("w-t").textContent=w.tomorrow;}',
+'function renderFeed(){const list=NEWS.filter(n=>(cCat==="all"||n.cat===cCat)&&(cCity==="all"||n.city.includes(cCity)));document.getElementById("feed").innerHTML=list.map((n,i)=>{const lead=n.text.replace(/\s+/g," ").slice(0,145);return i===0?"<article class=\"hero\" onclick=\"openArt('"+n.id+"')\"><img src=\"./"+n.cover+"\"><div class=\"hero-body\"><div class=\"meta\"><span class=\"cat\">"+n.catLabel+""+n.city+"• "+n.date+""+n.age+""+n.title+"<p class=\"lead\">"+lead+"...":"<article class=\"item\" onclick=\"openArt('"+n.id+"')\"><img src=\"./"+n.cover+"\"><div class=\"meta\"><span class=\"cat\">"+n.catLabel+""+n.city+"• "+n.date+""+n.age+""+n.title+"<p class=\"lead\">"+lead+"...";}).join("");}',
+'function filterCat(c,btn){cCat=c;document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderFeed();}',
+'function filterCity(c){cCity=c;renderFeed();}',
+'function openArt(id){const n=NEWS.find(x=>String(x.id)===String(id));if(!n)return;document.getElementById("m-body").innerHTML="<div class=\"meta\"><span class=\"cat\">"+n.catLabel+""+n.city+"• "+n.date+""+n.age+"<h1 style=\"font-size:21px;margin:8px 0 12px\">"+n.title+"<img src=\"./"+n.cover+"\" style=\"width:100%;border-radius:10px;margin-bottom:12px\"><div class=\"tldr\">"+n.tldr.replace(/\n/g,"
+")+"<p style=\"white-space:pre-line;line-height:1.7;margin-bottom:14px\">"+n.text+"<p style=\"font-size:12px;color:var(--muted)\">"+(n.src||"")+"";document.getElementById("modal").style.display="flex";}',
+'setInterval(()=>{const vl=new Date(Date.now()+new Date().getTimezoneOffset()*60000+36000000);document.getElementById("clock").textContent="Владивосток "+String(vl.getHours()).padStart(2,"0")+":"+String(vl.getMinutes()).padStart(2,"0");},5000);'
+].join('');
 fs.writeFileSync('index.html', page, 'utf8');
 const urls = ['  https://' + HOST + '/1.0'];
 for (const n of news) urls.push('  https://' + HOST + '/news/' + n.id + '.html0.8');
