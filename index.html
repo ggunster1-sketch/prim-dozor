@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Прим_Дозор — Главные новости Владивостока, Приморья и России 24/7</title>
-  <meta name="description" content="Оперативные новости Владивостока, Приморского края и России 24/7: ЧП, криминал, ЖКХ, погода, мосты, законы РФ и сводки.">
+  <meta name="description" content="Оперативные новости Владивостока, Приморского края и России 24/7: ЧП, криминал, ЖКХ, отключения света и воды, погода, мосты, законы РФ и сводки.">
   <meta name="yandex-verification" content="4ff5849c5d803c0e" />
   <meta name="yandex-verification" content="0dc10018fffed4cc" />
   <link rel="stylesheet" href="style.css">
@@ -35,18 +35,18 @@
     <div class="container top-flex">
       <div>
         <span class="live-pill">● ВЛАДИВОСТОК <span id="clock">--:--</span></span>
-        <span style="margin-left:10px;">Погода:
-          <select id="city-sel">
-            <option>Владивосток +2°C ☀️</option>
-            <option>Большой Камень +1°C 🌤</option>
-            <option>Артём 0°C ☁️</option>
-            <option>Уссурийск -2°C ☀️</option>
-            <option>Находка +3°C 🌊</option>
+        <span style="margin-left:10px;">Город:
+          <select id="city-sel" onchange="selectWeatherCity(this.selectedIndex)">
+            <option value="0">Владивосток +2°C ☀️</option>
+            <option value="1">Большой Камень +1°C 🌤</option>
+            <option value="2">Артём 0°C ☁️</option>
+            <option value="3">Уссурийск -2°C ☀️</option>
+            <option value="4">Находка +3°C 🌊</option>
           </select>
         </span>
         <span style="margin-left:10px;">🌉 Мосты: <strong style="color:#10b981">Открыты</strong></span>
       </div>
-      <div id="rates-box">💵 USD: 98.4 ₽ · 💴 CNY: 13.6 ₽ · 🏫 Школы: <strong>Очно</strong></div>
+      <div id="rates-box">💵 USD: 82.2 ₽ · 💴 CNY: 12.3 ₽ · 🏫 Школы: <strong>Очно</strong></div>
     </div>
   </div>
 
@@ -56,19 +56,28 @@
         <span class="logo">ПРИМ_ДОЗОР <span class="age">18+</span></span>
         <div id="season-txt" style="font-size:12px; color:var(--muted); margin-top:4px;">Главный надзор Приморья и России 24/7</div>
       </div>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button class="btn" title="Увеличить шрифт" onclick="document.body.classList.toggle('big-font')">А+</button>
         <button class="btn" title="Ночная графитовая тема" onclick="document.body.classList.toggle('dark')">🌓</button>
+        <button class="btn" onclick="document.getElementById('adv-modal').style.display='flex'">📢 Реклама и тендеры</button>
         <button class="btn btn-red" onclick="document.getElementById('rep-modal').style.display='flex'">+ Прислать ЧП</button>
       </div>
     </div>
   </header>
 
   <div class="ticker">
-    <div class="container"><span class="ticker-tag">⚡ МОЛНИЯ</span><span>Оперативные сводки Приморья, законы РФ и новости 24/7</span></div>
+    <div class="container"><span class="ticker-tag">⚡ МОЛНИЯ</span><span id="holiday-ticker">Оперативные сводки Приморья, законы РФ, отключения ЖКХ и новости 24/7</span></div>
   </div>
 
   <div class="container">
+    <div id="season-banner" class="box" style="margin-top:14px; border-left:4px solid var(--red); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div>
+        <strong id="season-title">🍂 Осень в Приморском крае</strong>
+        <div id="season-desc" style="font-size:13px; color:var(--muted); margin-top:2px;">Следите за сводками погоды, состоянием перевалов и графиком отопительного сезона.</div>
+      </div>
+      <span id="holiday-badge" class="cat-tag">Приморье 24/7</span>
+    </div>
+
     <div class="socials">
       <div style="font-size:14px; font-weight:700; color:var(--muted);">📲 Читайте «Прим_Дозор» там, где вам удобно (нажмите для перехода):</div>
       <div class="soc-grid">
@@ -82,11 +91,11 @@
     <div class="tabs">
       <button class="tab active" onclick="setCat('all', this)">🔥 Главное</button>
       <button class="tab" onclick="setCat('chp', this)">🚨 ЧП и 112</button>
-      <button class="tab" onclick="setCat('svo', this)">🇷🇺 СВО и Защитники</button>
-      <button class="tab" onclick="setCat('law', this)">🏛 Законы и Политика</button>
       <button class="tab" onclick="setCat('city', this)">🏙 Город и ЖКХ</button>
+      <button class="tab" onclick="setCat('law', this)">🏛 Законы и Политика</button>
+      <button class="tab" onclick="setCat('svo', this)">🇷🇺 СВО и Защитники</button>
       <button class="tab" onclick="setCat('family', this)">👨‍👩‍👧 Семья и Медицина</button>
-      <button class="tab" onclick="setCat('sport', this)">🏆 Спорт</button>
+      <button class="tab" onclick="setCat('sport', this)">🏆 Спорт и Афиша</button>
     </div>
 
     <div class="grid">
@@ -100,16 +109,28 @@
             <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Артём')">Артём</button>
             <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Уссурийск')">Уссурийск</button>
             <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Находка')">Находка</button>
+            <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Приморье')">Весь край</button>
             <button class="btn" style="padding:5px 9px; font-size:12px;" onclick="setCity('Россия')">Россия</button>
           </div>
         </div>
+
+        <div class="box">
+          <h3>🌤 Погода: <span id="w-city-name">Владивосток</span></h3>
+          <div class="row"><span>Утро / День</span><strong id="w-day">Загрузка...</strong></div>
+          <div class="row"><span>Вечер</span><strong id="w-eve">Загрузка...</strong></div>
+          <div class="row"><span>Завтра (днём)</span><strong id="w-tom">Загрузка...</strong></div>
+        </div>
+
         <div class="box">
           <h3>💡 Радар отключений ЖКХ</h3>
-          <div class="row"><span>Владивосток (Чуркин)</span><span style="color:#d97706;font-weight:700;">Свет до 17:00</span></div>
-          <div class="row"><span>Большой Камень</span><span style="color:var(--green);font-weight:700;">Штатно</span></div>
-          <div class="row"><span>Уссурийск (Центр)</span><span style="color:#d97706;font-weight:700;">ХВС до 16:00</span></div>
-          <div class="row"><span>Находка / Артём</span><span style="color:var(--green);font-weight:700;">Без аварий</span></div>
+          <div id="outages-list">
+            <div class="row"><span>Владивосток (Чуркин)</span><span style="color:#d97706;font-weight:700;">Плановые работы</span></div>
+            <div class="row"><span>Большой Камень</span><span style="color:var(--green);font-weight:700;">Штатно</span></div>
+            <div class="row"><span>Уссурийск / Находка</span><span style="color:var(--green);font-weight:700;">Без аварий</span></div>
+            <div class="row"><span>Артём</span><span style="color:var(--green);font-weight:700;">Сети штатно</span></div>
+          </div>
         </div>
+
         <div class="box">
           <h3>🌊 Морской и таёжный радар</h3>
           <div class="row"><span>Вода (Амурский зал.)</span><span>+4°C</span></div>
@@ -130,58 +151,54 @@
 
       <aside>
         <div class="box">
-          <h3>☎️ Службы края в 1 клик</h3>
-          <div class="row"><span>Служба спасения</span><a href="tel:112" style="color:var(--red);font-weight:700;">112</a></div>
+          <h3>☎️ Службы и больницы края</h3>
+          <div class="row"><span>Единая служба спасения</span><a href="tel:112" style="color:var(--red);font-weight:700;">112</a></div>
           <div class="row"><span>Полиция (УМВД)</span><a href="tel:102" style="color:var(--blue);font-weight:700;">102</a></div>
+          <div class="row"><span>Скорая помощь</span><a href="tel:103" style="color:var(--red);font-weight:700;">103</a></div>
+          <div class="row"><span>Единая справка больниц ПК</span><a href="tel:122" style="color:var(--blue);font-weight:700;">122</a></div>
           <div class="row"><span>ЕДДС Владивостока</span><a href="tel:84232222333" style="color:var(--blue);font-weight:700;">222-23-33</a></div>
-          <div class="row"><span>Примводоканал</span><a href="tel:84232005777" style="color:var(--blue);font-weight:700;">200-57-77</a></div>
-        </div>
-        <div class="box">
-          <h3>📅 Авто-сводки 24/7</h3>
-          <div class="row"><span>07:30</span><span>Погода, мосты, школы</span></div>
-          <div class="row"><span>09:00–18:00</span><span>Главное в крае и РФ</span></div>
-          <div class="row"><span>20:00</span><span>Погода на завтра</span></div>
-          <div class="row"><span>21:00</span><span>Дайджест дня</span></div>
-        </div>
-      </aside>
-    </div>
-  </div>
+          <div class="row"><span>ЕДДС Артёма</span><a href="tel:84233742533" style="color:var(--blue);font-weight:700;">4-25-33</a></div>
+          <div class="row"><span>ЕДДС Уссурийска</span><a href="tel:84234321112" style="color:var(--blue);font-weight:700;">32-11-12</a></div>
+          <div class="row"><span>ЕДДС Находки</span><a href="tel:84236692151" style="color:var(--blue);font-weight:700;">69-21-51</a></div>
+          <div class="row"><span>ЕДДС Большого Камня</span><a href="tel:84233551555" style="color:var(--blue);font-weight:700;">5-15-55</a></div>
+          <div class="row"><span>Примводоканал (аварии)</span><a href="tel:84232005777" style="color:var(--blue);font-weight:700;">200-57-77</a></div>
+Свет: ДРСК / ВПЭС8-800-1000-397
+🎭 Бесплатная афиша и спорт
+Набережная СпортивнаяПрогулки, спорт
+Музеи и выставкиДни открытых дверей
+КСК «Фетисов Арена»Матчи ХК «Адмирал»
+СК «Олимпиец»Баскетбол / Волейбол
+💼 Реклама и тендеры
+Размещение нативных публикаций, спецпроектов и баннеров с маркировкой erid (38-ФЗ).
+Оставить заявку
 
-  <footer>
-    <div class="container">
-      <p><strong>© 2026 Прим_Дозор (18+).</strong> <span id="foot-owner">Информационный портал.</span></p>
-      <p style="margin-top:8px;">
-        <a href="legal.html" style="text-decoration:underline; margin-right:12px;">Политика конфиденциальности (152-ФЗ)</a>
-        <a href="legal.html#rules" style="text-decoration:underline;">Правила публикации и авторские права</a>
-      </p>
-    </div>
-  </footer>
 
-  <div id="art-modal" class="modal" onclick="if(event.target===this)this.style.display='none'">
-    <div class="modal-box">
-      <button class="btn" style="float:right;" onclick="document.getElementById('art-modal').style.display='none'">✕ Закрыть</button>
-      <div id="art-body"></div>
-    </div>
-  </div>
 
-  <div id="rep-modal" class="modal" onclick="if(event.target===this)this.style.display='none'">
-    <div class="modal-box">
-      <button class="btn" style="float:right;" onclick="document.getElementById('rep-modal').style.display='none'">✕</button>
-      <h3 style="margin-bottom:10px;">📢 Прислать новость / Народный контроль</h3>
-      <form onsubmit="event.preventDefault(); alert('Сообщение отправлено в редакцию!'); document.getElementById('rep-modal').style.display='none';">
-        <input class="input" type="text" placeholder="Город или район (например, Владивосток, Чуркин)" required>
-        <textarea class="input" rows="4" placeholder="Опишите происшествие или проблему ЖКХ..." required></textarea>
-        <label style="display:flex; gap:8px; font-size:12px; color:var(--muted); margin-bottom:12px;">
-          <input type="checkbox" required> Согласен на обработку персональных данных (152-ФЗ)
-        </label>
-        <button class="btn btn-red" type="submit">Отправить в редакцию</button>
-      </form>
-    </div>
-  </div>
+© 2026 Прим_Дозор (18+). Региональный информационный портал Приморского края.
 
-  <div id="cookie-box" class="cookie">
+Политика конфиденциальности (152-ФЗ)
+Правила публикации и авторские права
+Редакция: prim_dozor@internet.ru
 
-    Мы используем файлы cookie и Яндекс.Метрику для работы сайта. Продолжая просмотр, вы соглашаетесь с Политикой конфиденциальности.
+
+✕ Закрыть
+
+
+✕
+📢 Прислать новость / Народный контроль
+
+
+Отправить в редакцию
+
+
+✕
+💼 Реклама, спецпроекты и тендеры
+Почта отдела рекламы: prim_dozor@internet.ru или прямой чат с администратором в Telegram.
+
+
+
+Отправить заявку
+
+
+Мы используем файлы cookie и Яндекс.Метрику для работы сайта. Продолжая просмотр, вы соглашаетесь с Политикой конфиденциальности.
 Согласен
-
-    
