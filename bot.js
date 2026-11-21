@@ -4,7 +4,7 @@ const AI_KEY = process.env.AI_API_KEY;
 const TG_TOKEN = process.env.TG_BOT_TOKEN;
 const TG_CHAT = process.env.TG_CHAT_ID || '@prim_dozor';
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '';
-const SITE_HOST = 'www.primdozor.ru';
+const SITE_HOST = 'primdozor.ru';
 
 const FEEDS = [
   'https://primamedia.ru',
@@ -88,7 +88,7 @@ async function rewriteWithAI(rawItem) {
 
 async function sendToTelegram(news) {
   if (!TG_TOKEN) return;
-  const caption = `${news.catLabel} | ${news.city} (${news.age})\n\n<b>${news.title}</b>\n\n${news.text}\n\n🌐 Полная картина: https://www.primdozor.ru\n💬 Мы в Макс: https://max.ru\n✈️ Подписаться: @prim_dozor`;
+  const caption = `${news.catLabel} | ${news.city} (${news.age})\n\n<b>${news.title}</b>\n\n${news.text}\n\n🌐 Полная картина: https://primdozor.ru\n💬 Мы в Макс: https://max.ru\n✈️ Подписаться: @prim_dozor`;
   try {
     await fetch(`https://telegram.org{TG_TOKEN}/sendMessage`, {
       method: 'POST',
