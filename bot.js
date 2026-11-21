@@ -29,11 +29,11 @@ async function fetchRSS(url) {
     const items = [];
     const matches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
     for (const m of matches) {
-      const block = m;
+      const block = m.at(1) || '';
       const titleMatch = block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) || block.match(/<title>([\s\S]*?)<\/title>/);
       const descMatch = block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/) || block.match(/<description>([\s\S]*?)<\/description>/);
-      const title = titleMatch ? titleMatch : '';
-      const desc = descMatch ? descMatch : '';
+      const title = titleMatch ? titleMatch.at(1) : '';
+      const desc = descMatch ? descMatch.at(1) : '';
       if (title) {
         items.push({
           title: title.replace(/<[^>]+>/g, '').trim(),
@@ -95,7 +95,8 @@ async function rewriteWithAI(rawItem) {
         continue;
       }
       const data = await res.json();
-      const content = data.choices?.?.message?.content?.trim();
+      const firstChoice = Array.isArray(data.choices) ? data.choices.at(0) : null;
+      const content = firstChoice && firstChoice.message ? firstChoice.message.content.trim() : '';
       if (!content || content.includes('SKIP')) return null;
       const cleanJson = content.replace(/^```json|```$/g, '').trim();
       return JSON.parse(cleanJson);
@@ -167,7 +168,7 @@ async function pingIndexNow() {
       body: JSON.stringify({
         host: 'www.' + SITE_HOST,
         key: INDEXNOW_KEY,
-        keyLocation: 'https://www.' + SITE_HOST + '/' + INDEXNOW_KEY + '.txt',
+        keyLocation: 'https://www.${SITE_HOST}/${INDEXNOW_KEY}.txt',
         urlList: ['https://www.' + SITE_HOST + '/']
       })
     });
