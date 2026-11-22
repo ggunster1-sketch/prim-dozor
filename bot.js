@@ -31,7 +31,8 @@ const CHANNELS = [
   { id: 'primamedia', name: 'PrimaMedia', off: false },
   { id: 'vostokmedia24', name: 'Восток-Медиа', off: false },
   { id: 'vpes_vl', name: 'ВПЭС Владивосток', off: true },
-  { id: 'primvodokanal', name: 'Примводоканал', off: true }
+  { id: 'primvodokanal', name: 'Примводоканал', off: true },
+  { id: 'minzdrav_pk', name: 'Минздрав Приморья', off: true }
 ];
 
 function getHttp(url) {
@@ -50,6 +51,19 @@ function getHttp(url) {
 
 function cleanText(s) {
   return String(s || '').replace(new RegExp(LT + '[^' + GT + ']+' + GT, 'g'), ' ').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+}
+
+function isDuplicate(title, existingList) {
+  const words = s => new Set(String(s || '').toLowerCase().replace(/[^а-яёa-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3));
+  const w1 = words(title);
+  if (w1.size < 2) return false;
+  for (const item of existingList.slice(0, 35)) {
+    const w2 = words(item.title);
+    let common = 0;
+    for (const w of w1) if (w2.has(w)) common++;
+    if (common / Math.min(w1.size, w2.size) >= 0.55) return true;
+  }
+  return false;
 }
 
 async function fetchWeatherAndRates() {
@@ -94,13 +108,13 @@ async function fetchWeatherAndRates() {
 async function rewriteNews(raw) {
   if (!AI_KEY) return null;
   const prompt = [
-    'Ты главный редактор СМИ Приморского края «Прим_Дозор» (уровень РБК / VL.ru).',
-    'Перепиши новость своими словами без нарушения авторских прав, сохраняя все адреса, улицы и факты.',
-    'СТРОГО: Если событие не в Приморском крае (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Хасан, Спасск и др.) и не касается важных законов РФ — верни слово SKIP. Никогда не путай Благовещенск или Хабаровск с Приморьем.',
-    'Рекламу и розыгрыши отклоняй словом SKIP. Соблюдай законы РФ (436-ФЗ, УК, КоАП).',
-    'Верни строго JSON без markdown:',
-    '{"title":"Сильный заголовок до 85 символов","cat":"chp|city|law|svo|family|sport","catLabel":"ЧП и 112|Город и ЖКХ|Законы и Власть|СВО|Общество|Спорт","city":"Город Приморья","age":"0+|6+|12+|16+|18+","tldr":"• Тезис 1 • Тезис 2","text":"3 содержательных абзаца (800-1100 символов)."}',
-    'Исходный текст: ' + raw.slice(0, 2200)
+    'Ты старший корреспондент и редактор портала Приморского края «Прим_Дозор» (уровень РБК и VL.ru).',
+    'Напиши полноценную, развёрнутую журналистскую статью (3-4 подробных абзаца, 950-1300 символов) живым, профессиональным языком без шаблонных фраз ИИ («подчеркивает важность», «вызывает широкий резонанс», «в заключение стоит отметить»). Сохрани все факты, адреса, имена ведомств и цифры.',
+    'СТРОГИЙ ФИЛЬТР ГЕОГРАФИИ: Публикуй ТОЛЬКО события Приморского края (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Спасск-Дальний, Партизанск, Дальнегорск, Лесозаводск, Хасан и др.), важные федеральные законы РФ для граждан, а также события СВО и изменения в законодательстве Украины (если тема касается СВО/Украины). Любые новости других регионов РФ (Красноярск, Хабаровск, Благовещенск, Москва без привязки к законам) отклоняй словом SKIP.',
+    'Рекламу, розыгрыши, акции салонов и астрологию отклоняй словом SKIP. Соблюдай законы РФ (436-ФЗ, УК, КоАП).',
+    'Верни строго валидный JSON без markdown:',
+    '{"title":"Информативный заголовок до 85 символов","cat":"chp|city|law|svo|family|sport","catLabel":"ЧП и 112|Город и ЖКХ|Законы и Власть|СВО и Защита|Общество|Спорт и Афиша","city":"Город Приморья","age":"0+|6+|12+|16+|18+","tldr":"• Факт 1 • Факт 2","text":"Полный текст статьи в 3-4 абзацах."}',
+    'Исходный материал: ' + raw.slice(0, 2400)
   ].join(NL);
 
   try {
@@ -108,7 +122,7 @@ async function rewriteNews(raw) {
     const res = await fetch(aiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
-      body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.4 })
+      body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.35 })
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -148,9 +162,12 @@ async function drawCover(post, imgUrl) {
   grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(9,13,22,0.96)');
   ctx.fillStyle = grad; ctx.fillRect(0, h - 260, w, 260);
 
-  ctx.fillStyle = '#dc2626'; ctx.fillRect(40, 32, 220, 42);
+  ctx.fillStyle = '#c81e1e'; ctx.fillRect(40, 32, 220, 42);
   ctx.fillStyle = '#fff'; ctx.font = 'bold 21px sans-serif';
   ctx.fillText('ПРИМ_ДОЗОР', 56, 60);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = 'bold 26px sans-serif';
+  ctx.fillText('PRIMDOZOR.RU', w - 255, 60);
 
   ctx.fillStyle = '#ffffff'; ctx.font = 'bold 34px sans-serif';
   const words = post.title.split(' ');
@@ -174,38 +191,43 @@ async function drawCover(post, imgUrl) {
 
 async function run() {
   const { weather, rates } = await fetchWeatherAndRates();
-  let news = [];
-  if (fs.existsSync('news.json')) { try { news = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {} }
-  let state = {};
-  if (fs.existsSync('tg_state.json')) { try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {} }
+  let rawNews = [];
+  if (fs.existsSync('news.json')) { try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {} }
 
-  const candidates = [];
-  for (const ch of CHANNELS) {
-    try {
-      const html = await getHttp(['https:', '', 't.me', 's', ch.id].join(SLASH));
-      let maxId = state[ch.id] || 0;
-      for (const b of html.split('tgme_widget_message_wrap').slice(-5)) {
-        const pm = b.match(new RegExp('data-post="[^"]+' + SLASH + '(\\d+)"'));
-        const num = pm ? Number(pm.at(1)) : 0;
-        if (num && state[ch.id] && num <= state[ch.id]) continue;
-        if (num > maxId) maxId = num;
-        const idx = b.indexOf('tgme_widget_message_text');
-        if (idx === -1) continue;
-        const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
-        if (txt.length < 80 || txt.includes('erid') || txt.includes('#реклама')) continue;
-        const im = b.match(new RegExp("background-image:url\\('(https?:" + SLASH + SLASH + "[^']+)'\\)"));
-        candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
-      }
-      if (maxId > 0) state[ch.id] = maxId;
-    } catch (e) {}
+  const news = [];
+  for (const item of rawNews) {
+    if ((item.city || '').includes('Красноярск')) continue;
+    if (!isDuplicate(item.title, news)) news.push(item);
   }
-  fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
 
-  let added = 0;
-  for (const c of candidates) {
-    if (added >= 6) break;
-    const ai = await rewriteNews(c.raw);
-    if (!ai) continue;
+  let state = {};
+if (fs.existsSync('tg_state.json')) { try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {} }
+const candidates = [];
+for (const ch of CHANNELS) {
+try {
+const html = await getHttp(['https:', '', 't.me', 's', ch.id].join(SLASH));
+let maxId = state[ch.id] || 0;
+for (const b of html.split('tgme_widget_message_wrap').slice(-5)) {
+const pm = b.match(new RegExp('data-post="[^"]+' + SLASH + '(\d+)"'));
+const num = pm ? Number(pm.at(1)) : 0;
+if (num && state[ch.id] && num <= state[ch.id]) continue;
+if (num > maxId) maxId = num;
+const idx = b.indexOf('tgme_widget_message_text');
+if (idx === -1) continue;
+const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
+if (txt.length < 90 || txt.includes('erid') || txt.includes('#реклама')) continue;
+const im = b.match(new RegExp("background-image:url\('(https?:" + SLASH + SLASH + "[^']+)'\)"));
+candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
+}
+if (maxId > 0) state[ch.id] = maxId;
+} catch (e) {}
+}
+fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
+let added = 0;
+for (const c of candidates) {
+if (added >= 6) break;
+const ai = await rewriteNews(c.raw);
+if (!ai || isDuplicate(ai.title, news)) continue;
 const vl = new Date(Date.now() + 10 * 3600000);
 const post = {
 id: Date.now() + added,
@@ -223,9 +245,9 @@ post.cover = await drawCover(post, c.img);
 news.unshift(post);
 added++;
 }
-news = news.slice(0, 60);
-fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
-buildHtml(news, weather, rates);
+const finalNews = news.slice(0, 60);
+fs.writeFileSync('news.json', JSON.stringify(finalNews, null, 2), 'utf8');
+buildHtml(finalNews, weather, rates);
 if (added > 0 && INDEXNOW_KEY) {
 try {
 const idxUrl = ['https:', '', 'yandex.com', 'indexnow'].join(SLASH);
@@ -236,6 +258,6 @@ body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + 
 });
 } catch (e) {}
 }
-console.log('Готово. Опубликовано статей: ' + added);
+console.log('Готово. Опубликовано новых уникальных статей: ' + added);
 }
 run();
