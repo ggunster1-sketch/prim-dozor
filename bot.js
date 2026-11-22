@@ -215,6 +215,7 @@ added++;
 const finalNews = news.slice(0, 60);
 fs.writeFileSync('news.json', JSON.stringify(finalNews, null, 2), 'utf8');
 updateLiveOutages(finalNews);
+  await updateAfisha(AI_KEY);
 buildHtml(finalNews, weather, rates);
 if (added > 0 && INDEXNOW_KEY) {
 try {
