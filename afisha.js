@@ -1,7 +1,15 @@
 const fs = require('fs');
 const https = require('https');
 
-const AFISHA_CHANNELS = ['adm_vl', 'sport_primorye', 'primorskyadmin', 'culture_pk', 'turizm_pk'];
+const AFISHA_CHANNELS = [
+  'adm_vl',
+  'sport_primorye',
+  'primorskyadmin',
+  'culture_pk',
+  'turizm_pk',
+  'vladivostok_afisha',
+  'visitprimorye'
+];
 
 function getPage(url) {
   return new Promise((resolve, reject) => {
@@ -33,16 +41,17 @@ function cleanAfishaText(s) {
 async function updateAfisha(aiKey) {
   if (!aiKey || !fs.existsSync('data/directories.json')) return;
   const rawPosts = [];
+  const tgHost = ['t', 'me'].join('.');
 
   for (const ch of AFISHA_CHANNELS) {
     try {
-      const html = await getPage(['https:', '', 't.me', 's', ch].join('/'));
-      for (const b of html.split('tgme_widget_message_wrap').slice(-6)) {
+      const html = await getPage(['https:', '', tgHost, 's', ch].join('/'));
+      for (const b of html.split('tgme_widget_message_wrap').slice(-8)) {
         const idx = b.indexOf('tgme_widget_message_text');
         if (idx === -1) continue;
         const txt = cleanAfishaText(b.slice(b.indexOf('>', idx) + 1, b.indexOf('</div>', idx)));
-        if (txt.length > 70 && /(бесплатн|вход свободный|афиша|фестивал|ярмарк|матч|турнир|выставк|концерт|забег|хокке|баскетбол|футбол|парк|набережн)/i.test(txt)) {
-          rawPosts.push(txt.slice(0, 650));
+        if (txt.length > 60 && /(афиша|фестивал|ярмарк|матч|турнир|выставк|концерт|спектакл|забег|хокке|баскетбол|футбол|парк|набережн|музе|библиотек|бесплатн|вход свободный|состоится|пройдёт|пройдет)/i.test(txt)) {
+          rawPosts.push(txt.slice(0, 800));
         }
       }
     } catch (e) {}
@@ -50,18 +59,22 @@ async function updateAfisha(aiKey) {
 
   if (!rawPosts.length) return;
 
+  const vl = new Date(Date.now() + 10 * 3600000);
+  const todayStr = vl.getUTCDate() + '.' + String(vl.getUTCMonth() + 1).padStart(2, '0') + '.' + vl.getUTCFullYear();
+
   const prompt = [
-    'Ты редактор афиши Приморского края на портале «Прим_Дозор».',
-    'Из сообщений выбери 5 самых интересных городских мероприятий, выставок, ярмарок или спортивных матчей во Владивостоке и Приморском крае.',
-    'Пиши грамотным русским языком с пробелами после всех знаков препинания.',
-    'Любую скрытую коммерческую рекламу кафе, клиник и розыгрышей отбрось.',
+    'Ты редактор актуальной афиши Приморского края на портале «Прим_Дозор». Сегодняшняя дата во Владивостоке: ' + todayStr + '.',
+    'Из сообщений выбери 6 самых актуальных ближайших мероприятий (выставки, концерты, спортивные матчи, ярмарки, фестивали, городские праздники) во Владивостоке и городах Приморского края.',
+    'Не бери прошедшие события и коммерческую рекламу кафе, салонов красоты или розыгрышей.',
+    'Обязательно укажи для каждого события конкретную дату, время начала, точное место и улицу (адрес), а также стоимость или «Вход свободный».',
     'Верни строго JSON-массив без markdown:',
-    '[{"date":"Дата и время начала (например: 24 ноября, 12:00)","city":"Город Приморья","place":"Точное место проведения и адрес","price":"Вход свободный или цена","title":"Название события до 75 символов","tag":"Спорт • 0+ | Культура • 0+ | Город • 0+","desc":"Подробное описание программы мероприятия (2-3 предложения): что будет происходить, для кого подходит и как добраться."}]',
-    'Исходные сообщения:\n' + rawPosts.slice(0, 12).join('\n---\n')
+    '[{"date":"Дата и время (например: 23 ноября, 19:00)","city":"Город Приморья","place":"Площадка и точный адрес (например: Фетисов Арена, ул. Маковского, 284)","price":"Вход свободный или цена билета","title":"Название события до 75 символов","tag":"Спорт • 0+ | Культура • 6+ | Город • 0+","desc":"Подробная программа мероприятия (3-4 предложения): что ждёт зрителей, во сколько сбор гостей, как добраться и нужна ли предварительная регистрация."}]',
+    'Исходные сообщения:\n' + rawPosts.slice(0, 15).join('\n---\n')
   ].join('\n');
 
   try {
-    const aiUrl = ['https:', '', 'polza.ai', 'api', 'v1', 'chat', 'completions'].join('/');
+    const aiHost = ['polza', 'ai'].join('.');
+    const aiUrl = ['https:', '', aiHost, 'api', 'v1', 'chat', 'completions'].join('/');
     const res = await fetch(aiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiKey },
