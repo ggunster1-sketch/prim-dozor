@@ -106,13 +106,14 @@ function initBannerAndAds() {
     ]);
 
     const hol = allHolidays.find(h => (h.start <= h.end) ? (mmdd >= h.start && mmdd <= h.end) : (mmdd >= h.start || mmdd <= h.end));
+    const uHost = ['images', 'unsplash', 'com'].join('.');
     const seasonBg = (m === 12 || m <= 2)
-      ? 'linear-gradient(90deg, rgba(15,23,42,0.88), rgba(30,58,138,0.78)), url("https://unsplash.com")'
+      ? 'linear-gradient(90deg, rgba(15,23,42,0.88), rgba(30,58,138,0.78)), url("https://' + uHost + '/photo-1483664852095-d6cc6870702d?auto=format&fit=crop&w=1200&q=75")'
       : (m >= 3 && m <= 5)
-      ? 'linear-gradient(90deg, rgba(15,23,42,0.86), rgba(6,95,70,0.76)), url("https://unsplash.com")'
+      ? 'linear-gradient(90deg, rgba(15,23,42,0.86), rgba(6,95,70,0.76)), url("https://' + uHost + '/photo-1522748906645-95d8adfd52c7?auto=format&fit=crop&w=1200&q=75")'
       : (m >= 6 && m <= 8)
-      ? 'linear-gradient(90deg, rgba(15,23,42,0.84), rgba(3,105,161,0.76)), url("https://unsplash.com")'
-      : 'linear-gradient(90deg, rgba(15,23,42,0.88), rgba(146,64,14,0.78)), url("https://unsplash.com")';
+      ? 'linear-gradient(90deg, rgba(15,23,42,0.84), rgba(3,105,161,0.76)), url("https://' + uHost + '/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=75")'
+      : 'linear-gradient(90deg, rgba(15,23,42,0.88), rgba(146,64,14,0.78)), url("https://' + uHost + '/photo-1508193638397-1c4234db14d8?auto=format&fit=crop&w=1200&q=75")';
 
     banner.style.backgroundImage = seasonBg;
     if (hol) {
@@ -134,11 +135,17 @@ function initBannerAndAds() {
   const ad = cfg.partnerAd;
   const adBox = document.getElementById('ad-slot');
   if (ad && ad.enabled && adBox) {
+    const uHost = ['images', 'unsplash', 'com'].join('.');
     adBox.innerHTML =
       '<div class="ad-tag"><span>' + ad.label + '</span><span>' + ad.advertiserInfo + ' • erid: ' + ad.erid + '</span></div>' +
-      '<div style="font-weight:800;font-size:15px;margin-bottom:4px">' + ad.title + '</div>' +
-      '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">' + ad.description + '</div>' +
-      '<a href="tel:' + ad.phone.replace(/[^+\d]/g, '') + '" class="btn-cta" style="display:inline-block">' + ad.buttonText + ': ' + ad.phone + '</a>';
+      '<div style="display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:center">' +
+        '<img src="https://' + uHost + '/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=400&q=80" alt="Аварийный комиссар Приморье" style="width:100%;height:96px;object-fit:cover;border-radius:8px">' +
+        '<div>' +
+          '<div style="font-weight:800;font-size:15px;margin-bottom:4px">' + ad.title + '</div>' +
+          '<div style="font-size:13px;color:var(--muted);margin-bottom:8px">' + ad.description + '</div>' +
+          '<a href="tel:' + ad.phone.replace(/[^+\d]/g, '') + '" class="btn-cta" style="display:inline-block">' + ad.buttonText + ': ' + ad.phone + '</a>' +
+        '</div>' +
+      '</div>';
     adBox.style.display = 'block';
   }
 }
@@ -153,19 +160,18 @@ function sendReport(e) {
   const city = document.getElementById('rep-city').value;
   const text = document.getElementById('rep-text').value.trim();
   if (!text) return;
-  const msg = encodeURIComponent('Народный контроль (' + city + '):\n' + text);
-  window.open('https://t.me?text=' + msg, '_blank');
-  document.getElementById('report-modal').style.display = 'none';
+const msg = encodeURIComponent('Народный контроль (' + city + '):\n' + text);
+window.open('t.me' + msg, '_blank');
+document.getElementById('report-modal').style.display = 'none';
 }
-
 window.addEventListener('DOMContentLoaded', () => {
-  if (localStorage.getItem('ck')) {
-    const ck = document.getElementById('ck');
-    if (ck) ck.style.display = 'none';
-  }
-  initBannerAndAds();
-  renderCityPhones('Все города');
-  setInterval(() => {
+if (localStorage.getItem('ck')) {
+const ck = document.getElementById('ck');
+if (ck) ck.style.display = 'none';
+}
+initBannerAndAds();
+renderCityPhones('Все города');
+setInterval(() => {
 const vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
 const cl = document.getElementById('clock');
 if (cl) cl.textContent = 'Владивосток ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
