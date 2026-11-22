@@ -12,6 +12,8 @@ function tag(name, attrs, inner) {
 
 function esc(s) {
   return String(s || '')
+    .replace(/\+0°C/g, '0°C')
+    .replace(/-0°C/g, '0°C')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -27,6 +29,8 @@ function telHref(phone) {
 
 function safeJson(data) {
   return JSON.stringify(data || [])
+    .replace(/\+0°C/g, '0°C')
+    .replace(/-0°C/g, '0°C')
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')
     .replace(/&/g, '\\u0026')
@@ -94,7 +98,7 @@ function buildHtml(news, weather, rates) {
         tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
         tag('title', '', esc(p.title) + ' — Прим_Дозор') +
         tag('meta', 'name="description" content="' + esc(String(p.text || '').replace(/\s+/g, ' ').slice(0, 160)) + '"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=22"')
+        tag('link', 'rel="stylesheet" href="/style.css?v=35"')
       ) +
       tag('body', '',
         tag('header', 'class="site-header"',
@@ -133,7 +137,28 @@ function buildHtml(news, weather, rates) {
       }).join('')
     : tag('div', 'class="widget"', tag('p', 'style="color:var(--muted)"', 'Лента новостей обновляется. Зайдите через пару минут.'));
 
-  const tpl = fs.readFileSync('template.html', 'utf8');
+  let tpl = fs.readFileSync('template.html', 'utf8');
+
+  // Автоочистка template.html от старой Метрики и дублирующего inline-скрипта
+  const badYm = ['"https:', '', 'yandex.ru"'].join(SLASH);
+  const goodYm = ['"https:', '', 'mc.yandex.ru', 'metrika', 'tag.js"'].join(SLASH);
+  tpl = tpl.replace(badYm, goodYm).replace(/style\.css\?v=\d+/g, 'style.css?v=35');
+
+  const footerEnd = tpl.indexOf(LT + SLASH + 'footer' + GT);
+  if (footerEnd !== -1) {
+    const cleanTail = NL + NL +
+      tag('script', '',
+        NL + 'window.NEWS=' + safeJson(list) + ';' +
+        NL + 'window.WEATHER=' + safeJson(weather) + ';' +
+        NL + 'window.DIRECTORIES=' + safeJson(dir) + ';' + NL
+      ) + NL +
+      tag('script', 'src="/config.js?v=35"', '') + NL +
+      tag('script', 'src="/app.js?v=35"', '') + NL +
+      LT + SLASH + 'body' + GT + NL +
+      LT + SLASH + 'html' + GT;
+    tpl = tpl.slice(0, footerEnd + 9) + cleanTail;
+  }
+
   const html = tpl
     .replace(/\{\{W_NOW\}\}/g, () => esc(w0.now))
     .replace(/\{\{W_M\}\}/g, () => esc(w0.morning))
@@ -159,7 +184,7 @@ function buildHtml(news, weather, rates) {
   }
   fs.writeFileSync(
     'sitemap.xml',
-    '<?xml version="1.0" encoding="UTF-8"?>' + NL + tag('urlset', 'xmlns="http://sitemaps.org"', NL + urls.join(NL) + NL),
+    '<?xml version="1.0" encoding="UTF-8"?>' + NL + tag('urlset', 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"', NL + urls.join(NL) + NL),
     'utf8'
   );
 }
