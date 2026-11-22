@@ -38,6 +38,45 @@ const CHANNELS = [
   { id: 'minzdrav_pk', name: 'Минздрав Приморья', off: true }
 ];
 
+function detectDistrict(text) {
+  const s = String(text || '').toLowerCase();
+  if (/(остров\s*русск|о\.\s*русск|двфу|аякс|новик|поспелов|канал|ворошиловск)/i.test(s)) return 'о. Русский';
+  if (/(первомайск|чуркин|окатов|калинин|фадеев|спортивн|лугов|борисенк|никифоров|сафонов|патрокл|тихая|бухта тихая|змеинк|диомид|героев тихоокеанцев|надибаидзе|харьковск|гульбинович)/i.test(s)) return 'Первомайский р-н (Чуркин)';
+  if (/(ленинск|светланск|авангард|гайдамак|голубиная падь|шилкинск|нейбута|адмирала юмашева|лазо|суханова|капитана шефнера|баляева|котельникова|толстого)/i.test(s)) return 'Ленинский р-н';
+  if (/(первореченск|снеговая падь|снегов|жигур|народн|проспект 100|столетия|океанск|некрасовск|огородн|бам|карбышева|шошина|ильичёва|давыдова)/i.test(s)) return 'Первореченский р-н';
+  if (/(советск|вторая речка|вторяк|русск|кирова|енисейск|чапаева|заря|седанк|океанская|спутник|санаторн|весенн|угольн|трудов|де-фриз|низководн)/i.test(s)) return 'Советский р-н';
+  if (/(фрунзенск|эгершельд|алеутск|посьетск|тигров|верхнепортов|крыгина|маяк|токаревск|бестужева|фонтанн|набережная|спортивная гавань|арбат|вокзал)/i.test(s)) return 'Фрунзенский р-н (Центр)';
+  return '';
+}
+
+function buildTrafficRadar(newsList) {
+  const recent = (Array.isArray(newsList) ? newsList : []).slice(0, 12);
+  const routes = [
+    { id: 'gold', name: 'Золотой мост', re: /золот(ой|ом|ого)\s*мост/i },
+    { id: 'russky', name: 'Русский мост', re: /русск(ий|ом|ого)\s*мост/i },
+    { id: 'low', name: 'Де-Фриз — Седанка', re: /(низководн|де-фриз|седанк)/i },
+    { id: 'm60', name: 'Трасса А-370 (Уссури)', re: /(а-370|м-60|трасс[аеу]\s*(владивосток|уссурийск|хабаровск)|кипарисово|раздольн)/i },
+    { id: 'nakh', name: 'Трасса на Находку', re: /(трасс[аеу]\s*(на\s*)?находк|артём\s*—\s*находк|шкотово|смоляниново|фокино)/i }
+  ];
+
+  const radar = routes.map(rt => {
+    const hit = recent.find(n => rt.re.test((n.title || '') + ' ' + (n.text || '')));
+    if (!hit) return { name: rt.name, level: 'ok', status: 'Свободно' };
+    const full = ((hit.title || '') + ' ' + (hit.text || '')).toLowerCase();
+    if (/(перекрыт|закрыт|ограничен|обвал|размыв)/i.test(full)) {
+      return { name: rt.name, level: 'danger', status: 'Перекрытие / Ограничено', newsId: hit.id };
+    }
+    if (/(дтп|авари|столкновен|пробк|затор|гололёд|гололед|снег)/i.test(full)) {
+      return { name: rt.name, level: 'warn', status: 'ДТП / Затор', newsId: hit.id };
+    }
+    return { name: rt.name, level: 'ok', status: 'Штатно', newsId: hit.id };
+  });
+
+  if (!fs.existsSync('data')) fs.mkdirSync('data', { recursive: true });
+  fs.writeFileSync('data/traffic.json', JSON.stringify(radar, null, 2), 'utf8');
+  return radar;
+}
+
 function getHttp(url) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { family: 4, timeout: 9000, headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
@@ -159,60 +198,62 @@ async function rewriteNews(raw) {
   const prompt = [
     'Ты опытный шеф-редактор и журналист ведущего СМИ Приморского края «Прим_Дозор» (уровень VL.ru и РБК).',
     'Напиши захватывающую, грамотную, SEO-оптимизированную журналистскую статью (4 содержательных абзаца, 1100-1500 символов) живым русским языком без орфографических и пунктуационных ошибок, с пробелами после всех знаков препинания. Сохрани все факты, улицы, суммы, номера маршрутов и официальные комментарии.',
-    'Также напиши отдельный вовлекающий анонс для Telegram-канала (tgText: 2 живых абзаца, 480-600 символов, с интригой и ключевыми деталями, чтобы читателю захотелось перейти на сайт).',
-    'СТРОГИЙ ЗАПРЕТ РЕКЛАМЫ: Любые коммерческие предложения, услуги клиник, массаж, скидки, акции, розыгрыши и продвижение чужих каналов отклоняй словом SKIP.',
-    'СТРОГИЙ ФИЛЬТР ГЕОГРАФИИ: Публикуй ТОЛЬКО события Приморского края (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Спасск-Дальний, Партизанск, Дальнегорск, Лесозаводск, Хасан и др.), важные федеральные законы РФ, а также события СВО и изменения в законодательстве Украины (если тема касается СВО/Украины). Другие регионы РФ отклоняй словом SKIP.',
-    'Верни строго валидный JSON без markdown:',
-    '{"title":"Цепляющий SEO-заголовок до 85 символов","cat":"chp|city|law|svo|family|sport","catLabel":"ЧП и 112|Город и ЖКХ|Законы и Власть|СВО и Защита|Общество|Спорт и Афиша","city":"Город Приморья","age":"0+|6+|12+|16+|18+","urgent":false,"tldr":"• Факт 1 • Факт 2","tgText":"2 живых абзаца для Telegram (480-600 символов).","text":"Полная SEO-статья в 4 абзацах (1100-1500 символов)."}',
-    'Исходный материал: ' + raw.slice(0, 2400)
-  ].join(NL);
-
-  try {
-    const aiHost = ['polza', 'ai'].join('.');
-    const aiUrl = ['https:', '', aiHost, 'api', 'v1', 'chat', 'completions'].join(SLASH);
-    const res = await fetch(aiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
-      body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.4 })
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const txt = data.choices.at(0).message.content.trim();
-    if (!txt || txt.includes('SKIP')) return null;
-    const p = JSON.parse(txt.replace(/^```json|```$/g, '').trim());
-    p.title = fixTypography(p.title);
-    p.tldr = fixTypography(p.tldr);
-    p.tgText = fixTypography(p.tgText);
-    p.text = fixTypography(p.text);
-    if (isAdOrSpam(p.title + ' ' + p.text)) return null;
-    if (/\b(Meta|Instagram|Facebook|Инстаграм|Фейсбук)\b/i.test(p.text)) {
-      p.text += NL + NL + '*Деятельность Meta (Facebook и Instagram) запрещена в России как экстремистская.';
-    }
-    return p;
-  } catch (e) {
-    return null;
-  }
+'Также напиши отдельный вовлекающий анонс для Telegram-канала (tgText: 2 живых абзаца, 480-600 символов, с интригой и ключевыми деталями, чтобы читателю захотелось перейти на сайт).',
+'СТРОГИЙ ЗАПРЕТ РЕКЛАМЫ: Любые коммерческие предложения, услуги клиник, массаж, скидки, акции, розыгрыши и продвижение чужих каналов отклоняй словом SKIP.',
+'СТРОГИЙ ФИЛЬТР ГЕОГРАФИИ: Публикуй ТОЛЬКО события Приморского края (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Спасск-Дальний, Партизанск, Дальнегорск, Лесозаводск, Хасан и др.), важные федеральные законы РФ, а также события СВО и изменения в законодательстве Украины (если тема касается СВО/Украины). Другие регионы РФ отклоняй словом SKIP.',
+'Верни строго валидный JSON без markdown:',
+'{"title":"Цепляющий SEO-заголовок до 85 символов","cat":"chp|city|law|svo|family|sport","catLabel":"ЧП и 112|Город и ЖКХ|Законы и Власть|СВО и Защита|Общество|Спорт и Афиша","city":"Город Приморья","district":"Район Владивостока если применимо или пусто","age":"0+|6+|12+|16+|18+","urgent":false,"tldr":"• Факт 1 • Факт 2","tgText":"2 живых абзаца для Telegram (480-600 символов).","text":"Полная SEO-статья в 4 абзацах (1100-1500 символов)."}',
+'Исходный материал: ' + raw.slice(0, 2400)
+].join(NL);
+try {
+const aiHost = ['polza', 'ai'].join('.');
+const aiUrl = ['https:', '', aiHost, 'api', 'v1', 'chat', 'completions'].join(SLASH);
+const res = await fetch(aiUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
+body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.4 })
+});
+if (!res.ok) return null;
+const data = await res.json();
+const txt = data.choices.at(0).message.content.trim();
+if (!txt || txt.includes('SKIP')) return null;
+const p = JSON.parse(txt.replace(/^json|$/g, '').trim());
+p.title = fixTypography(p.title);
+p.tldr = fixTypography(p.tldr);
+p.tgText = fixTypography(p.tgText);
+p.text = fixTypography(p.text);
+const autoDist = detectDistrict(p.title + ' ' + p.text + ' ' + (p.district || ''));
+if (autoDist) p.district = autoDist;
+if (isAdOrSpam(p.title + ' ' + p.text)) return null;
+if (/\b(Meta|Instagram|Facebook|Инстаграм|Фейсбук)\b/i.test(p.text)) {
+p.text += NL + NL + '*Деятельность Meta (Facebook и Instagram) запрещена в России как экстремистская.';
 }
-
+return p;
+} catch (e) {
+return null;
+}
+}
 async function run() {
-  const { weather, rates } = await fetchWeatherAndRates();
-  let rawNews = [];
-  if (fs.existsSync('news.json')) {
-    try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
-  }
-
-  const news = [];
-  for (const item of rawNews) {
-    if (!item.isPartner && !item.manual && isAdOrSpam(item.title + ' ' + item.text)) continue;
-    item.title = fixTypography(item.title);
-    item.text = fixTypography(item.text);
+const { weather, rates } = await fetchWeatherAndRates();
+let rawNews = [];
+if (fs.existsSync('news.json')) {
+try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
+}
+const news = [];
+for (const item of rawNews) {
+if (!item.isPartner && !item.manual && isAdOrSpam(item.title + ' ' + item.text)) continue;
+item.title = fixTypography(item.title);
+item.text = fixTypography(item.text);
 item.tldr = fixTypography(item.tldr);
+if (!item.district) {
+const d = detectDistrict(item.title + ' ' + item.text);
+if (d) item.district = d;
+}
 if (!item.cover || item.cover.startsWith('http')) {
 item.cover = await drawThemedCover(item, item.cover || '');
 }
 if (!isDuplicate(item.title, news)) news.push(item);
 }
-// Афиша обновляется в реальном времени при каждом запуске
 if (typeof updateAfisha === 'function') {
 await updateAfisha(AI_KEY);
 }
@@ -221,8 +262,9 @@ const startUtc = Date.UTC(2026, 10, 22, 21, 0, 0);
 if (Date.now() < startUtc) {
 fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
 updateLiveOutages(news);
+buildTrafficRadar(news);
 buildHtml(news, weather, rates);
-console.log('Ожидание старта новостей в 07:00 23.11.2026 (Владивосток). Погода, курсы и Афиша обновлены.');
+console.log('Ожидание старта новостей в 07:00 23.11.2026 (Владивосток). Погода, курсы, радар трасс и Афиша обновлены.');
 return;
 }
 let state = {};
@@ -264,6 +306,7 @@ date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + Str
 cat: ai.cat || 'city',
 catLabel: ai.catLabel || 'Город и ЖКХ',
 city: ai.city || 'Приморье',
+district: ai.district || '',
 age: ai.age || '16+',
 title: ai.title,
 tldr: ai.tldr,
@@ -278,6 +321,7 @@ added++;
 const finalNews = news.slice(0, 60);
 fs.writeFileSync('news.json', JSON.stringify(finalNews, null, 2), 'utf8');
 updateLiveOutages(finalNews);
+buildTrafficRadar(finalNews);
 buildHtml(finalNews, weather, rates);
 if (added > 0 && INDEXNOW_KEY) {
 try {
