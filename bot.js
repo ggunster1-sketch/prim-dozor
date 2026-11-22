@@ -166,12 +166,15 @@ async function rewriteNews(raw) {
   }
 }
 
-async function run() {
-  const { weather, rates } = await fetchWeatherAndRates();
-  let rawNews = [];
-  if (fs.existsSync('news.json')) {
-    try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
+  const news = [];
+  for (const item of rawNews) {
+    if (!item.isPartner && !item.manual && isAdOrSpam(item.title + ' ' + item.text)) continue;
+    if (!item.cover || item.cover.startsWith('http')) {
+      item.cover = await drawThemedCover(item, item.cover || '');
+    }
+    if (!isDuplicate(item.title, news)) news.push(item);
   }
+
 
   const news = [];
   for (const item of rawNews) {
