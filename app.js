@@ -282,7 +282,7 @@ adBox.innerHTML =
 '' + ad.label + ' ' + ad.advertiserInfo + ' • erid: ' + ad.erid + ' \n' +
 '' + ad.title + ' \n' +
 '' + ad.description + ' \n' +
-'📞 ' + ad.buttonText + ': ' + ad.phone + '';
+'📞 Позвонить: ' + ad.phone + '';
 adBox.style.display = 'block';
 }
 setInterval(function() {
