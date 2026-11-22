@@ -22,6 +22,16 @@ function getByIdx(arr, index) {
   return found;
 }
 
+function cleanPhoneDigits(str) {
+  var s = String(str || '');
+  var res = '';
+  for (var i = 0; i < s.length; i++) {
+    var ch = s.charAt(i);
+    if ((ch >= '0' && ch <= '9') || ch === '+') res += ch;
+  }
+  return res;
+}
+
 function fmtTemp(v) {
   var n = Math.round(Number(v) || 0);
   if (n === 0) return '0°C';
@@ -163,7 +173,7 @@ function switchDirTab(tabId, btn) {
 function makeTelHref(num) {
   var parts = String(num || '').split('/');
   var first = getByIdx(parts, 0) || '';
-  var clean = first.replace(/[^\d+]/g, '');
+  var clean = cleanPhoneDigits(first);
   if (clean.length === 7 && clean.indexOf('+') !== 0) clean = '+7423' + clean;
   if (clean.indexOf('8') === 0 && clean.length === 11) clean = '+7' + clean.slice(1);
   return 'tel:' + clean;
@@ -194,7 +204,7 @@ function renderSeasonBanner() {
     { start: '02-23', end: '02-23', icon: '🎖', title: 'С Днём защитника Отечества!', text: 'Поздравляем моряков Тихоокеанского флота, бойцов СВО и всех защитников России!' },
     { start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
     { start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
-    { start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
+{ start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
 { start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
 { start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
 { start: '07-02', end: '07-02', icon: '⚓', title: 'С Днём города Владивостока!', text: 'С днём рождения, столица Дальнего Востока! Процветания городу у моря!' },
@@ -265,6 +275,7 @@ var cfg = window.PRIM_DOZOR_CONFIG || {};
 var ad = cfg.partnerAd;
 var adBox = document.getElementById('ad-slot');
 if (ad && ad.enabled && adBox) {
+var dialNum = cleanPhoneDigits(ad.phone);
 adBox.innerHTML =
 '' + ad.label + ' ' + ad.advertiserInfo + ' • erid: ' + ad.erid + ' \n' +
 '' + ad.title + ' \n' +
