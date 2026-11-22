@@ -17,6 +17,19 @@ function getPage(url) {
   });
 }
 
+function cleanAfishaText(s) {
+  return String(s || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/([а-яёa-z0-9])([А-ЯЁ])/g, '$1 $2')
+    .replace(/([.!?])([А-ЯЁA-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 async function updateAfisha(aiKey) {
   if (!aiKey || !fs.existsSync('data/directories.json')) return;
   const rawPosts = [];
@@ -27,8 +40,7 @@ async function updateAfisha(aiKey) {
       for (const b of html.split('tgme_widget_message_wrap').slice(-6)) {
         const idx = b.indexOf('tgme_widget_message_text');
         if (idx === -1) continue;
-        const txt = b.slice(b.indexOf('>', idx) + 1, b.indexOf('</div>', idx))
-          .replace(/<[^>]+>/g, ' ').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+        const txt = cleanAfishaText(b.slice(b.indexOf('>', idx) + 1, b.indexOf('</div>', idx)));
         if (txt.length > 70 && /(бесплатн|вход свободный|афиша|фестивал|ярмарк|матч|турнир|выставк|концерт|забег|хокке|баскетбол|футбол|парк|набережн)/i.test(txt)) {
           rawPosts.push(txt.slice(0, 650));
         }
@@ -41,6 +53,7 @@ async function updateAfisha(aiKey) {
   const prompt = [
     'Ты редактор афиши Приморского края на портале «Прим_Дозор».',
     'Из сообщений выбери 5 самых интересных городских мероприятий, выставок, ярмарок или спортивных матчей во Владивостоке и Приморском крае.',
+    'Пиши грамотным русским языком с пробелами после всех знаков препинания.',
     'Любую скрытую коммерческую рекламу кафе, клиник и розыгрышей отбрось.',
     'Верни строго JSON-массив без markdown:',
     '[{"date":"Дата и время начала (например: 24 ноября, 12:00)","city":"Город Приморья","place":"Точное место проведения и адрес","price":"Вход свободный или цена","title":"Название события до 75 символов","tag":"Спорт • 0+ | Культура • 0+ | Город • 0+","desc":"Подробное описание программы мероприятия (2-3 предложения): что будет происходить, для кого подходит и как добраться."}]',
@@ -60,7 +73,15 @@ async function updateAfisha(aiKey) {
     const items = JSON.parse(txt);
     if (Array.isArray(items) && items.length > 0) {
       const dir = JSON.parse(fs.readFileSync('data/directories.json', 'utf8'));
-      dir.afisha = items.slice(0, 6);
+      dir.afisha = items.slice(0, 6).map(it => ({
+        date: cleanAfishaText(it.date),
+        city: cleanAfishaText(it.city),
+        place: cleanAfishaText(it.place),
+        price: cleanAfishaText(it.price),
+        title: cleanAfishaText(it.title),
+        tag: cleanAfishaText(it.tag),
+        desc: cleanAfishaText(it.desc)
+      }));
       fs.writeFileSync('data/directories.json', JSON.stringify(dir, null, 2), 'utf8');
     }
   } catch (e) {}
