@@ -239,8 +239,31 @@ window.open('t.me' + encodeURIComponent('https://primdozor.ru') + '&text=' + enc
 var m = document.getElementById('report-modal');
 if (m) m.style.display = 'none';
 }
+function bindFallbackClicks() {
+var catMap = { 'Главное': 'all', 'ЧП и 112': 'chp', 'Город и ЖКХ': 'city', 'Законы и Власть': 'law', 'СВО и Защита': 'svo', 'Общество': 'family', 'Спорт и Афиша': 'sport' };
+document.querySelectorAll('.tab').forEach(function(btn) {
+btn.onclick = function() {
+var label = (btn.textContent || '').trim();
+filterCat(catMap[label] || 'all', btn);
+};
+});
+var dirMap = { 'ЖКХ и свет': 'dir-jkh', 'Телефоны': 'dir-phones', 'Афиша': 'dir-afisha', '24/7': 'dir-guide' };
+document.querySelectorAll('.mini-tab').forEach(function(btn) {
+btn.onclick = function() {
+var label = (btn.textContent || '').trim();
+switchDirTab(dirMap[label] || 'dir-jkh', btn);
+};
+});
+document.querySelectorAll('.btn-cta').forEach(function(btn) {
+var txt = (btn.textContent || '').trim();
+if (txt.indexOf('Прислать') !== -1 || txt.indexOf('Сообщить') !== -1) {
+btn.onclick = openReport;
+}
+});
+}
 function initSite() {
 try { if (localStorage.getItem('ck')) { var ck = document.getElementById('ck'); if (ck) ck.style.display = 'none'; } } catch (e) {}
+bindFallbackClicks();
 drawSeason();
 renderCityPhones('Все города');
 renderGuide('');
