@@ -8,7 +8,7 @@
 <meta name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, ЖКХ, отключения воды и света, погода, курсы валют, законы РФ, афиша.">
 <link rel="canonical" href="https://primdozor.ru">
 <link rel="manifest" href="/manifest.json">
-<link rel="stylesheet" href="/style.css?v=10">
+<link rel="stylesheet" href="/style.css?v=12">
 <script type="text/javascript">(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://yandex.ru","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});</script>
 </head>
 <body>
@@ -73,7 +73,7 @@
 </div>
 
 <div class="wrap">
-  <div id="season-banner" class="season-banner" style="display:none"></div>
+  <div id="season-banner" class="season-banner" style="display:none;background-size:cover;background-position:center;color:#fff;min-height:96px;border:none;border-radius:12px;padding:18px 22px;box-shadow:0 4px 14px rgba(0,0,0,0.08)"></div>
 
   <div class="sub-tools">
     <input type="search" class="search-input" placeholder="Поиск по новостям Приморья..." oninput="setSearch(this.value)">
@@ -93,7 +93,7 @@
 
     <aside>
       <div class="widget">
-        <div class="widget-title"><span>Справочник края 24/7</span></div>
+        <div class="widget-title"><span>Отключения и службы 24/7</span></div>
         <div class="mini-tabs">
           <button class="mini-tab active" onclick="switchDirTab('dir-jkh',this)">ЖКХ и свет</button>
           <button class="mini-tab" onclick="switchDirTab('dir-phones',this)">Телефоны</button>
@@ -133,9 +133,9 @@
 
       <div class="widget">
         <div class="widget-title">Редакция и СМИ</div>
-        <div class="w-row"><span>Почта редакции</span><strong>prim_dozor@internet.ru</strong></div>
-        <div class="w-row"><a href="/admin.html">✍ Кабинет редактора</a><strong>→</strong></div>
-        <div class="w-row"><a href="/legal.html">⚖ Правовая информация</a><strong>→</strong></div>
+        <a href="mailto:prim_dozor@internet.ru" class="w-row" style="cursor:pointer"><span>Почта редакции</span><strong>prim_dozor@internet.ru</strong></a>
+        <a href="/admin.html" class="w-row" style="cursor:pointer"><span>✍ Кабинет редактора</span><strong>→</strong></a>
+        <a href="/legal.html" class="w-row" style="cursor:pointer"><span>⚖ Правовая информация (152-ФЗ)</span><strong>→</strong></a>
       </div>
     </aside>
   </div>
@@ -187,7 +187,7 @@ window.NEWS={{NEWS_JSON}};
 window.WEATHER={{WEATHER_JSON}};
 window.DIRECTORIES={{DIR_JSON}};
 </script>
-<script src="/config.js?v=10"></script>
-<script src="/app.js?v=10"></script>
+<script src="/config.js?v=12"></script>
+<script src="/app.js?v=12"></script>
 </body>
 </html>
