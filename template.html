@@ -162,7 +162,7 @@
       <button class="soc-pill" onclick="document.getElementById('report-modal').style.display='none'">✕</button>
     </div>
     <form onsubmit="sendReport(event)">
-      <select id="rep-city" class="input">
+           <select id="rep-city" class="input">
         <option>Владивосток</option>
         <option>Уссурийск</option>
         <option>Находка</option>
@@ -365,14 +365,14 @@ function renderSeasonBanner() {
   var m = now.getMonth() + 1;
   var mmdd = String(m).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-  var holidays = (cfg.holidays || []).concat([
-    { start: '01-25', end: '01-25', icon: '🎓', title: 'С Днём российского студенчества (Татьянин день)!', text: 'Редакция «Прим_Дозора» поздравляет студентов и преподавателей ДВФУ, ВВГУ и всех вузов Приморья!' },
-    { start: '02-23', end: '02-23', icon: '🎖', title: 'С Днём защитника Отечества!', text: 'Поздравляем моряков Тихоокеанского флота, бойцов СВО и всех защитников России!' },
-    { start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
-    { start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
-    { start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
-    { start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
-    { start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
+var holidays = (cfg.holidays || []).concat([
+{ start: '01-25', end: '01-25', icon: '🎓', title: 'С Днём российского студенчества (Татьянин день)!', text: 'Редакция «Прим_Дозора» поздравляет студентов и преподавателей ДВФУ, ВВГУ и всех вузов Приморья!' },
+{ start: '02-23', end: '02-23', icon: '🎖', title: 'С Днём защитника Отечества!', text: 'Поздравляем моряков Тихоокеанского флота, бойцов СВО и всех защитников России!' },
+{ start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
+{ start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
+{ start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
+{ start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
+{ start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
 { start: '07-02', end: '07-02', icon: '⚓', title: 'С Днём города Владивостока!', text: 'С днём рождения, столица Дальнего Востока! Процветания городу у моря!' },
 { start: '07-26', end: '07-26', icon: '🚢', title: 'С Днём Военно-Морского Флота!', text: 'Слава Тихоокеанскому флоту и всем военным морякам Приморья!' },
 { start: '09-01', end: '09-01', icon: '📚', title: 'С Днём знаний — 1 Сентября!', text: 'Успешного учебного года школьникам, студентам и педагогам Приморского края!' },
@@ -424,7 +424,7 @@ window.open('t.me' + encodeURIComponent('https://primdozor.ru') + '&text=' + msg
 var m = document.getElementById('report-modal');
 if (m) m.style.display = 'none';
 }
-(function initSite() {
+function initSite() {
 try {
 if (localStorage.getItem('ck')) {
 var ck = document.getElementById('ck');
@@ -451,4 +451,9 @@ var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000
 var cl = document.getElementById('clock');
 if (cl) cl.textContent = 'Владивосток ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
 }, 5000);
-})();
+}
+if (document.readyState === 'loading') {
+document.addEventListener('DOMContentLoaded', initSite);
+} else {
+initSite();
+}
