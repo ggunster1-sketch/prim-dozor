@@ -92,20 +92,26 @@ async function fetchWeatherAndRates() {
     { name: 'Уссурийск', now: '☀ 0°C', morning: '-5°C', day: '+1°C', evening: '-3°C', tomorrow: '+2°C' },
     { name: 'Находка', now: '🌤 +2°C', morning: '-1°C', day: '+3°C', evening: '+1°C', tomorrow: '+4°C' },
     { name: 'Артём', now: '🌤 +1°C', morning: '-3°C', day: '+2°C', evening: '-1°C', tomorrow: '+3°C' },
-    { name: 'Большой Камень', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' }
+    { name: 'Большой Камень', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' },
+    { name: 'Арсеньев', now: '☀ -1°C', morning: '-6°C', day: '0°C', evening: '-4°C', tomorrow: '+1°C' },
+    { name: 'Спасск-Дальний', now: '☀ -2°C', morning: '-7°C', day: '-1°C', evening: '-5°C', tomorrow: '0°C' },
+    { name: 'Партизанск', now: '🌤 +1°C', morning: '-3°C', day: '+2°C', evening: '-1°C', tomorrow: '+3°C' },
+    { name: 'Дальнегорск', now: '❄ -3°C', morning: '-8°C', day: '-2°C', evening: '-6°C', tomorrow: '-1°C' }
   ];
   try {
+    const lats = '43.1155,43.7972,42.8241,43.3592,43.1128,44.1628,44.5978,43.1286,44.5603';
+    const lons = '131.8855,131.9517,132.8928,132.1892,132.3481,133.2778,132.8192,133.1244,135.5700';
     const wUrl = [
       'https:',
       '',
-      '://open-meteo.com',
+      'api.open-meteo.com',
       'v1',
-      'forecast?latitude=43.1155,43.7972,42.8241,43.3592,43.1128&longitude=131.8855,131.9517,132.8928,132.1892,132.3481&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'
+      'forecast?latitude=' + lats + '&longitude=' + lons + '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'
     ].join(SLASH);
     const list = JSON.parse(await getHttp(wUrl));
     const fmt = v => (v > 0 ? '+' : '') + Math.round(v) + '°C';
     const ico = c => c === 0 ? '☀' : c <= 3 ? '🌤' : (c >= 71 && c <= 77) ? '❄' : c >= 51 ? '🌧' : '☁';
-    if (Array.isArray(list)) {
+    if (Array.isArray(list) && list.length === weather.length) {
       weather = list.map((r, i) => ({
         name: weather[i].name,
         now: fmt(r.current.temperature_2m) + ' ' + ico(r.current.weather_code),
@@ -130,7 +136,6 @@ async function fetchWeatherAndRates() {
   } catch (e) {}
   return { weather, rates };
 }
-
 async function rewriteNews(raw) {
   if (!AI_KEY) return null;
   const prompt = [
@@ -188,7 +193,7 @@ async function run() {
     fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
     updateLiveOutages(news);
     buildHtml(news, weather, rates);
-    console.log('Ожидание старта 07:00 23.11.2026 (Владивосток). Погода и курсы обновлены.');
+    console.log('Ожидание старта 07:00 23.11.2026 (Владивосток). Погода по 9 городам и курсы обновлены.');
     return;
   }
 
@@ -211,62 +216,68 @@ async function run() {
         if (idx === -1) continue;
         const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
         if (txt.length < 90 || isAdOrSpam(txt)) continue;
-const im = b.match(new RegExp("background-image:url\('(https?:" + SLASH + SLASH + "[^']+)'\)"));
-candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
+        const im = b.match(new RegExp("background-image:url\\('(https?:" + SLASH + SLASH + "[^']+)'\\)"));
+        candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
+      }
+      if (maxId > 0) state[ch.id] = maxId;
+    } catch (e) {}
+  }
+  fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
+
+  let added = 0;
+  for (const c of candidates) {
+    if (added >= 2) break;
+    const ai = await rewriteNews(c.raw);
+    if (!ai || isDuplicate(ai.title, news)) continue;
+    if (added >= 1 && !ai.urgent && ai.cat !== 'chp') break;
+    const vl = new Date(Date.now() + 10 * 3600000);
+    const post = {
+      id: Date.now() + added,
+      date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
+      cat: ai.cat || 'city',
+      catLabel: ai.catLabel || 'Город и ЖКХ',
+      city: ai.city || 'Приморье',
+      age: ai.age || '16+',
+      title: ai.title,
+      tldr: ai.tldr,
+      tgText: ai.tgText || '',
+      text: ai.text,
+      src: c.src
+    };
+    post.cover = await drawThemedCover(post, c.img);
+    news.unshift(post);
+    added++;
+  }
+
+  const finalNews = news.slice(0, 60);
+  fs.writeFileSync('news.json', JSON.stringify(finalNews, null, 2), 'utf8');
+  updateLiveOutages(finalNews);
+  if (typeof updateAfisha === 'function') {
+    await updateAfisha(AI_KEY);
+  }
+  buildHtml(finalNews, weather, rates);
+
+  if (added > 0 && INDEXNOW_KEY) {
+    try {
+      const idxUrl = ['https:', '', 'yandex.com', 'indexnow'].join(SLASH);
+      await fetch(idxUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          host: HOST,
+          key: INDEXNOW_KEY,
+          keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt',
+          urlList: ['https://' + HOST + '/']
+        })
+      });
+    } catch (e) {}
+  }
+
+  if (added > 0 && TG_TOKEN) {
+    await postToTelegram(finalNews.slice(0, added), TG_TOKEN, HOST);
+  }
+
+  console.log('Готово. Опубликовано новых уникальных статей: ' + added);
 }
-if (maxId > 0) state[ch.id] = maxId;
-} catch (e) {}
-}
-fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
-let added = 0;
-for (const c of candidates) {
-if (added >= 2) break;
-const ai = await rewriteNews(c.raw);
-if (!ai || isDuplicate(ai.title, news)) continue;
-if (added >= 1 && !ai.urgent && ai.cat !== 'chp') break;
-const vl = new Date(Date.now() + 10 * 3600000);
-const post = {
-id: Date.now() + added,
-date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
-cat: ai.cat || 'city',
-catLabel: ai.catLabel || 'Город и ЖКХ',
-city: ai.city || 'Приморье',
-age: ai.age || '16+',
-title: ai.title,
-tldr: ai.tldr,
-tgText: ai.tgText || '',
-text: ai.text,
-src: c.src
-};
-post.cover = await drawThemedCover(post, c.img);
-news.unshift(post);
-added++;
-}
-const finalNews = news.slice(0, 60);
-fs.writeFileSync('news.json', JSON.stringify(finalNews, null, 2), 'utf8');
-updateLiveOutages(finalNews);
-if (typeof updateAfisha === 'function') {
-await updateAfisha(AI_KEY);
-}
-buildHtml(finalNews, weather, rates);
-if (added > 0 && INDEXNOW_KEY) {
-try {
-const idxUrl = ['https:', '', 'yandex.com', 'indexnow'].join(SLASH);
-await fetch(idxUrl, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-host: HOST,
-key: INDEXNOW_KEY,
-keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt',
-urlList: ['https://' + HOST + '/']
-})
-});
-} catch (e) {}
-}
-if (added > 0 && TG_TOKEN) {
-await postToTelegram(finalNews.slice(0, added), TG_TOKEN, HOST);
-}
-console.log('Готово. Опубликовано новых уникальных статей: ' + added);
-}
+
 run();
