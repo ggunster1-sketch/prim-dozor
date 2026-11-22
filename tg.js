@@ -7,7 +7,8 @@ async function postToTelegram(posts, token, host) {
 
   for (const p of queue) {
     try {
-      const caption = '🔴 <b>' + p.title + '</b>\n\n' + p.tldr + '\n\n📍 ' + p.city + ' (' + p.age + ')\n👉 Читать полностью: https://' + host + '/news/' + p.id + '.html';
+      const lead = (p.tgText || p.text || '').slice(0, 620).trim();
+      const caption = '🔴 <b>' + p.title + '</b>\n\n' + lead + '...\n\n📍 ' + p.city + ' (' + p.age + ')\n👉 <b>Читать подробности и фото на портале:</b> https://' + host + '/news/' + p.id + '.html';
       const boundary = '----PrimDozorBoundary' + Date.now();
       const imgBuf = fs.readFileSync(p.cover);
       const head = Buffer.from(
