@@ -18,6 +18,13 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+function telHref(phone) {
+  let clean = String(phone || '').replace(/[^\d+]/g, '');
+  if (clean.length === 7 && !clean.startsWith('+')) clean = '+7423' + clean;
+  if (clean.startsWith('8') && clean.length === 11) clean = '+7' + clean.slice(1);
+  return 'tel:' + clean;
+}
+
 function safeJson(data) {
   return JSON.stringify(data || [])
     .replace(/</g, '\\u003c')
@@ -30,7 +37,7 @@ function safeJson(data) {
 function buildHtml(news, weather, rates) {
   if (!fs.existsSync('news')) fs.mkdirSync('news', { recursive: true });
   const list = Array.isArray(news) ? news : [];
-  const w0 = (Array.isArray(weather) && weather[0]) || {
+  const w0 = (Array.isArray(weather) && weather) || {
     name: 'Владивосток',
     now: '🌤 +1°C',
     morning: '-2°C',
@@ -48,15 +55,21 @@ function buildHtml(news, weather, rates) {
 
   const jkhHtml = (dir.outages || []).map(o =>
     tag('div', 'class="w-row"',
-      tag('div', '', tag('strong', '', esc(o.city)) + ' — ' + esc(o.status)) +
-      tag('strong', 'style="white-space:nowrap"', esc(o.phone))
+      tag('div', 'style="flex:1;padding-right:8px"',
+        tag('div', 'style="font-size:11px;color:var(--accent);font-weight:700"', esc(o.city) + ' • ' + esc(o.type || 'Мониторинг 24/7')) +
+        tag('div', 'style="font-size:13px;line-height:1.35;margin-top:2px"', esc(o.status))
+      ) +
+      tag('a', 'href="' + telHref(o.phone) + '" class="tel-pill"', '📞 ' + esc(o.phone))
     )
   ).join('');
 
-  const afishaHtml = (dir.afisha || []).map(a =>
-    tag('div', 'class="w-row" style="flex-direction:column;align-items:flex-start;gap:2px"',
-      tag('div', 'style="font-size:11.5px;color:var(--accent);font-weight:700"', esc(a.city) + ' • ' + esc(a.date) + ' • ' + esc(a.tag)) +
-      tag('div', 'style="font-weight:600"', esc(a.title))
+  const afishaHtml = (dir.afisha || []).map((a, idx) =>
+    tag('div', 'class="w-row afisha-item" onclick="openAfisha(' + idx + ')"',
+      tag('div', 'style="flex:1"',
+        tag('div', 'style="font-size:11.5px;color:var(--accent);font-weight:700"', esc(a.city) + ' • ' + esc(a.date) + ' • ' + esc(a.tag)) +
+        tag('div', 'style="font-weight:700;margin-top:2px"', esc(a.title)) +
+        tag('div', 'style="font-size:11.5px;color:var(--muted);margin-top:2px"', 'Нажмите для подробностей (где и во сколько) →')
+      )
     )
   ).join('');
 
@@ -81,7 +94,7 @@ function buildHtml(news, weather, rates) {
         tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
         tag('title', '', esc(p.title) + ' — Прим_Дозор') +
         tag('meta', 'name="description" content="' + esc(String(p.text || '').replace(/\s+/g, ' ').slice(0, 160)) + '"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=13"')
+        tag('link', 'rel="stylesheet" href="/style.css?v=18"')
       ) +
       tag('body', '',
         tag('header', 'class="site-header"',
