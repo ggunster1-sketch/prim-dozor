@@ -90,19 +90,22 @@ function renderFeed() {
   var box = document.getElementById('feed');
   if (!box) return;
   var q = cQuery.toLowerCase();
+  var targetLoc = cCity.toLowerCase();
   var list = (window.NEWS || []).filter(function(n) {
     var okCat = cCat === 'all' || (n.cat || '').indexOf(cCat) !== -1;
-    var okCity = cCity === 'all' || (n.city || '').toLowerCase().indexOf(cCity.toLowerCase()) !== -1;
-    var okQ = !q || (n.title || '').toLowerCase().indexOf(q) !== -1 || (n.text || '').toLowerCase().indexOf(q) !== -1;
+    var locStr = ((n.city || '') + ' ' + (n.district || '') + ' ' + (n.title || '') + ' ' + (n.text || '')).toLowerCase();
+    var okCity = targetLoc === 'all' || locStr.indexOf(targetLoc) !== -1;
+    var okQ = !q || locStr.indexOf(q) !== -1;
     return okCat && okCity && okQ;
   });
   if (!list.length) {
-    box.innerHTML = '<div class="widget"><p style="color:var(--muted);">По выбранному фильтру новостей пока нет.</p></div>';
+    box.innerHTML = '<div class="widget"><p style="color:var(--muted);">По выбранному району или фильтру новостей пока нет.</p></div>';
     return;
   }
   box.innerHTML = list.map(function(n, i) {
     var lead = (n.text || '').replace(/\s+/g, ' ').slice(0, 155);
-    var meta = '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + n.city + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + n.age + '</span></div>';
+    var locLabel = n.city + (n.district ? ' • ' + n.district : '');
+    var meta = '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + locLabel + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + n.age + '</span></div>';
     return i === 0
       ? '<article class="hero-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="hero-img" src="./' + n.cover + '" alt=""><div class="hero-body">' + meta + ' <h2 class="hero-title">' + n.title + '</h2> <p class="hero-lead">' + lead + '...</p></div></article>'
       : '<article class="news-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./' + n.cover + '" alt=""><div>' + meta + ' <h3 class="news-title">' + n.title + '</h3> <p class="news-excerpt">' + lead + '...</p></div></article>';
@@ -127,8 +130,9 @@ function openArt(id) {
   var mBody = document.getElementById('m-body');
   var modal = document.getElementById('modal');
   if (!mBody || !modal) return;
+  var locLabel = n.city + (n.district ? ' (' + n.district + ')' : '');
   mBody.innerHTML =
-    '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + n.city + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + n.age + '</span></div>\n' +
+    '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + locLabel + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + n.age + '</span></div>\n' +
     '<h1 style="font-size:21px;line-height:1.3;margin:8px 0 14px">' + n.title + '</h1>\n' +
     '<img src="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px">\n' +
     '<div class="tldr"><strong>Главное:</strong><br>' + (n.tldr || '').replace(/\n/g, '<br>') + '</div>\n' +
@@ -214,12 +218,12 @@ function drawSeasonArtCanvas() {
   else if (m >= 3 && m <= 5) theme = 'spring';
   else if (m >= 6 && m <= 8) theme = 'summer';
 
-  banner.style.padding = '0';
-  banner.style.border = 'none';
-  banner.style.borderRadius = '14px';
-  banner.style.overflow = 'hidden';
-  banner.style.height = '108px';
-  banner.style.display = 'block';
+banner.style.padding = '0';
+banner.style.border = 'none';
+banner.style.borderRadius = '14px';
+banner.style.overflow = 'hidden';
+banner.style.height = '108px';
+banner.style.display = 'block';
 banner.innerHTML = '';
 var cvs = document.createElement('canvas');
 var W = 1200;
