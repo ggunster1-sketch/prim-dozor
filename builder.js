@@ -79,6 +79,10 @@ function buildHtml(news, weather, rates) {
   ).join('');
 
   for (const p of list) {
+    const shareUrl = encodeURIComponent('https://' + HOST + '/news/' + p.id + '.html');
+    const shareTitle = encodeURIComponent(p.title);
+    const tgShare = ['https:', '', 't.me', 'share', 'url?url=' + shareUrl + '&text=' + shareTitle].join(SLASH);
+
     const body = tag('article', 'class="widget" style="padding:24px"',
       tag('div', 'class="news-meta"',
         tag('span', 'class="badge-cat"', esc(p.catLabel)) +
@@ -90,7 +94,11 @@ function buildHtml(news, weather, rates) {
       tag('img', 'class="hero-img" src="/' + esc(p.cover) + '" alt="' + esc(p.title) + '" style="border-radius:10px;margin-bottom:14px"') +
       tag('div', 'class="tldr"', esc(p.tldr).split(NL).join(tag('br'))) +
       tag('div', 'style="font-size:16px;white-space:pre-line;line-height:1.75"', esc(p.text)) +
-      tag('p', 'style="font-size:12px;color:var(--muted);margin-top:16px"', esc(p.src || ''))
+      tag('p', 'style="font-size:12px;color:var(--muted);margin-top:16px"', esc(p.src || '')) +
+      tag('div', 'style="display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)"',
+        tag('a', 'href="' + tgShare + '" target="_blank" rel="noopener" class="btn-cta"', '✈ Переслать в Telegram') +
+        tag('button', 'type="button" class="soc-pill" onclick="navigator.clipboard&&navigator.clipboard.writeText(window.location.href);this.textContent=' + SQ + '✓ Ссылка скопирована' + SQ + '"', '🔗 Скопировать ссылку')
+      )
     );
 
     const artHtml = '<!DOCTYPE html>' + tag('html', 'lang="ru"',
@@ -99,7 +107,8 @@ function buildHtml(news, weather, rates) {
         tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
         tag('title', '', esc(p.title) + ' — Прим_Дозор') +
         tag('meta', 'name="description" content="' + esc(String(p.text || '').replace(/\s+/g, ' ').slice(0, 160)) + '"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=60"')
+        tag('link', 'rel="canonical" href="https://' + HOST + '/news/' + p.id + '.html"') +
+        tag('link', 'rel="stylesheet" href="/style.css?v=70"')
       ) +
       tag('body', '',
         tag('header', 'class="site-header"',
@@ -136,7 +145,7 @@ function buildHtml(news, weather, rates) {
           tag('div', '', meta + tag('h3', 'class="news-title"', esc(n.title)) + tag('p', 'class="news-excerpt"', esc(lead) + '...'))
         );
       }).join('')
-    : tag('div', 'class="widget"', tag('p', 'style="color:var(--muted)"', 'Лента новостей обновляется. Зайдите через пару минут.'));
+    : tag('div', 'class="widget"', tag('p', 'style="color:var(--muted)"', 'Лента новостей обновляется. Первые сводки появятся в 07:00 по Владивостоку.'));
 
   const wCities = ['Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень', 'Арсеньев', 'Спасск-Дальний', 'Партизанск', 'Дальнегорск']
     .map((c, idx) => tag('option', 'value="' + idx + '"', c)).join('');
@@ -177,30 +186,29 @@ function buildHtml(news, weather, rates) {
     tag('title', '', 'Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)') +
     tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, ЖКХ, отключения воды и света, погода, курсы валют, законы РФ, афиша."') +
     tag('link', 'rel="canonical" href="https://primdozor.ru"') +
+    tag('link', 'rel="alternate" type="application/rss+xml" title="Прим_Дозор RSS" href="https://primdozor.ru"') +
     tag('link', 'rel="manifest" href="/manifest.json"') +
-    tag('link', 'rel="stylesheet" href="/style.css?v=60"') +
+    tag('link', 'rel="stylesheet" href="/style.css?v=70"') +
     tag('script', 'type="text/javascript"', ymCode)
-  );
-
-  const infobarHtml = tag('div', 'class="infobar"',
-    tag('div', 'class="wrap infobar-inner"',
-      tag('div', 'class="infobar-left"',
-        tag('span', 'class="live-dot"', '') +
-        tag('strong', 'id="clock"', 'Владивосток') +
-        tag('select', 'class="pill-btn" id="w-sel" onchange="setWeather(this.value)"', wCities) +
-        tag('strong', 'id="w-top"', esc(w0.now))
-      ) +
-      tag('div', 'class="infobar-right"',
-        tag('span', 'class="hide-mob"', '$' + esc(rates.usd) + ' | €' + esc(rates.eur) + ' | ¥' + esc(rates.cny)) +
-        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'big-font' + SQ + ')"', 'А+') +
-        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
-      )
-    )
-  );
-
-  const headerHtml = tag('header', 'class="site-header"',
-    tag('div', 'class="wrap header-inner"',
-      tag('a', 'href="/" class="brand"',
+);
+const infobarHtml = tag('div', 'class="infobar"',
+tag('div', 'class="wrap infobar-inner"',
+tag('div', 'class="infobar-left"',
+tag('span', 'class="live-dot"', '') +
+tag('strong', 'id="clock"', 'Владивосток') +
+tag('select', 'class="pill-btn" id="w-sel" onchange="setWeather(this.value)"', wCities) +
+tag('strong', 'id="w-top"', esc(w0.now))
+) +
+tag('div', 'class="infobar-right"',
+tag('span', 'class="hide-mob"', '$' + esc(rates.usd) + ' | €' + esc(rates.eur) + ' | ¥' + esc(rates.cny)) +
+tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'big-font' + SQ + ')"', 'А+') +
+tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
+)
+)
+);
+const headerHtml = tag('header', 'class="site-header"',
+tag('div', 'class="wrap header-inner"',
+tag('a', 'href="/" class="brand"',
 tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР') +
 tag('span', 'class="brand-sub"', 'Приморский край 24/7') +
 tag('span', 'class="brand-age"', '18+')
@@ -248,11 +256,14 @@ tag('a', 'href="mailto:prim_dozor@internet.ru" class="w-row" style="cursor:point
 tag('a', 'href="/legal.html" class="w-row" style="cursor:pointer"', tag('span', '', '⚖ Правовая информация (152-ФЗ)') + tag('strong', '', '→'))
 )
 );
-const defaultAdHtml =
-tag('div', 'class="ad-tag"', tag('span', '', 'Партнёрский материал') + ' ' + tag('span', '', 'Реклама. Козин А.И., ИНН 254303011920 • erid: ТЕСТОВЫЙ_РЕЖИМ')) +
-tag('div', 'style="font-weight:800;font-size:15px;margin-bottom:6px"', 'Скорая страховая помощь в Приморье') +
-tag('div', 'style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.45"', 'Круглосуточный выезд аварийного комиссара за 15 минут во Владивостоке и крае. Оформление ДТП, автоюрист, независимая экспертиза.') +
-tag('a', 'href="tel:+79673888889" class="btn-cta" style="position:relative;z-index:10;display:inline-flex"', '📞 Позвонить: +7 (967) 388-88-89');
+const editorialSlotHtml =
+tag('div', 'class="ad-tag"', tag('span', '', 'Народный контроль Приморья • 24/7') + ' ' + tag('span', '', 'Бесплатно для жителей края')) +
+tag('div', 'style="font-weight:800;font-size:15px;margin-bottom:6px"', 'Сообщите о проблеме ЖКХ, ДТП или перекрытии дороги') +
+tag('div', 'style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.45"', 'Оперативно публикуем сигналы жителей Владивостока, Уссурийска, Находки, Артёма и других городов Приморского края.') +
+tag('div', 'style="display:flex;flex-wrap:wrap;gap:8px"',
+tag('button', 'type="button" class="btn-cta" onclick="openReport()"', '📢 Сообщить в редакцию') +
+tag('a', 'href="mailto:prim_dozor@internet.ru?subject=%D0%A0%D0%B5%D0%BA%D0%BB%D0%B0%D0%BC%D0%B0%20%D0%BD%D0%B0%20PrimDozor.ru" class="soc-pill"', '💼 Разместить рекламу (38-ФЗ)')
+);
 const mainWrapHtml = tag('div', 'class="wrap"',
 tag('div', 'id="season-banner" class="season-banner" style="display:none"', '') +
 tag('div', 'class="sub-tools"',
@@ -260,7 +271,7 @@ tag('input', 'type="search" class="search-input" placeholder="Поиск по н
 tag('div', 'class="soc-pills"', socLinks)
 ) +
 tag('div', 'class="layout"',
-tag('div', '', tag('main', 'id="feed"', cards) + tag('div', 'id="ad-slot" class="ad-box"', defaultAdHtml)) +
+tag('div', '', tag('main', 'id="feed"', cards) + tag('div', 'id="ad-slot" class="ad-box"', editorialSlotHtml)) +
 asideHtml
 )
 );
@@ -301,10 +312,11 @@ NL + 'window.NEWS=' + safeJson(list) + ';' +
 NL + 'window.WEATHER=' + safeJson(weather) + ';' +
 NL + 'window.DIRECTORIES=' + safeJson(dir) + ';' + NL
 ) +
-tag('script', 'src="/config.js?v=60"', '') +
-tag('script', 'src="/app.js?v=60"', '');
+tag('script', 'src="/config.js?v=70"', '') +
+tag('script', 'src="/app.js?v=70"', '');
 const fullHtml = '' + tag('html', 'lang="ru"', headHtml + tag('body', '', infobarHtml + headerHtml + navHtml + mainWrapHtml + modalsHtml + scriptsHtml));
 fs.writeFileSync('index.html', fullHtml, 'utf8');
+// Генерация sitemap.xml
 const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
 for (const n of list) {
 urls.push(tag('url', '', tag('loc', '', 'https://' + HOST + '/news/' + n.id + '.html') + tag('priority', '', '0.8')));
@@ -314,5 +326,34 @@ fs.writeFileSync(
 '' + NL + tag('urlset', 'xmlns="sitemaps.org"', NL + urls.join(NL) + NL),
 'utf8'
 );
+// Генерация robots.txt для Яндекса и Google
+const robotsTxt = [
+'User-agent: *',
+'Allow: /',
+'Disallow: /data/',
+'Host: https://' + HOST,
+'Sitemap: https://' + HOST + '/sitemap.xml'
+].join(NL);
+fs.writeFileSync('robots.txt', robotsTxt, 'utf8');
+// Генерация RSS-ленты для Дзена и агрегаторов
+const rssItems = list.slice(0, 20).map(n =>
+tag('item', '',
+tag('title', '', esc(n.title)) +
+tag('link', '', 'https://' + HOST + '/news/' + n.id + '.html') +
+tag('guid', '', 'https://' + HOST + '/news/' + n.id + '.html') +
+tag('description', '', esc(String(n.text || '').slice(0, 500)))
+)
+).join(NL);
+const rssXml = '' + NL +
+tag('rss', 'version="2.0"',
+tag('channel', '',
+tag('title', '', 'Прим_Дозор — Новости Владивостока и Приморского края') +
+tag('link', '', 'https://' + HOST + '/') +
+tag('description', '', 'Главные новости Приморского края 24/7') +
+tag('language', '', 'ru') +
+rssItems
+)
+);
+fs.writeFileSync('rss.xml', rssXml, 'utf8');
 }
 module.exports = { buildHtml };
