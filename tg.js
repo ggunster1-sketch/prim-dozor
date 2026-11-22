@@ -2,7 +2,10 @@ const fs = require('fs');
 
 async function postToTelegram(posts, token, host) {
   if (!token || !posts.length) return;
-  for (const p of posts) {
+  const chpPosts = posts.filter(p => p.cat === 'chp');
+  const queue = chpPosts.length > 0 ? chpPosts.slice(0, 2) : posts.slice(0, 1);
+
+  for (const p of queue) {
     try {
       const caption = '🔴 <b>' + p.title + '</b>\n\n' + p.tldr + '\n\n📍 ' + p.city + ' (' + p.age + ')\n👉 Читать полностью: https://' + host + '/news/' + p.id + '.html';
       const boundary = '----PrimDozorBoundary' + Date.now();
