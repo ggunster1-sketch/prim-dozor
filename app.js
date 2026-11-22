@@ -261,13 +261,11 @@ grad.addColorStop(1, '#b45309');
 }
 ctx.fillStyle = grad;
 ctx.fillRect(0, 0, W, H);
-// Мягкое свечение солнца или луны
 var sun = ctx.createRadialGradient(W * 0.78, H * 0.32, 8, W * 0.78, H * 0.32, 220);
 sun.addColorStop(0, 'rgba(254, 240, 138, 0.55)');
 sun.addColorStop(1, 'rgba(254, 240, 138, 0)');
 ctx.fillStyle = sun;
 ctx.fillRect(0, 0, W, H);
-// Силуэты приморских сопок на горизонте
 ctx.fillStyle = 'rgba(15, 10, 8, 0.32)';
 ctx.beginPath();
 ctx.moveTo(0, H);
@@ -287,9 +285,8 @@ ctx.quadraticCurveTo(920, 114, W, 84);
 ctx.lineTo(W, H);
 ctx.closePath();
 ctx.fill();
-// Декоративные элементы сезона / праздника без единой буквы
 if (theme === 'autumn' || theme === 'tiger') {
-var leaves = [
+var leaves = new Array(
 { x: 140, y: 34, r: 15, a: -0.4, c: '#f97316' },
 { x: 260, y: 66, r: 12, a: 0.5, c: '#facc15' },
 { x: 410, y: 28, r: 16, a: -0.2, c: '#ef4444' },
@@ -297,7 +294,7 @@ var leaves = [
 { x: 730, y: 32, r: 15, a: -0.5, c: '#fde047' },
 { x: 890, y: 62, r: 14, a: 0.3, c: '#f97316' },
 { x: 1060, y: 36, r: 16, a: -0.3, c: '#ef4444' }
-];
+);
 leaves.forEach(function(lf) {
 ctx.save();
 ctx.translate(lf.x, lf.y);
@@ -335,7 +332,7 @@ ctx.arc(sx, sy, (i % 3) + 1.5, 0, Math.PI * 2);
 ctx.fill();
 }
 } else if (theme === 'mar8' || theme === 'spring' || theme === 'may1') {
-var petals =;
+var petals = new Array(220, 440, 680, 940);
 petals.forEach(function(px, idx) {
 ctx.fillStyle = idx % 2 === 0 ? 'rgba(244, 114, 182, 0.85)' : 'rgba(251, 207, 232, 0.85)';
 ctx.beginPath();
@@ -347,7 +344,6 @@ ctx.arc(px, 46 + (idx % 2) * 18, 4.5, 0, Math.PI * 2);
 ctx.fill();
 });
 } else {
-// Морские волны Приморья
 ctx.strokeStyle = 'rgba(224, 242, 254, 0.45)';
 ctx.lineWidth = 3;
 for (var row = 0; row < 3; row++) {
