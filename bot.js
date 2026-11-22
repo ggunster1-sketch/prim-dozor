@@ -3,6 +3,7 @@ const https = require('https');
 const { buildHtml } = require('./builder');
 const { isAdOrSpam, updateLiveOutages, drawThemedCover } = require('./media');
 const { postToTelegram } = require('./tg');
+const { updateAfisha } = require('./afisha');
 
 const AI_KEY = (process.env.AI_API_KEY || '').trim();
 const INDEXNOW_KEY = (process.env.INDEXNOW_KEY || '').trim();
