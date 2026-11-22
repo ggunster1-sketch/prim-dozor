@@ -41,23 +41,40 @@ const CHANNELS = [
 function getHttp(url) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { family: 4, timeout: 9000, headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
-      if (res.statusCode !== 200) { res.resume(); return reject(new Error('HTTP ' + res.statusCode)); }
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error('HTTP ' + res.statusCode));
+      }
       let data = '';
       res.setEncoding('utf8');
       res.on('data', c => data += c);
       res.on('end', () => resolve(data));
     });
-    req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Timeout'));
+    });
     req.on('error', reject);
   });
 }
 
 function cleanText(s) {
-  return String(s || '').replace(new RegExp(LT + '[^' + GT + ']+' + GT, 'g'), ' ').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+  return String(s || '')
+    .replace(new RegExp(LT + '[^' + GT + ']+' + GT, 'g'), ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function isDuplicate(title, existingList) {
-  const words = s => new Set(String(s || '').toLowerCase().replace(/[^а-яёa-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3));
+  const words = s => new Set(
+    String(s || '')
+      .toLowerCase()
+      .replace(/[^а-яёa-z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter(w => w.length > 3)
+  );
   const w1 = words(title);
   if (w1.size < 2) return false;
   for (const item of existingList.slice(0, 40)) {
@@ -78,8 +95,13 @@ async function fetchWeatherAndRates() {
     { name: 'Большой Камень', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' }
   ];
   try {
-    const wUrl = ['https:', '', 'api.open-meteo.com', 'v1', 'forecast?latitude=43.1155,43.7972,42.8241,43.3592,43.1128&longitude=131.8855,131.9517,132.8928,132.1892,132.3481&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'].join(SLASH);
-
+    const wUrl = [
+      'https:',
+      '',
+      'api.open-meteo.com',
+      'v1',
+      'forecast?latitude=43.1155,43.7972,42.8241,43.3592,43.1128&longitude=131.8855,131.9517,132.8928,132.1892,132.3481&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'
+    ].join(SLASH);
     const list = JSON.parse(await getHttp(wUrl));
     const fmt = v => (v > 0 ? '+' : '') + Math.round(v) + '°C';
     const ico = c => c === 0 ? '☀' : c <= 3 ? '🌤' : (c >= 71 && c <= 77) ? '❄' : c >= 51 ? '🌧' : '☁';
@@ -139,13 +161,17 @@ async function rewriteNews(raw) {
       p.text += NL + NL + '*Деятельность Meta (Facebook и Instagram) запрещена в России как экстремистская.';
     }
     return p;
-  } catch (e) { return null; }
+  } catch (e) {
+    return null;
+  }
 }
 
 async function run() {
   const { weather, rates } = await fetchWeatherAndRates();
   let rawNews = [];
-  if (fs.existsSync('news.json')) { try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {} }
+  if (fs.existsSync('news.json')) {
+    try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
+  }
 
   const news = [];
   for (const item of rawNews) {
@@ -164,7 +190,9 @@ async function run() {
   }
 
   let state = {};
-  if (fs.existsSync('tg_state.json')) { try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {} }
+  if (fs.existsSync('tg_state.json')) {
+    try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {}
+  }
 
   const candidates = [];
   for (const ch of CHANNELS) {
@@ -183,13 +211,12 @@ async function run() {
         const im = b.match(new RegExp("background-image:url\\('(https?:" + SLASH + SLASH + "[^']+)'\\)"));
         candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
       }
-      if (maxId > 0) state[ch.id] = maxId;
-    } catch (e) {}
-  }
-  fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
-
-  let added = 0;
-  for (const c of candidates) {
+if (maxId > 0) state[ch.id] = maxId;
+} catch (e) {}
+}
+fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
+let added = 0;
+for (const c of candidates) {
 if (added >= 2) break;
 const ai = await rewriteNews(c.raw);
 if (!ai || isDuplicate(ai.title, news)) continue;
@@ -215,7 +242,9 @@ added++;
 const finalNews = news.slice(0, 60);
 fs.writeFileSync('news.json', JSON.stringify(finalNews, null, 2), 'utf8');
 updateLiveOutages(finalNews);
-  await updateAfisha(AI_KEY);
+if (typeof updateAfisha === 'function') {
+await updateAfisha(AI_KEY);
+}
 buildHtml(finalNews, weather, rates);
 if (added > 0 && INDEXNOW_KEY) {
 try {
@@ -223,7 +252,12 @@ const idxUrl = ['https:', '', 'yandex.com', 'indexnow'].join(SLASH);
 await fetch(idxUrl, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + HOST + '/'] })
+body: JSON.stringify({
+host: HOST,
+key: INDEXNOW_KEY,
+keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt',
+urlList: ['https://' + HOST + '/']
+})
 });
 } catch (e) {}
 }
