@@ -100,6 +100,8 @@ function makeJson() {
 
   const obj = {
     id: Date.now(),
+    manual: true,
+    isPartner: isAd,
     date: 'Сегодня, ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0'),
     cat,
     catLabel,
@@ -117,5 +119,3 @@ function makeJson() {
   document.getElementById('out-wrap').style.display = 'block';
 }
 </script>
-</body>
-</html>
