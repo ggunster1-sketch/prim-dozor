@@ -190,4 +190,10 @@ select.pill-btn option { background: #0f172a; color: #fff; }
 .news-excerpt { display: none; }
 .hero-title { font-size: 17px; }
 .season-banner { height: 84px; border-radius: 12px; }
+.mini-tab, .tab, .btn-cta, .soc-pill, .tel-pill, .pill-btn {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
+
