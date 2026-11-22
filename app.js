@@ -35,21 +35,6 @@ function cleanPhoneDigits(str) {
   return res;
 }
 
-function dialOrCopy(num, btnEl) {
-  var clean = cleanPhoneDigits(num) || '+79673888889';
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(clean);
-    }
-  } catch (e) {}
-  if (btnEl) {
-    var old = btnEl.textContent;
-    btnEl.textContent = '📞 Набираем ' + num + ' (номер скопирован)';
-    setTimeout(function() { btnEl.textContent = old; }, 3500);
-  }
-  window.location.href = 'tel:' + clean;
-}
-
 function fmtTemp(v) {
   var n = Math.round(Number(v) || 0);
   if (n === 0) return '0°C';
@@ -218,9 +203,9 @@ function renderSeasonBanner() {
 
   var holidays = (cfg.holidays || []).concat([
     { start: '01-25', end: '01-25', icon: '🎓', title: 'С Днём российского студенчества (Татьянин день)!', text: 'Редакция «Прим_Дозора» поздравляет студентов и преподавателей ДВФУ, ВВГУ и всех вузов Приморья!' },
-{ start: '02-23', end: '02-23', icon: '🎖', title: 'С Днём защитника Отечества!', text: 'Поздравляем моряков Тихоокеанского флота, бойцов СВО и всех защитников России!' },
-{ start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
-{ start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
+    { start: '02-23', end: '02-23', icon: '🎖', title: 'С Днём защитника Отечества!', text: 'Поздравляем моряков Тихоокеанского флота, бойцов СВО и всех защитников России!' },
+    { start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
+    { start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
 { start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
 { start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
 { start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
@@ -288,18 +273,6 @@ var firstW = getByIdx(window.WEATHER, 0);
 if (firstW) applyWeatherObj(firstW);
 fetchLiveWeather(0);
 setInterval(function() { fetchLiveWeather(); }, 600000);
-var cfg = window.PRIM_DOZOR_CONFIG || {};
-var ad = cfg.partnerAd;
-var adBox = document.getElementById('ad-slot');
-if (ad && ad.enabled && adBox) {
-var dialNum = cleanPhoneDigits(ad.phone) || '+79673888889';
-adBox.innerHTML =
-'' + ad.label + ' ' + ad.advertiserInfo + ' • erid: ' + ad.erid + ' \n' +
-'' + ad.title + ' \n' +
-'' + ad.description + ' \n' +
-'📞 Позвонить: ' + ad.phone + '';
-adBox.style.display = 'block';
-}
 setInterval(function() {
 var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
 var cl = document.getElementById('clock');
