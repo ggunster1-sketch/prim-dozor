@@ -29,6 +29,9 @@ function cleanPhoneDigits(str) {
     var ch = s.charAt(i);
     if ((ch >= '0' && ch <= '9') || ch === '+') res += ch;
   }
+  if (res.indexOf('8') === 0 && res.length === 11) {
+    res = '+7' + res.slice(1);
+  }
   return res;
 }
 
@@ -175,7 +178,6 @@ function makeTelHref(num) {
   var first = getByIdx(parts, 0) || '';
   var clean = cleanPhoneDigits(first);
   if (clean.length === 7 && clean.indexOf('+') !== 0) clean = '+7423' + clean;
-  if (clean.indexOf('8') === 0 && clean.length === 11) clean = '+7' + clean.slice(1);
   return 'tel:' + clean;
 }
 
@@ -275,7 +277,8 @@ var cfg = window.PRIM_DOZOR_CONFIG || {};
 var ad = cfg.partnerAd;
 var adBox = document.getElementById('ad-slot');
 if (ad && ad.enabled && adBox) {
-var dialNum = cleanPhoneDigits(ad.phone);
+var dialNum = cleanPhoneDigits(ad.phone) || '+79673888889';
+var telLink = 'tel:' + dialNum;
 adBox.innerHTML =
 '' + ad.label + ' ' + ad.advertiserInfo + ' • erid: ' + ad.erid + ' \n' +
 '' + ad.title + ' \n' +
