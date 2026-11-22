@@ -37,7 +37,7 @@ function safeJson(data) {
 function buildHtml(news, weather, rates) {
   if (!fs.existsSync('news')) fs.mkdirSync('news', { recursive: true });
   const list = Array.isArray(news) ? news : [];
-  const w0 = (Array.isArray(weather) && weather) || {
+  const w0 = (Array.isArray(weather) && weather.length > 0 ? weather.at(0) : null) || {
     name: 'Владивосток',
     now: '🌤 +1°C',
     morning: '-2°C',
@@ -94,7 +94,7 @@ function buildHtml(news, weather, rates) {
         tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
         tag('title', '', esc(p.title) + ' — Прим_Дозор') +
         tag('meta', 'name="description" content="' + esc(String(p.text || '').replace(/\s+/g, ' ').slice(0, 160)) + '"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=18"')
+        tag('link', 'rel="stylesheet" href="/style.css?v=22"')
       ) +
       tag('body', '',
         tag('header', 'class="site-header"',
