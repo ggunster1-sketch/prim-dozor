@@ -12,9 +12,19 @@ var PRIM_CITIES = [
   { name: 'Дальнегорск', lat: 44.5603, lon: 135.5700 }
 ];
 
+function getByIdx(arr, index) {
+  if (!Array.isArray(arr)) return null;
+  var target = Number(index) || 0;
+  var found = null;
+  arr.forEach(function(item, i) {
+    if (i === target) found = item;
+  });
+  return found;
+}
+
 function fmtTemp(v) {
   var n = Math.round(Number(v) || 0);
-  if (Object.is(n, -0) || n === 0) return '0°C';
+  if (n === 0) return '0°C';
   return (n > 0 ? '+' : '') + n + '°C';
 }
 
@@ -32,7 +42,7 @@ function applyWeatherObj(w) {
 
 function setWeather(i) {
   var idx = Number(i) || 0;
-  var w = (window.WEATHER || []).at(idx);
+  var w = getByIdx(window.WEATHER, idx);
   if (w) applyWeatherObj(w);
   fetchLiveWeather(idx);
 }
@@ -40,7 +50,7 @@ function setWeather(i) {
 function fetchLiveWeather(selectedIndex) {
   var sel = document.getElementById('w-sel');
   var idx = selectedIndex !== undefined ? Number(selectedIndex) : (sel ? Number(sel.value) : 0);
-  var city = PRIM_CITIES.at(idx) || PRIM_CITIES.at(0);
+  var city = getByIdx(PRIM_CITIES, idx) || getByIdx(PRIM_CITIES, 0);
   var host = ['api', 'open-meteo', 'com'].join('.');
   var url = 'https://' + host + '/v1/forecast?latitude=' + city.lat + '&longitude=' + city.lon +
     '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok';
@@ -54,12 +64,11 @@ function fetchLiveWeather(selectedIndex) {
     var fresh = {
       name: city.name,
       now: fmtTemp(curT) + ' ' + ico(r.current.weather_code),
-      morning: fmtTemp(h.length > 8 ? h.at(8) : curT),
-      day: fmtTemp(h.length > 14 ? h.at(14) : curT),
-      evening: fmtTemp(h.length > 20 ? h.at(20) : curT),
-      tomorrow: fmtTemp(d.length > 1 ? d.at(1) : curT)
+      morning: fmtTemp(h.length > 8 ? getByIdx(h, 8) : curT),
+      day: fmtTemp(h.length > 14 ? getByIdx(h, 14) : curT),
+      evening: fmtTemp(h.length > 20 ? getByIdx(h, 20) : curT),
+      tomorrow: fmtTemp(d.length > 1 ? getByIdx(d, 1) : curT)
     };
-    if (Array.isArray(window.WEATHER)) window.WEATHER[idx] = fresh;
     applyWeatherObj(fresh);
   }).catch(function() {});
 }
@@ -123,7 +132,7 @@ function openArt(id) {
 
 function openAfisha(idx) {
   var dir = window.DIRECTORIES || {};
-  var a = (dir.afisha || []).at(Number(idx));
+  var a = getByIdx(dir.afisha, idx);
   if (!a) return;
   var mBody = document.getElementById('m-body');
   var modal = document.getElementById('modal');
@@ -153,7 +162,7 @@ function switchDirTab(tabId, btn) {
 
 function makeTelHref(num) {
   var parts = String(num || '').split('/');
-  var first = parts.length > 0 ? parts.at(0) : '';
+  var first = getByIdx(parts, 0) || '';
   var clean = first.replace(/[^\d+]/g, '');
   if (clean.length === 7 && clean.indexOf('+') !== 0) clean = '+7423' + clean;
   if (clean.indexOf('8') === 0 && clean.length === 11) clean = '+7' + clean.slice(1);
@@ -186,8 +195,7 @@ function renderSeasonBanner() {
     { start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
     { start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
     { start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
-    { start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
-Используйте код с осторожностью.
+{ start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
 { start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
 { start: '07-02', end: '07-02', icon: '⚓', title: 'С Днём города Владивостока!', text: 'С днём рождения, столица Дальнего Востока! Процветания городу у моря!' },
 { start: '07-26', end: '07-26', icon: '🚢', title: 'С Днём Военно-Морского Флота!', text: 'Слава Тихоокеанскому флоту и всем военным морякам Приморья!' },
@@ -249,9 +257,8 @@ if (ck) ck.style.display = 'none';
 } catch (e) {}
 renderSeasonBanner();
 renderCityPhones('Все города');
-if (Array.isArray(window.WEATHER) && window.WEATHER.length > 0) {
-applyWeatherObj(window.WEATHER.at(0));
-}
+var firstW = getByIdx(window.WEATHER, 0);
+if (firstW) applyWeatherObj(firstW);
 fetchLiveWeather(0);
 setInterval(function() { fetchLiveWeather(); }, 600000);
 var cfg = window.PRIM_DOZOR_CONFIG || {};
