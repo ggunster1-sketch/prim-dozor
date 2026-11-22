@@ -80,10 +80,10 @@ function renderFeed() {
   }
   box.innerHTML = list.map(function(n, i) {
     var lead = (n.text || '').replace(/\s+/g, ' ').slice(0, 155);
-    var meta = '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span><span>' + n.city + '</span><span>• ' + n.date + '</span><span class="badge-age">' + n.age + '</span></div>';
+    var meta = '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + n.city + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + n.age + '</span></div>';
     return i === 0
-      ? '<article class="hero-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="hero-img" src="./' + n.cover + '" alt=""><div class="hero-body">' + meta + '<h2 class="hero-title">' + n.title + '</h2><p class="hero-lead">' + lead + '...</p></div></article>'
-      : '<article class="news-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./' + n.cover + '" alt=""><div>' + meta + '<h3 class="news-title">' + n.title + '</h3><p class="news-excerpt">' + lead + '...</p></div></article>';
+      ? '<article class="hero-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="hero-img" src="./' + n.cover + '" alt=""><div class="hero-body">' + meta + ' <h2 class="hero-title">' + n.title + '</h2> <p class="hero-lead">' + lead + '...</p></div></article>'
+      : '<article class="news-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./' + n.cover + '" alt=""><div>' + meta + ' <h3 class="news-title">' + n.title + '</h3> <p class="news-excerpt">' + lead + '...</p></div></article>';
   }).join('');
 }
 
@@ -106,16 +106,16 @@ function openArt(id) {
   var modal = document.getElementById('modal');
   if (!mBody || !modal) return;
   mBody.innerHTML =
-    '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span><span>' + n.city + '</span><span>• ' + n.date + '</span><span class="badge-age">' + n.age + '</span></div>' +
-    '<h1 style="font-size:21px;line-height:1.3;margin:8px 0 14px">' + n.title + '</h1>' +
-    '<img src="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px">' +
-    '<div class="tldr"><strong>Главное:</strong><br>' + (n.tldr || '').replace(/\n/g, '<br>') + '</div>' +
-    '<div style="white-space:pre-line;line-height:1.75;font-size:15.5px;margin-bottom:16px">' + n.text + '</div>' +
-    (n.src ? '<p style="font-size:12px;color:var(--muted);margin-bottom:14px">' + n.src + '</p>' : '') +
+    '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + n.city + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + n.age + '</span></div>\n' +
+    '<h1 style="font-size:21px;line-height:1.3;margin:8px 0 14px">' + n.title + '</h1>\n' +
+    '<img src="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px">\n' +
+    '<div class="tldr"><strong>Главное:</strong><br>' + (n.tldr || '').replace(/\n/g, '<br>') + '</div>\n' +
+    '<div style="white-space:pre-line;line-height:1.75;font-size:15.5px;margin-bottom:16px">' + n.text + '</div>\n' +
+    (n.src ? '<p style="font-size:12px;color:var(--muted);margin-bottom:14px">' + n.src + '</p>\n' : '') +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid var(--border)">' +
-    '<a href="' + (soc.telegram || 'https://t.me') + '" target="_blank" class="btn-cta">✈ Telegram ЧП</a>' +
-    '<a href="' + (soc.max || 'https://max.ru') + '" target="_blank" class="soc-pill">💬 МАКС</a>' +
-    '<a href="' + (soc.vk || 'https://vk.ru') + '" target="_blank" class="soc-pill">🌐 ВК</a>' +
+    '<a href="' + (soc.telegram || 'https://t.me') + '" target="_blank" class="btn-cta">✈ Telegram ЧП</a> ' +
+    '<a href="' + (soc.max || 'https://max.ru') + '" target="_blank" class="soc-pill">💬 МАКС</a> ' +
+    '<a href="' + (soc.vk || 'https://vk.ru') + '" target="_blank" class="soc-pill">🌐 ВК</a> ' +
     '<a href="' + (soc.dzen || 'https://dzen.ru') + '" target="_blank" class="soc-pill">🔥 Дзен</a>' +
     '</div>';
   modal.style.display = 'flex';
@@ -129,13 +129,13 @@ function openAfisha(idx) {
   var modal = document.getElementById('modal');
   if (!mBody || !modal) return;
   mBody.innerHTML =
-    '<div class="news-meta"><span class="badge-cat">' + (a.tag || 'Афиша Приморья') + '</span><span>' + (a.city || 'Приморский край') + '</span></div>' +
-    '<h1 style="font-size:21px;line-height:1.3;margin:8px 0 14px">' + a.title + '</h1>' +
-    '<div class="tldr">' +
-      '<div style="margin-bottom:6px">📅 <strong>Когда и во сколько:</strong> ' + (a.date || 'Уточняется') + '</div>' +
-      '<div style="margin-bottom:6px">📍 <strong>Где проходит:</strong> ' + (a.place || a.city || 'Приморский край') + '</div>' +
-      '<div>🎟 <strong>Условия входа:</strong> ' + (a.price || 'Вход свободный') + '</div>' +
-    '</div>' +
+    '<div class="news-meta"><span class="badge-cat">' + (a.tag || 'Афиша Приморья') + '</span> <span>' + (a.city || 'Приморский край') + '</span></div>\n' +
+    '<h1 style="font-size:21px;line-height:1.3;margin:8px 0 14px">' + a.title + '</h1>\n' +
+    '<div class="tldr">\n' +
+      '<div style="margin-bottom:6px">📅 <strong>Когда и во сколько:</strong> ' + (a.date || 'Уточняется') + '</div>\n' +
+      '<div style="margin-bottom:6px">📍 <strong>Где проходит:</strong> ' + (a.place || a.city || 'Приморский край') + '</div>\n' +
+      '<div>🎟 <strong>Условия входа:</strong> ' + (a.price || 'Вход свободный') + '</div>\n' +
+    '</div>\n' +
     '<div style="line-height:1.7;font-size:15.5px;margin-bottom:16px">' +
       (a.desc || 'Приглашаем жителей и гостей Приморского края посетить мероприятие. Подробности и программа доступны на площадке проведения.') +
     '</div>';
@@ -167,8 +167,8 @@ function renderCityPhones(city) {
   var box = document.getElementById('phones-list');
   if (box) {
     box.innerHTML = list.map(function(p) {
-      return '<div class="w-row"><span style="flex:1;padding-right:8px">' + p.name + '</span><a href="' + makeTelHref(p.num) + '" class="tel-pill">📞 ' + p.num + '</a></div>';
-    }).join('');
+      return '<div class="w-row"><span style="flex:1;padding-right:8px">' + p.name + '</span> <a href="' + makeTelHref(p.num) + '" class="tel-pill">📞 ' + p.num + '</a></div>';
+    }).join('\n');
   }
 }
 
@@ -187,7 +187,8 @@ function renderSeasonBanner() {
     { start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
     { start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
     { start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
-    { start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
+Используйте код с осторожностью.
+{ start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
 { start: '07-02', end: '07-02', icon: '⚓', title: 'С Днём города Владивостока!', text: 'С днём рождения, столица Дальнего Востока! Процветания городу у моря!' },
 { start: '07-26', end: '07-26', icon: '🚢', title: 'С Днём Военно-Морского Флота!', text: 'Слава Тихоокеанскому флоту и всем военным морякам Приморья!' },
 { start: '09-01', end: '09-01', icon: '📚', title: 'С Днём знаний — 1 Сентября!', text: 'Успешного учебного года школьникам, студентам и педагогам Приморского края!' },
@@ -215,11 +216,11 @@ var title = hol ? hol.title : (isWinter ? 'Зимний мониторинг д�
 var sub = hol ? hol.text : 'Оперативные сводки МЧС, ГИБДД, отключений воды и света по всем городам края в реальном времени.';
 banner.style.backgroundImage = bg;
 banner.innerHTML =
-'' + emblem + '' +
-'' +
-'' + badge + '' +
-'' + title + '' +
-'' + sub + '' +
+'' + emblem + ' \n' +
+'\n' +
+'' + badge + ' \n' +
+'' + title + ' \n' +
+'' + sub + '\n' +
 '';
 banner.style.display = 'flex';
 }
@@ -258,9 +259,9 @@ var ad = cfg.partnerAd;
 var adBox = document.getElementById('ad-slot');
 if (ad && ad.enabled && adBox) {
 adBox.innerHTML =
-'' + ad.label + '' + ad.advertiserInfo + ' • erid: ' + ad.erid + '' +
-'' + ad.title + '' +
-'' + ad.description + '' +
+'' + ad.label + ' ' + ad.advertiserInfo + ' • erid: ' + ad.erid + ' \n' +
+'' + ad.title + ' \n' +
+'' + ad.description + ' \n' +
 '📞 ' + ad.buttonText + ': ' + ad.phone + '';
 adBox.style.display = 'block';
 }
