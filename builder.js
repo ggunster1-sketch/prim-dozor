@@ -345,8 +345,8 @@ NL + 'window.NEWS=' + safeJson(list) + ';' +
 NL + 'window.WEATHER=' + safeJson(weather) + ';' +
 NL + 'window.DIRECTORIES=' + safeJson(dirClean) + ';' + NL
 ) +
-tag('script', 'src="/config.js?v=100"', '') +
-tag('script', 'src="/app.js?v=100"', '');
+tag('script', 'src="/config.js?v=105"', '') +
+tag('script', 'src="/app.js?v=105"', '');
 const fullHtml = '' + tag('html', 'lang="ru"', headHtml + tag('body', '', infobarHtml + headerHtml + navHtml + mainWrapHtml + modalsHtml + scriptsHtml));
 fs.writeFileSync('index.html', fullHtml, 'utf8');
 const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
