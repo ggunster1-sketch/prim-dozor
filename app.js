@@ -12,6 +12,19 @@ var PRIM_CITIES = [
   { name: 'Дальнегорск', lat: 44.5603, lon: 135.5700 }
 ];
 
+var PRIM_GUIDE = [
+  { cat: 'Травмпункты 24/7', title: 'Травмпункт №1 (Ленинский / Первомайский)', addr: 'Владивосток, ул. Уткинская, 7', phone: '+7 (423) 240-03-86' },
+  { cat: 'Травмпункты 24/7', title: 'Травмпункт №2 (Первореченский / Центр)', addr: 'Владивосток, ул. Калинина, 78', phone: '+7 (423) 227-64-83' },
+  { cat: 'Травмпункты 24/7', title: 'Травмпункт №3 (Советский / Вторая Речка)', addr: 'Владивосток, ул. Давыдова, 3', phone: '+7 (423) 231-90-15' },
+  { cat: 'Травмпункты 24/7', title: 'Детский краевой травмпункт 24/7', addr: 'Владивосток, пр-т Острякова, 27', phone: '+7 (423) 245-19-07' },
+  { cat: 'Аптеки 24/7', title: 'Дежурная аптека «Монастырёв» (Центр)', addr: 'Владивосток, Океанский пр-т, 18', phone: '+7 (423) 240-24-02' },
+  { cat: 'Аптеки 24/7', title: 'Круглосуточная аптека «Госаптека» (Чуркин)', addr: 'Владивосток, ул. Калинина, 42', phone: '+7 (423) 227-35-10' },
+  { cat: 'Аптеки 24/7', title: 'Аптека 24/7 «Овита» (Вторая Речка)', addr: 'Владивосток, ул. Русская, 46', phone: '+7 (423) 232-08-08' },
+  { cat: 'Паромы и катера', title: 'Морской вокзал (о. Попова, о. Рейнеке, Славянка)', addr: 'Владивосток, ул. Нижнепортовая, 1 (Причал №1)', phone: '+7 (423) 249-73-01' },
+  { cat: 'Паромы и катера', title: 'Справочная автовокзала Приморья', addr: 'Владивосток, ул. Русская, 2А', phone: '+7 (423) 232-33-78' },
+  { cat: 'Ветпомощь 24/7', title: 'Круглосуточная ветклиника «Друг»', addr: 'Владивосток, ул. Борисенко, 33', phone: '+7 (423) 260-87-60' }
+];
+
 function getByIdx(arr, index) {
   if (!Array.isArray(arr)) return null;
   var target = Number(index) || 0;
@@ -132,6 +145,57 @@ function injectJkhSearch() {
   box.insertBefore(inp, box.firstChild);
 }
 
+function renderGuideList(q) {
+  var listBox = document.getElementById('guide-items');
+  if (!listBox) return;
+  var query = String(q || '').toLowerCase().trim();
+  var filtered = PRIM_GUIDE.filter(function(item) {
+    if (!query) return true;
+    return (item.cat + ' ' + item.title + ' ' + item.addr).toLowerCase().indexOf(query) !== -1;
+  });
+  listBox.innerHTML = filtered.map(function(g) {
+    return '<div class="w-row"><div style="flex:1;padding-right:8px">' +
+      '<div style="font-size:11px;color:var(--accent);font-weight:700">' + g.cat + '</div>' +
+      '<div style="font-weight:700;font-size:13px;margin-top:1px">' + g.title + '</div>' +
+      '<div style="font-size:11.5px;color:var(--muted)">📍 ' + g.addr + '</div></div>' +
+      '<a href="tel:' + cleanPhoneDigits(g.phone) + '" class="tel-pill">📞 Позвонить</a></div>';
+  }).join('');
+}
+
+function injectGuideTab() {
+  var jkhBox = document.getElementById('dir-jkh');
+  if (!jkhBox || document.getElementById('dir-guide')) return;
+  var widget = jkhBox.parentNode;
+  var tabs = widget.querySelector('.mini-tabs');
+  if (tabs) {
+    var btn = document.createElement('button');
+    btn.className = 'mini-tab';
+    btn.textContent = '24/7';
+    btn.onclick = function() { switchDirTab('dir-guide', btn); };
+    tabs.appendChild(btn);
+  }
+  var guideDiv = document.createElement('div');
+  guideDiv.id = 'dir-guide';
+  guideDiv.style.display = 'none';
+
+  var inp = document.createElement('input');
+  inp.type = 'search';
+  inp.className = 'input';
+  inp.placeholder = 'Травмпункт, аптека, паром...';
+  inp.style.marginBottom = '8px';
+  inp.style.padding = '6px 10px';
+  inp.style.fontSize = '13px';
+  inp.oninput = function() { renderGuideList(this.value); };
+
+  var itemsBox = document.createElement('div');
+  itemsBox.id = 'guide-items';
+
+  guideDiv.appendChild(inp);
+  guideDiv.appendChild(itemsBox);
+  widget.appendChild(guideDiv);
+  renderGuideList('');
+}
+
 function openArt(id) {
   var n = (window.NEWS || []).find(function(x) { return String(x.id) === String(id); });
   if (!n) return;
@@ -142,68 +206,65 @@ function openArt(id) {
   mBody.innerHTML =
     '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + locLabel + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + n.age + '</span></div>' +
     '<h1 style="font-size:21px;line-height:1.3;margin:8px 0 14px">' + n.title + '</h1>' +
-    '<img src="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px">' +
-    '<div class="tldr"><strong>Главное:</strong><br>' + (n.tldr || '').replace(/\n/g, '<br>') + '</div>' +
-    '<div style="white-space:pre-line;line-height:1.75;font-size:15.5px;margin-bottom:16px">' + n.text + '</div>' +
-    (n.src ? '<p style="font-size:12px;color:var(--muted);margin-bottom:14px">' + n.src + '</p>' : '') +
-    '<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid var(--border)">' +
-    '<a href="' + (soc.telegram || 'https://t.me') + '" target="_blank" class="btn-cta">✈ Telegram ЧП</a> ' +
-    '<a href="' + (soc.max || 'https://max.ru') + '" target="_blank" class="soc-pill">💬 МАКС</a> ' +
-    '<a href="' + (soc.vk || 'https://vk.ru') + '" target="_blank" class="soc-pill">🌐 ВК</a> ' +
-    '<a href="' + (soc.dzen || 'https://dzen.ru') + '" target="_blank" class="soc-pill">🔥 Дзен</a></div>';
-  modal.style.display = 'flex';
+'' +
+'Главное:
+' + (n.tldr || '').replace(/\n/g, '
+') + '' +
+'' + n.text + '' +
+(n.src ? '' + n.src + '' : '') +
+'' +
+'✈ Telegram ЧП ' +
+'💬 МАКС ' +
+'🌐 ВК ' +
+'🔥 Дзен';
+modal.style.display = 'flex';
 }
-
 function openAfisha(idx) {
-  var a = getByIdx((window.DIRECTORIES || {}).afisha, idx);
-  if (!a) return;
-  var mBody = document.getElementById('m-body'), modal = document.getElementById('modal');
-  if (!mBody || !modal) return;
-  mBody.innerHTML =
-    '<div class="news-meta"><span class="badge-cat">' + (a.tag || 'Афиша Приморья') + '</span> <span>' + (a.city || 'Приморский край') + '</span></div>' +
-    '<h1 style="font-size:21px;line-height:1.3;margin:8px 0 14px">' + a.title + '</h1>' +
-    '<div class="tldr"><div style="margin-bottom:6px">📅 <strong>Когда и во сколько:</strong> ' + (a.date || 'Уточняется') + '</div>' +
-    '<div style="margin-bottom:6px">📍 <strong>Где проходит:</strong> ' + (a.place || a.city || 'Приморский край') + '</div>' +
-    '<div>🎟 <strong>Условия входа:</strong> Вход свободный</div></div>' +
-    '<div style="line-height:1.7;font-size:15.5px;margin-bottom:16px">' + (a.desc || 'Бесплатное городское мероприятие для жителей и гостей Приморского края.') + '</div>';
-  modal.style.display = 'flex';
+var a = getByIdx((window.DIRECTORIES || {}).afisha, idx);
+if (!a) return;
+var mBody = document.getElementById('m-body'), modal = document.getElementById('modal');
+if (!mBody || !modal) return;
+mBody.innerHTML =
+'' + (a.tag || 'Афиша Приморья') + ' ' + (a.city || 'Приморский край') + '' +
+'' + a.title + '' +
+'📅 Когда и во сколько: ' + (a.date || 'Уточняется') + '' +
+'📍 Где проходит: ' + (a.place || a.city || 'Приморский край') + '' +
+'🎟 Условия входа: Вход свободный' +
+'' + (a.desc || 'Бесплатное городское мероприятие для жителей и гостей Приморского края.') + '';
+modal.style.display = 'flex';
 }
-
 function switchDirTab(tabId, btn) {
-  document.querySelectorAll('.mini-tab').forEach(function(b) { b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  ['dir-jkh', 'dir-phones', 'dir-afisha'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.style.display = (id === tabId) ? 'block' : 'none';
-  });
+document.querySelectorAll('.mini-tab').forEach(function(b) { b.classList.remove('active'); });
+if (btn) btn.classList.add('active');
+['dir-jkh', 'dir-phones', 'dir-afisha', 'dir-guide'].forEach(function(id) {
+var el = document.getElementById(id);
+if (el) el.style.display = (id === tabId) ? 'block' : 'none';
+});
 }
-
 function makeTelHref(num) {
-  var first = getByIdx(String(num || '').split('/'), 0) || '';
-  var clean = cleanPhoneDigits(first);
-  if (clean.length === 7 && clean.indexOf('+') !== 0) clean = '+7423' + clean;
-  return 'tel:' + clean;
+var first = getByIdx(String(num || '').split('/'), 0) || '';
+var clean = cleanPhoneDigits(first);
+if (clean.length === 7 && clean.indexOf('+') !== 0) clean = '+7423' + clean;
+return 'tel:' + clean;
 }
-
 function renderCityPhones(city) {
-  var phones = (window.DIRECTORIES || {}).phones || {};
-  var list = phones[city] || phones['Все города'] || [];
-  var box = document.getElementById('phones-list');
-  if (box) {
-    box.innerHTML = list.map(function(p) {
-      return '<div class="w-row"><span style="flex:1;padding-right:8px">' + p.name + '</span> <a href="' + makeTelHref(p.num) + '" class="tel-pill">📞 ' + p.num + '</a></div>';
-    }).join('\n');
-  }
+var phones = (window.DIRECTORIES || {}).phones || {};
+var list = phones[city] || phones['Все города'] || [];
+var box = document.getElementById('phones-list');
+if (box) {
+box.innerHTML = list.map(function(p) {
+return '' + p.name + ' 📞 ' + p.num + '';
+}).join('\n');
 }
-
+}
 function drawSeasonArtCanvas() {
-  var banner = document.getElementById('season-banner');
-  if (!banner) return;
-  var now = new Date(), m = now.getMonth() + 1;
-  var mmdd = String(m).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-  var theme = 'autumn';
-  if (mmdd >= '12-20' || mmdd <= '01-10') theme = 'newyear';
-  else if (mmdd >= '02-21' && mmdd <= '02-24') theme = 'feb23';
+var banner = document.getElementById('season-banner');
+if (!banner) return;
+var now = new Date(), m = now.getMonth() + 1;
+var mmdd = String(m).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+var theme = 'autumn';
+if (mmdd >= '12-20' || mmdd <= '01-10') theme = 'newyear';
+else if (mmdd >= '02-21' && mmdd <= '02-24') theme = 'feb23';
 else if (mmdd >= '03-06' && mmdd <= '03-09') theme = 'mar8';
 else if (mmdd >= '05-07' && mmdd <= '05-10') theme = 'victory';
 else if (mmdd >= '06-11' && mmdd <= '06-13') theme = 'russia';
@@ -266,6 +327,7 @@ function initSite() {
 try { if (localStorage.getItem('ck')) { var ck = document.getElementById('ck'); if (ck) ck.style.display = 'none'; } } catch (e) {}
 drawSeasonArtCanvas();
 injectJkhSearch();
+injectGuideTab();
 renderCityPhones('Все города');
 var firstW = getByIdx(window.WEATHER, 0);
 if (firstW) applyWeatherObj(firstW);
