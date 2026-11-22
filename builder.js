@@ -99,7 +99,7 @@ function buildHtml(news, weather, rates) {
         tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
         tag('title', '', esc(p.title) + ' — Прим_Дозор') +
         tag('meta', 'name="description" content="' + esc(String(p.text || '').replace(/\s+/g, ' ').slice(0, 160)) + '"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=50"')
+        tag('link', 'rel="stylesheet" href="/style.css?v=60"')
       ) +
       tag('body', '',
         tag('header', 'class="site-header"',
@@ -178,7 +178,7 @@ function buildHtml(news, weather, rates) {
     tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, ЖКХ, отключения воды и света, погода, курсы валют, законы РФ, афиша."') +
     tag('link', 'rel="canonical" href="https://primdozor.ru"') +
     tag('link', 'rel="manifest" href="/manifest.json"') +
-    tag('link', 'rel="stylesheet" href="/style.css?v=50"') +
+    tag('link', 'rel="stylesheet" href="/style.css?v=60"') +
     tag('script', 'type="text/javascript"', ymCode)
   );
 
@@ -192,13 +192,15 @@ function buildHtml(news, weather, rates) {
       ) +
       tag('div', 'class="infobar-right"',
         tag('span', 'class="hide-mob"', '$' + esc(rates.usd) + ' | €' + esc(rates.eur) + ' | ¥' + esc(rates.cny)) +
-        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'big-font' + SQ + ')"', 'А+') +tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
-)
-)
-);
-const headerHtml = tag('header', 'class="site-header"',
-tag('div', 'class="wrap header-inner"',
-tag('a', 'href="/" class="brand"',
+        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'big-font' + SQ + ')"', 'А+') +
+        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
+      )
+    )
+  );
+
+  const headerHtml = tag('header', 'class="site-header"',
+    tag('div', 'class="wrap header-inner"',
+      tag('a', 'href="/" class="brand"',
 tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР') +
 tag('span', 'class="brand-sub"', 'Приморский край 24/7') +
 tag('span', 'class="brand-age"', '18+')
@@ -246,6 +248,11 @@ tag('a', 'href="mailto:prim_dozor@internet.ru" class="w-row" style="cursor:point
 tag('a', 'href="/legal.html" class="w-row" style="cursor:pointer"', tag('span', '', '⚖ Правовая информация (152-ФЗ)') + tag('strong', '', '→'))
 )
 );
+const defaultAdHtml =
+tag('div', 'class="ad-tag"', tag('span', '', 'Партнёрский материал') + ' ' + tag('span', '', 'Реклама. Козин А.И., ИНН 254303011920 • erid: ТЕСТОВЫЙ_РЕЖИМ')) +
+tag('div', 'style="font-weight:800;font-size:15px;margin-bottom:6px"', 'Скорая страховая помощь в Приморье') +
+tag('div', 'style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.45"', 'Круглосуточный выезд аварийного комиссара за 15 минут во Владивостоке и крае. Оформление ДТП, автоюрист, независимая экспертиза.') +
+tag('a', 'href="tel:+79673888889" class="btn-cta" style="position:relative;z-index:10;display:inline-flex"', '📞 Позвонить: +7 (967) 388-88-89');
 const mainWrapHtml = tag('div', 'class="wrap"',
 tag('div', 'id="season-banner" class="season-banner" style="display:none"', '') +
 tag('div', 'class="sub-tools"',
@@ -253,7 +260,7 @@ tag('input', 'type="search" class="search-input" placeholder="Поиск по н
 tag('div', 'class="soc-pills"', socLinks)
 ) +
 tag('div', 'class="layout"',
-tag('div', '', tag('main', 'id="feed"', cards) + tag('div', 'id="ad-slot" class="ad-box" style="display:none"', '')) +
+tag('div', '', tag('main', 'id="feed"', cards) + tag('div', 'id="ad-slot" class="ad-box"', defaultAdHtml)) +
 asideHtml
 )
 );
@@ -283,7 +290,7 @@ tag('button', 'type="submit" class="btn-cta" style="width:100%;padding:10px"', '
 ) +
 tag('div', 'id="ck" class="cookie-bar"',
 tag('span', '', '🍪 Используем cookie и Яндекс.Метрику (152-ФЗ). ' + tag('a', 'href="/legal.html" style="text-decoration:underline"', 'Подробнее')) +
-tag('button', 'class="btn-cta" onclick="localStorage.setItem(' + SQ + 'ck' + SQ + ',' + SQ + '1' + SQ + ');document.getElementById(' + SQ + 'ck' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', 'ОК')
+tag('button', 'class="btn-cta" onclick="try{localStorage.setItem(' + SQ + 'ck' + SQ + ',' + SQ + '1' + SQ + ')}catch(e){};document.getElementById(' + SQ + 'ck' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', 'ОК')
 ) +
 tag('footer', 'class="site-footer"',
 tag('div', 'class="wrap"', '© 2026 Прим_Дозор (18+). Региональный информационный портал Приморского края. Администратор: Козин А.И. • ' + tag('a', 'href="/legal.html" style="text-decoration:underline;"', 'Правовая информация и 152-ФЗ'))
@@ -294,8 +301,8 @@ NL + 'window.NEWS=' + safeJson(list) + ';' +
 NL + 'window.WEATHER=' + safeJson(weather) + ';' +
 NL + 'window.DIRECTORIES=' + safeJson(dir) + ';' + NL
 ) +
-tag('script', 'src="/config.js?v=50"', '') +
-tag('script', 'src="/app.js?v=50"', '');
+tag('script', 'src="/config.js?v=60"', '') +
+tag('script', 'src="/app.js?v=60"', '');
 const fullHtml = '' + tag('html', 'lang="ru"', headHtml + tag('body', '', infobarHtml + headerHtml + navHtml + mainWrapHtml + modalsHtml + scriptsHtml));
 fs.writeFileSync('index.html', fullHtml, 'utf8');
 const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
