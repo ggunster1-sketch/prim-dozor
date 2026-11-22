@@ -10,6 +10,8 @@ const TOPIC_IMAGES = {
   sport: 'https://unsplash.com'
 };
 
+
+
 function isAdOrSpam(text) {
   const s = String(text || '').toLowerCase();
   const bad = [
