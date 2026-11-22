@@ -186,15 +186,20 @@ const m = document.getElementById('report-modal');
 if (m) m.style.display = 'none';
 }
 window.addEventListener('DOMContentLoaded', () => {
-if (localStorage.getItem('ck')) {
-const ck = document.getElementById('ck');
-if (ck) ck.style.display = 'none';
-}
-initBannerAndAds();
-renderCityPhones('Все города');
-setInterval(() => {
-const vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
-const cl = document.getElementById('clock');
-if (cl) cl.textContent = 'Владивосток ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
-}, 5000);
+  if (localStorage.getItem('ck')) {
+    const ck = document.getElementById('ck');
+    if (ck) ck.style.display = 'none';
+  }
+  const feed = document.getElementById('feed');
+  if (feed && !feed.children.length) {
+    renderFeed();
+  }
+  initBannerAndAds();
+  renderCityPhones('Все города');
+  setInterval(() => {
+    const vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
+    const cl = document.getElementById('clock');
+    if (cl) cl.textContent = 'Владивосток ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
+  }, 5000);
 });
+
