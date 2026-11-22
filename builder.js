@@ -5,6 +5,7 @@ const SLASH = String.fromCharCode(47);
 const LT = String.fromCharCode(60);
 const GT = String.fromCharCode(62);
 const NL = String.fromCharCode(10);
+const SQ = String.fromCharCode(39);
 
 function tag(name, attrs, inner) {
   return LT + name + (attrs ? ' ' + attrs : '') + GT + (inner !== undefined ? inner + LT + SLASH + name + GT : '');
@@ -98,7 +99,7 @@ function buildHtml(news, weather, rates) {
         tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
         tag('title', '', esc(p.title) + ' — Прим_Дозор') +
         tag('meta', 'name="description" content="' + esc(String(p.text || '').replace(/\s+/g, ' ').slice(0, 160)) + '"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=40"')
+        tag('link', 'rel="stylesheet" href="/style.css?v=41"')
       ) +
       tag('body', '',
         tag('header', 'class="site-header"',
@@ -151,10 +152,10 @@ function buildHtml(news, weather, rates) {
     ['svo', 'СВО и Защита', false],
     ['family', 'Общество', false],
     ['sport', 'Спорт и Афиша', false]
-  ].map(t => tag('button', 'class="tab' + (t.at(2) ? ' active' : '') + '" onclick="filterCat(\'' + t.at(0) + '\',this)"', t.at(1))).join('');
+  ].map(t => tag('button', 'class="tab' + (t.at(2) ? ' active' : '') + '" onclick="filterCat(' + SQ + t.at(0) + SQ + ',this)"', t.at(1))).join('');
 
   const ymSrc = ['https:', '', 'mc.yandex.ru', 'metrika', 'tag.js'].join(SLASH);
-  const ymCode = '(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","' + ymSrc + '","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});';
+  const ymCode = '(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts.length&&document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","' + ymSrc + '","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});';
 
   const socLinks = [
     [['https:', '', 't.me'].join(SLASH), '✈ Telegram'],
@@ -177,7 +178,7 @@ function buildHtml(news, weather, rates) {
     tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, ЖКХ, отключения воды и света, погода, курсы валют, законы РФ, афиша."') +
     tag('link', 'rel="canonical" href="https://primdozor.ru"') +
     tag('link', 'rel="manifest" href="/manifest.json"') +
-    tag('link', 'rel="stylesheet" href="/style.css?v=40"') +
+    tag('link', 'rel="stylesheet" href="/style.css?v=41"') +
     tag('script', 'type="text/javascript"', ymCode)
   );
 
@@ -191,8 +192,8 @@ function buildHtml(news, weather, rates) {
       ) +
       tag('div', 'class="infobar-right"',
         tag('span', 'class="hide-mob"', '$' + esc(rates.usd) + ' | €' + esc(rates.eur) + ' | ¥' + esc(rates.cny)) +
-        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(\'big-font\')"', 'А+') +
-        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(\'dark\')"', '🌙')
+        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'big-font' + SQ + ')"', 'А+') +
+        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
       )
     )
   );
@@ -200,7 +201,7 @@ function buildHtml(news, weather, rates) {
   const headerHtml = tag('header', 'class="site-header"',
     tag('div', 'class="wrap header-inner"',
       tag('a', 'href="/" class="brand"',
-        tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР') +
+tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР') +
 tag('span', 'class="brand-sub"', 'Приморский край 24/7') +
 tag('span', 'class="brand-age"', '18+')
 ) +
@@ -215,9 +216,9 @@ const asideHtml = tag('aside', '',
 tag('div', 'class="widget"',
 tag('div', 'class="widget-title"', tag('span', '', 'Отключения и службы 24/7')) +
 tag('div', 'class="mini-tabs"',
-tag('button', 'class="mini-tab active" onclick="switchDirTab('dir-jkh',this)"', 'ЖКХ и свет') +
-tag('button', 'class="mini-tab" onclick="switchDirTab('dir-phones',this)"', 'Телефоны') +
-tag('button', 'class="mini-tab" onclick="switchDirTab('dir-afisha',this)"', 'Афиша')
+tag('button', 'class="mini-tab active" onclick="switchDirTab(' + SQ + 'dir-jkh' + SQ + ',this)"', 'ЖКХ и свет') +
+tag('button', 'class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-phones' + SQ + ',this)"', 'Телефоны') +
+tag('button', 'class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-afisha' + SQ + ',this)"', 'Афиша')
 ) +
 tag('div', 'id="dir-jkh"', jkhHtml) +
 tag('div', 'id="dir-phones" style="display:none"',
@@ -259,20 +260,20 @@ asideHtml
 )
 );
 const modalsHtml =
-tag('div', 'id="modal" class="modal" onclick="if(event.target===this)this.style.display='none'"',
+tag('div', 'id="modal" class="modal" onclick="if(event.target===this)this.style.display=' + SQ + 'none' + SQ + '"',
 tag('div', 'class="modal-sheet"',
 tag('div', 'style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"',
 tag('strong', 'style="color:var(--accent)"', 'ПРИМ_ДОЗОР • 18+') +
-tag('button', 'class="soc-pill" onclick="document.getElementById('modal').style.display='none'"', '✕ Закрыть')
+tag('button', 'class="soc-pill" onclick="document.getElementById(' + SQ + 'modal' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', '✕ Закрыть')
 ) +
 tag('div', 'id="m-body"', '')
 )
 ) +
-tag('div', 'id="report-modal" class="modal" onclick="if(event.target===this)this.style.display='none'"',
+tag('div', 'id="report-modal" class="modal" onclick="if(event.target===this)this.style.display=' + SQ + 'none' + SQ + '"',
 tag('div', 'class="modal-sheet" style="max-width:480px"',
 tag('div', 'style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"',
 tag('strong', '', 'Народный контроль Приморья') +
-tag('button', 'class="soc-pill" onclick="document.getElementById('report-modal').style.display='none'"', '✕')
+tag('button', 'class="soc-pill" onclick="document.getElementById(' + SQ + 'report-modal' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', '✕')
 ) +
 tag('form', 'onsubmit="sendReport(event)"',
 tag('select', 'id="rep-city" class="input"', repCities) +
@@ -284,7 +285,7 @@ tag('button', 'type="submit" class="btn-cta" style="width:100%;padding:10px"', '
 ) +
 tag('div', 'id="ck" class="cookie-bar"',
 tag('span', '', '🍪 Используем cookie и Яндекс.Метрику (152-ФЗ). ' + tag('a', 'href="/legal.html" style="text-decoration:underline"', 'Подробнее')) +
-tag('button', 'class="btn-cta" onclick="localStorage.setItem('ck','1');document.getElementById('ck').style.display='none'"', 'ОК')
+tag('button', 'class="btn-cta" onclick="localStorage.setItem(' + SQ + 'ck' + SQ + ',' + SQ + '1' + SQ + ');document.getElementById(' + SQ + 'ck' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', 'ОК')
 ) +
 tag('footer', 'class="site-footer"',
 tag('div', 'class="wrap"', '© 2026 Прим_Дозор (18+). Региональный информационный портал Приморского края. Администратор: Козин А.И. • ' + tag('a', 'href="/legal.html" style="text-decoration:underline;"', 'Правовая информация и 152-ФЗ'))
@@ -295,8 +296,8 @@ NL + 'window.NEWS=' + safeJson(list) + ';' +
 NL + 'window.WEATHER=' + safeJson(weather) + ';' +
 NL + 'window.DIRECTORIES=' + safeJson(dir) + ';' + NL
 ) +
-tag('script', 'src="/config.js?v=40"', '') +
-tag('script', 'src="/app.js?v=40"', '');
+tag('script', 'src="/config.js?v=41"', '') +
+tag('script', 'src="/app.js?v=41"', '');
 const fullHtml = '' + tag('html', 'lang="ru"', headHtml + tag('body', '', infobarHtml + headerHtml + navHtml + mainWrapHtml + modalsHtml + scriptsHtml));
 fs.writeFileSync('index.html', fullHtml, 'utf8');
 const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
