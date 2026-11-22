@@ -156,10 +156,10 @@ function openAfisha(idx) {
     '<div class="tldr">\n' +
       '<div style="margin-bottom:6px">📅 <strong>Когда и во сколько:</strong> ' + (a.date || 'Уточняется') + '</div>\n' +
       '<div style="margin-bottom:6px">📍 <strong>Где проходит:</strong> ' + (a.place || a.city || 'Приморский край') + '</div>\n' +
-      '<div>🎟 <strong>Условия входа:</strong> ' + (a.price || 'Вход свободный') + '</div>\n' +
+      '<div>🎟 <strong>Условия входа:</strong> Вход свободный</div>\n' +
     '</div>\n' +
     '<div style="line-height:1.7;font-size:15.5px;margin-bottom:16px">' +
-      (a.desc || 'Приглашаем жителей и гостей Приморского края посетить мероприятие. Подробности и программа доступны на площадке проведения.') +
+      (a.desc || 'Бесплатное городское мероприятие для жителей и гостей Приморского края.') +
     '</div>';
   modal.style.display = 'flex';
 }
@@ -193,7 +193,7 @@ function renderCityPhones(city) {
   }
 }
 
-function renderSeasonBanner() {
+function drawSeasonArtCanvas() {
   var banner = document.getElementById('season-banner');
   if (!banner) return;
   var now = new Date();
@@ -214,27 +214,152 @@ function renderSeasonBanner() {
   else if (m >= 3 && m <= 5) theme = 'spring';
   else if (m >= 6 && m <= 8) theme = 'summer';
 
-  var svgArt = '';
-  if (theme === 'newyear') {
-svgArt = '';
+  banner.style.padding = '0';
+  banner.style.border = 'none';
+  banner.style.borderRadius = '14px';
+  banner.style.overflow = 'hidden';
+  banner.style.height = '108px';
+  banner.style.display = 'block';
+banner.innerHTML = '';
+var cvs = document.createElement('canvas');
+var W = 1200;
+var H = 120;
+cvs.width = W;
+cvs.height = H;
+cvs.style.width = '100%';
+cvs.style.height = '100%';
+cvs.style.display = 'block';
+banner.appendChild(cvs);
+var ctx = cvs.getContext('2d');
+if (!ctx) return;
+var grad = ctx.createLinearGradient(0, 0, W, H);
+if (theme === 'newyear') {
+grad.addColorStop(0, '#071329');
+grad.addColorStop(0.55, '#153263');
+grad.addColorStop(1, '#1e4e8c');
 } else if (theme === 'victory' || theme === 'feb23') {
-svgArt = '';
+grad.addColorStop(0, '#181412');
+grad.addColorStop(0.5, '#4c1d05');
+grad.addColorStop(1, '#881337');
 } else if (theme === 'mar8' || theme === 'spring' || theme === 'may1') {
-svgArt = '';
+grad.addColorStop(0, '#0f4c45');
+grad.addColorStop(0.55, '#0d9488');
+grad.addColorStop(1, '#be185d');
 } else if (theme === 'russia' || theme === 'vladivostok' || theme === 'navy' || theme === 'summer') {
-svgArt = '';
+grad.addColorStop(0, '#083358');
+grad.addColorStop(0.5, '#0284c7');
+grad.addColorStop(1, '#1d4ed8');
 } else if (theme === 'winter') {
-svgArt = '';
+grad.addColorStop(0, '#0b132b');
+grad.addColorStop(0.55, '#1c3d7a');
+grad.addColorStop(1, '#0284c7');
 } else {
-svgArt = '';
+grad.addColorStop(0, '#2d0c04');
+grad.addColorStop(0.45, '#9a3412');
+grad.addColorStop(0.8, '#d97706');
+grad.addColorStop(1, '#b45309');
 }
-banner.style.padding = '0';
-banner.style.overflow = 'hidden';
-banner.style.height = '112px';
-banner.style.borderRadius = '14px';
-banner.style.border = 'none';
-banner.innerHTML = svgArt;
-banner.style.display = 'block';
+ctx.fillStyle = grad;
+ctx.fillRect(0, 0, W, H);
+// Мягкое свечение солнца или луны
+var sun = ctx.createRadialGradient(W * 0.78, H * 0.32, 8, W * 0.78, H * 0.32, 220);
+sun.addColorStop(0, 'rgba(254, 240, 138, 0.55)');
+sun.addColorStop(1, 'rgba(254, 240, 138, 0)');
+ctx.fillStyle = sun;
+ctx.fillRect(0, 0, W, H);
+// Силуэты приморских сопок на горизонте
+ctx.fillStyle = 'rgba(15, 10, 8, 0.32)';
+ctx.beginPath();
+ctx.moveTo(0, H);
+ctx.lineTo(0, 82);
+ctx.quadraticCurveTo(220, 46, 460, 78);
+ctx.quadraticCurveTo(720, 106, 980, 62);
+ctx.quadraticCurveTo(1100, 44, W, 68);
+ctx.lineTo(W, H);
+ctx.closePath();
+ctx.fill();
+ctx.fillStyle = 'rgba(10, 6, 4, 0.45)';
+ctx.beginPath();
+ctx.moveTo(0, H);
+ctx.lineTo(0, 96);
+ctx.quadraticCurveTo(320, 74, 640, 98);
+ctx.quadraticCurveTo(920, 114, W, 84);
+ctx.lineTo(W, H);
+ctx.closePath();
+ctx.fill();
+// Декоративные элементы сезона / праздника без единой буквы
+if (theme === 'autumn' || theme === 'tiger') {
+var leaves = [
+{ x: 140, y: 34, r: 15, a: -0.4, c: '#f97316' },
+{ x: 260, y: 66, r: 12, a: 0.5, c: '#facc15' },
+{ x: 410, y: 28, r: 16, a: -0.2, c: '#ef4444' },
+{ x: 560, y: 58, r: 13, a: 0.7, c: '#fb923c' },
+{ x: 730, y: 32, r: 15, a: -0.5, c: '#fde047' },
+{ x: 890, y: 62, r: 14, a: 0.3, c: '#f97316' },
+{ x: 1060, y: 36, r: 16, a: -0.3, c: '#ef4444' }
+];
+leaves.forEach(function(lf) {
+ctx.save();
+ctx.translate(lf.x, lf.y);
+ctx.rotate(lf.a);
+ctx.fillStyle = lf.c;
+ctx.beginPath();
+ctx.ellipse(0, 0, lf.r, lf.r * 0.48, 0, 0, Math.PI * 2);
+ctx.fill();
+ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+ctx.lineWidth = 1.5;
+ctx.beginPath();
+ctx.moveTo(-lf.r, 0);
+ctx.lineTo(lf.r + 5, 0);
+ctx.stroke();
+ctx.restore();
+});
+} else if (theme === 'victory' || theme === 'feb23') {
+ctx.strokeStyle = '#f97316';
+ctx.lineWidth = 18;
+ctx.beginPath();
+ctx.moveTo(-20, 92);
+ctx.quadraticCurveTo(380, 32, 680, 82);
+ctx.quadraticCurveTo(960, 118, W + 20, 42);
+ctx.stroke();
+ctx.strokeStyle = '#090d16';
+ctx.lineWidth = 6;
+ctx.stroke();
+} else if (theme === 'newyear' || theme === 'winter') {
+for (var i = 0; i < 36; i++) {
+var sx = (i * 137) % W;
+var sy = (i * 53) % (H - 14);
+ctx.fillStyle = i % 3 === 0 ? 'rgba(253, 224, 71, 0.85)' : 'rgba(255, 255, 255, 0.8)';
+ctx.beginPath();
+ctx.arc(sx, sy, (i % 3) + 1.5, 0, Math.PI * 2);
+ctx.fill();
+}
+} else if (theme === 'mar8' || theme === 'spring' || theme === 'may1') {
+var petals =;
+petals.forEach(function(px, idx) {
+ctx.fillStyle = idx % 2 === 0 ? 'rgba(244, 114, 182, 0.85)' : 'rgba(251, 207, 232, 0.85)';
+ctx.beginPath();
+ctx.arc(px, 46 + (idx % 2) * 18, 13, 0, Math.PI * 2);
+ctx.fill();
+ctx.fillStyle = '#fde047';
+ctx.beginPath();
+ctx.arc(px, 46 + (idx % 2) * 18, 4.5, 0, Math.PI * 2);
+ctx.fill();
+});
+} else {
+// Морские волны Приморья
+ctx.strokeStyle = 'rgba(224, 242, 254, 0.45)';
+ctx.lineWidth = 3;
+for (var row = 0; row < 3; row++) {
+ctx.beginPath();
+for (var wx = 0; wx <= W; wx += 40) {
+var wy = 76 + row * 14 + Math.sin(wx * 0.03 + row) * 4;
+if (wx === 0) ctx.moveTo(wx, wy);
+else ctx.lineTo(wx, wy);
+}
+ctx.stroke();
+}
+}
 }
 function openReport() {
 var m = document.getElementById('report-modal');
@@ -259,7 +384,7 @@ var ck = document.getElementById('ck');
 if (ck) ck.style.display = 'none';
 }
 } catch (e) {}
-renderSeasonBanner();
+drawSeasonArtCanvas();
 renderCityPhones('Все города');
 var firstW = getByIdx(window.WEATHER, 0);
 if (firstW) applyWeatherObj(firstW);
