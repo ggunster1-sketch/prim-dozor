@@ -196,53 +196,45 @@ function renderCityPhones(city) {
 function renderSeasonBanner() {
   var banner = document.getElementById('season-banner');
   if (!banner) return;
-  var cfg = window.PRIM_DOZOR_CONFIG || {};
   var now = new Date();
   var m = now.getMonth() + 1;
   var mmdd = String(m).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-  var holidays = (cfg.holidays || []).concat([
-    { start: '01-25', end: '01-25', icon: '🎓', title: 'С Днём российского студенчества (Татьянин день)!', text: 'Редакция «Прим_Дозора» поздравляет студентов и преподавателей ДВФУ, ВВГУ и всех вузов Приморья!' },
-    { start: '02-23', end: '02-23', icon: '🎖', title: 'С Днём защитника Отечества!', text: 'Поздравляем моряков Тихоокеанского флота, бойцов СВО и всех защитников России!' },
-    { start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
-    { start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
-{ start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
-{ start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
-{ start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
-{ start: '07-02', end: '07-02', icon: '⚓', title: 'С Днём города Владивостока!', text: 'С днём рождения, столица Дальнего Востока! Процветания городу у моря!' },
-{ start: '07-26', end: '07-26', icon: '🚢', title: 'С Днём Военно-Морского Флота!', text: 'Слава Тихоокеанскому флоту и всем военным морякам Приморья!' },
-{ start: '09-01', end: '09-01', icon: '📚', title: 'С Днём знаний — 1 Сентября!', text: 'Успешного учебного года школьникам, студентам и педагогам Приморского края!' },
-{ start: '09-27', end: '09-27', icon: '🐅', title: 'С Днём тигра в Приморском крае!', text: 'Бережём уникальную природу уссурийской тайги и главный символ Приморья!' },
-{ start: '10-20', end: '10-20', icon: '🏔', title: 'С Днём образования Приморского края!', text: 'Поздравляем земляков с днём рождения нашего родного Приморья!' },
-{ start: '11-04', end: '11-04', icon: '🤝', title: 'С Днём народного единства!', text: 'В единстве наша сила! С праздником, жители Приморского края!' },
-{ start: '11-29', end: '11-30', icon: '💐', title: 'С Днём матери!', text: 'Тепла, здоровья и благодарности всем мамам Приморского края!' }
-]);
-var hol = holidays.find(function(h) {
-return (h.start <= h.end) ? (mmdd >= h.start && mmdd <= h.end) : (mmdd >= h.start || mmdd <= h.end);
-});
-var isWinter = (m === 12 || m <= 2);
-var isSpring = (m >= 3 && m <= 5);
-var isSummer = (m >= 6 && m <= 8);
-var bg = isWinter
-? 'linear-gradient(100deg, rgba(15,23,42,0.92), rgba(30,58,138,0.82))'
-: isSpring
-? 'linear-gradient(100deg, rgba(15,23,42,0.90), rgba(6,95,70,0.82))'
-: isSummer
-? 'linear-gradient(100deg, rgba(15,23,42,0.88), rgba(3,105,161,0.82))'
-: 'linear-gradient(100deg, rgba(15,23,42,0.92), rgba(146,64,14,0.84))';
-var emblem = hol ? (hol.icon || '🎉') : (isWinter ? '❄️' : isSpring ? '🌱' : isSummer ? '🌊' : '🍁');
-var badge = hol ? 'ПОЗДРАВЛЕНИЕ РЕДАКЦИИ • ПРИМ_ДОЗОР' : (isWinter ? 'ЗИМА В ПРИМОРЬЕ • 24/7' : isSpring ? 'ВЕСНА В ПРИМОРЬЕ • 24/7' : isSummer ? 'ЛЕТО В ПРИМОРЬЕ • 24/7' : 'ОСЕНЬ В ПРИМОРЬЕ • 24/7');
-var title = hol ? hol.title : (isWinter ? 'Зимний мониторинг дорог, перевалов и ЖКХ Приморского края' : isSpring ? 'Весенний контроль паводков, дорог и городских служб Приморья' : isSummer ? 'Лето у моря: погода на побережье, трассы и афиша Приморья' : 'Осенний мониторинг отопления, трасс и событий Приморского края');
-var sub = hol ? hol.text : 'Оперативные сводки МЧС, ГИБДД, отключений воды и света по всем городам края в реальном времени.';
-banner.style.backgroundImage = bg;
-banner.innerHTML =
-'' + emblem + ' \n' +
-'\n' +
-'' + badge + ' \n' +
-'' + title + ' \n' +
-'' + sub + '\n' +
-'';
-banner.style.display = 'flex';
+  var theme = 'autumn';
+  if (mmdd >= '12-20' || mmdd <= '01-10') theme = 'newyear';
+  else if (mmdd >= '02-21' && mmdd <= '02-24') theme = 'feb23';
+  else if (mmdd >= '03-06' && mmdd <= '03-09') theme = 'mar8';
+  else if (mmdd >= '05-01' && mmdd <= '05-03') theme = 'may1';
+  else if (mmdd >= '05-07' && mmdd <= '05-10') theme = 'victory';
+  else if (mmdd >= '06-11' && mmdd <= '06-13') theme = 'russia';
+  else if (mmdd >= '07-01' && mmdd <= '07-03') theme = 'vladivostok';
+  else if (mmdd >= '07-25' && mmdd <= '07-28') theme = 'navy';
+  else if (mmdd >= '09-25' && mmdd <= '09-28') theme = 'tiger';
+  else if (m === 12 || m <= 2) theme = 'winter';
+  else if (m >= 3 && m <= 5) theme = 'spring';
+  else if (m >= 6 && m <= 8) theme = 'summer';
+
+  var svgArt = '';
+  if (theme === 'newyear') {
+svgArt = '';
+} else if (theme === 'victory' || theme === 'feb23') {
+svgArt = '';
+} else if (theme === 'mar8' || theme === 'spring' || theme === 'may1') {
+svgArt = '';
+} else if (theme === 'russia' || theme === 'vladivostok' || theme === 'navy' || theme === 'summer') {
+svgArt = '';
+} else if (theme === 'winter') {
+svgArt = '';
+} else {
+svgArt = '';
+}
+banner.style.padding = '0';
+banner.style.overflow = 'hidden';
+banner.style.height = '112px';
+banner.style.borderRadius = '14px';
+banner.style.border = 'none';
+banner.innerHTML = svgArt;
+banner.style.display = 'block';
 }
 function openReport() {
 var m = document.getElementById('report-modal');
