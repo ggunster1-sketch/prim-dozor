@@ -98,7 +98,7 @@ async function fetchWeatherAndRates() {
     const wUrl = [
       'https:',
       '',
-      'api.open-meteo.com',
+      '://open-meteo.com',
       'v1',
       'forecast?latitude=43.1155,43.7972,42.8241,43.3592,43.1128&longitude=131.8855,131.9517,132.8928,132.1892,132.3481&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'
     ].join(SLASH);
@@ -166,19 +166,19 @@ async function rewriteNews(raw) {
   }
 }
 
+async function run() {
+  const { weather, rates } = await fetchWeatherAndRates();
+  let rawNews = [];
+  if (fs.existsSync('news.json')) {
+    try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
+  }
+
   const news = [];
   for (const item of rawNews) {
     if (!item.isPartner && !item.manual && isAdOrSpam(item.title + ' ' + item.text)) continue;
     if (!item.cover || item.cover.startsWith('http')) {
       item.cover = await drawThemedCover(item, item.cover || '');
     }
-    if (!isDuplicate(item.title, news)) news.push(item);
-  }
-
-
-  const news = [];
-  for (const item of rawNews) {
-    if (isAdOrSpam(item.title + ' ' + item.text)) continue;
     if (!isDuplicate(item.title, news)) news.push(item);
   }
 
@@ -211,9 +211,9 @@ async function rewriteNews(raw) {
         if (idx === -1) continue;
         const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
         if (txt.length < 90 || isAdOrSpam(txt)) continue;
-        const im = b.match(new RegExp("background-image:url\\('(https?:" + SLASH + SLASH + "[^']+)'\\)"));
-        candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
-      }
+const im = b.match(new RegExp("background-image:url\('(https?:" + SLASH + SLASH + "[^']+)'\)"));
+candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
+}
 if (maxId > 0) state[ch.id] = maxId;
 } catch (e) {}
 }
