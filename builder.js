@@ -141,39 +141,5 @@ function buildHtml(news, weather, rates) {
         tag('footer', 'class="site-footer"', tag('div', 'class="wrap"', '© 2026 Прим_Дозор (18+). Приморский край.'))
       )
     );
-    fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
-  }
-    const cards = list.length ? list.map((n, i) => {
-    const lead = String(n.text || '').replace(/\s+/g, ' ').slice(0, 155);
-    const loc = esc(n.city) + (n.district ? ' • ' + esc(n.district) : '');
-    const meta = tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(n.catLabel)) + tag('span', '', loc) + tag('span', '', '• ' + esc(n.date)) + tag('span', 'class="badge-age"', esc(n.age)));
-    const attr = 'data-id="' + esc(n.id) + '" onclick="openArt(this.dataset.id)"';
-    return i === 0
-      ? tag('article', 'class="hero-card" ' + attr, tag('img', 'class="hero-img" src="./' + esc(n.cover) + '" alt=""') + tag('div', 'class="hero-body"', meta + tag('h2', 'class="hero-title"', esc(n.title)) + tag('p', 'class="hero-lead"', esc(lead) + '...')))
-      : tag('article', 'class="news-card" ' + attr, tag('img', 'class="news-thumb" src="./' + esc(n.cover) + '" alt="" loading="lazy"') + tag('div', '', meta + tag('h3', 'class="news-title"', esc(n.title)) + tag('p', 'class="news-excerpt"', esc(lead) + '...')));
-  }).join('') : tag('div', 'class="widget"', tag('p', 'style="color:var(--muted)"', 'Лента новостей обновляется. Первые сводки появятся в 07:00 по Владивостоку.'));
-
-  const wCities = ['Владивосток','Уссурийск','Находка','Артём','Большой Камень','Арсеньев','Спасск-Дальний','Партизанск','Дальнегорск'].map((c, i) => tag('option', 'value="' + i + '"', c)).join('');
-  const fCities = [['all','Весь край'],['Владивосток','Владивосток'],['Первомайский','↳ Первомайский'],['Ленинский','↳ Ленинский'],['Первореченский','↳ Первореченский'],['Советский','↳ Советский'],['Фрунзенский','↳ Фрунзенский'],['Русский','↳ о. Русский'],['Уссурийск','Уссурийск'],['Находка','Находка'],['Артём','Артём'],['Большой Камень','Большой Камень']].map(c => tag('option', 'value="' + c.at(0) + '"', c.at(1))).join('');
-  const tabsHtml = [['all','Главное',1],['chp','ЧП и 112',0],['city','Город и ЖКХ',0],['law','Законы и Власть',0],['svo','СВО и Защита',0],['family','Общество',0],['sport','Спорт и Афиша',0]].map(t => tag('button', 'type="button" class="tab' + (t.at(2) ? ' active' : '') + '" onclick="filterCat(' + SQ + t.at(0) + SQ + ',this)"', t.at(1))).join('');
-  const socLinks = [[['https:','','t.me'].join(SLASH),'✈ Telegram'],[['https:','','max.ru'].join(SLASH),'💬 МАКС'],[['https:','','vk.ru'].join(SLASH),'🌐 ВК'],[['https:','','dzen.ru'].join(SLASH),'🔥 Дзен']].map(s => tag('a', 'href="' + s.at(0) + '" target="_blank" class="soc-pill"', s.at(1))).join('');
-  const pCities = ['Все города','Владивосток','Уссурийск','Находка','Артём','Большой Камень'].map(c => tag('option', 'value="' + c + '"', c)).join('');
-Run node bot.js
-/home/runner/work/prim-dozor/prim-dozor/builder.js:161
-
-
-
-SyntaxError: Unexpected end of input
-    at wrapSafe (node:internal/modules/cjs/loader:1464:18)
-    at Module._compile (node:internal/modules/cjs/loader:1495:20)
-    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
-    at Module.load (node:internal/modules/cjs/loader:1266:32)
-    at Module._load (node:internal/modules/cjs/loader:1091:12)
-    at Module.require (node:internal/modules/cjs/loader:1289:19)
-    at require (node:internal/modules/helpers:182:18)
-    at Object.<anonymous> (/home/runner/work/prim-dozor/prim-dozor/bot.js:3:23)
-    at Module._compile (node:internal/modules/cjs/loader:1521:14)
-    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
-
-Node.js v20.20.2
-Error: Process completed with exit code 1.
+   }
+module.exports = { buildHtml };
