@@ -92,20 +92,43 @@ function initBannerAndAds() {
   const banner = document.getElementById('season-banner');
   if (banner) {
     const now = new Date();
-    const mmdd = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-    const hol = (cfg.holidays || []).find(h => mmdd >= h.start && mmdd <= h.end);
+    const m = now.getMonth() + 1;
+    const mmdd = String(m).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    const allHolidays = (cfg.holidays || []).concat([
+      { start: '01-25', end: '01-25', title: 'С Днём российского студенчества (Татьянин день)!', text: 'Поздравляем студентов и преподавателей ДВФУ, ВВГУ, МГУ им. Невельского и всех вузов Приморья!' },
+      { start: '05-07', end: '05-07', title: 'С Днём радио и работников связи!', text: 'Поздравляем связистов, журналистов и IT-специалистов Приморского края!' },
+      { start: '05-28', end: '05-28', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей России!' },
+      { start: '06-12', end: '06-12', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
+      { start: '07-03', end: '07-03', title: 'С Днём ГИБДД (ГАИ) МВД России!', text: 'Поздравляем сотрудников Госавтоинспекции Приморья с профессиональным праздником!' },
+      { start: '09-01', end: '09-01', title: 'С Днём знаний — 1 Сентября!', text: 'Успешного учебного года школьникам, студентам и педагогам Приморского края!' },
+      { start: '10-05', end: '10-05', title: 'С Днём учителя!', text: 'Низкий поклон и благодарность всем педагогам Приморья!' },
+      { start: '11-29', end: '11-30', title: 'С Днём матери!', text: 'Тепла, здоровья и благодарности всем мамам Приморского края!' }
+    ]);
+
+    const hol = allHolidays.find(h => (h.start <= h.end) ? (mmdd >= h.start && mmdd <= h.end) : (mmdd >= h.start || mmdd <= h.end));
+    const seasonBg = (m === 12 || m <= 2)
+      ? 'linear-gradient(90deg, rgba(15,23,42,0.88), rgba(30,58,138,0.78)), url("https://unsplash.com")'
+      : (m >= 3 && m <= 5)
+      ? 'linear-gradient(90deg, rgba(15,23,42,0.86), rgba(6,95,70,0.76)), url("https://unsplash.com")'
+      : (m >= 6 && m <= 8)
+      ? 'linear-gradient(90deg, rgba(15,23,42,0.84), rgba(3,105,161,0.76)), url("https://unsplash.com")'
+      : 'linear-gradient(90deg, rgba(15,23,42,0.88), rgba(146,64,14,0.78)), url("https://unsplash.com")';
+
+    banner.style.backgroundImage = seasonBg;
     if (hol) {
-      banner.innerHTML = '<div><strong style="color:var(--accent)">' + hol.title + '</strong><div style="font-size:13px;color:var(--muted)">' + hol.text + '</div></div>';
-      banner.style.display = 'flex';
+      banner.innerHTML = '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#fca5a5;font-weight:800;margin-bottom:2px">Поздравление редакции</div><strong style="font-size:17px;display:block">' + hol.title + '</strong><span style="font-size:13px;opacity:0.92">' + hol.text + '</span></div>';
     } else {
-      const m = now.getMonth() + 1;
-      const season = (m === 12 || m <= 2) ? 'Зима в Приморье: будьте внимательны на трассах и перевалах края'
-        : (m >= 3 && m <= 5) ? 'Весна в Приморье: контроль паводковой обстановки и дорог края'
-        : (m >= 6 && m <= 8) ? 'Лето в Приморье: сводки пляжей, морской обстановки и афиша края'
-        : 'Осень в Приморье: подготовка ЖКХ к отопительному сезону и сводки 24/7';
-      banner.innerHTML = '<div style="font-size:13px;font-weight:600">' + season + '</div>';
-      banner.style.display = 'flex';
+      const sTitle = (m === 12 || m <= 2) ? 'Зима в Приморском крае • Оперативный мониторинг 24/7'
+        : (m >= 3 && m <= 5) ? 'Весна в Приморском крае • Оперативный мониторинг 24/7'
+        : (m >= 6 && m <= 8) ? 'Лето в Приморском крае • Оперативный мониторинг 24/7'
+        : 'Осень в Приморском крае • Оперативный мониторинг 24/7';
+      const sSub = (m === 12 || m <= 2) ? 'Сводки трасс, перевалов, работа снегоуборочной техники и ЖКХ во всех городах края.'
+        : (m >= 3 && m <= 5) ? 'Контроль паводковой обстановки, состояние дорог и городских служб Приморья.'
+        : (m >= 6 && m <= 8) ? 'Погода на побережье, оперативная обстановка на дорогах и афиша мероприятий края.'
+        : 'Подготовка к зиме, запуск отопления, сводки ГИБДД и оперативные новости Приморья.';
+      banner.innerHTML = '<div><strong style="font-size:16px;display:block;margin-bottom:2px">' + sTitle + '</strong><span style="font-size:13px;opacity:0.9">' + sSub + '</span></div>';
     }
+    banner.style.display = 'flex';
   }
 
   const ad = cfg.partnerAd;
@@ -143,8 +166,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initBannerAndAds();
   renderCityPhones('Все города');
   setInterval(() => {
-    const vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
-    const cl = document.getElementById('clock');
-    if (cl) cl.textContent = 'Владивосток ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
-  }, 5000);
+const vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
+const cl = document.getElementById('clock');
+if (cl) cl.textContent = 'Владивосток ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
+}, 5000);
 });
