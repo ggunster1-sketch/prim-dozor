@@ -257,7 +257,9 @@ headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + HOST + '/'] })
 });
 } catch (e) {}
-}
+}  const { postToTelegram } = require('./tg');
+  if (added > 0) await postToTelegram(finalNews.slice(0, added), (process.env.TG_BOT_TOKEN || '').trim(), HOST);
+
 console.log('Готово. Опубликовано новых уникальных статей: ' + added);
 }
 run();
