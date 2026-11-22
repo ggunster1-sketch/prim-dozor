@@ -145,8 +145,7 @@ function buildHtml(news, weather, rates) {
       )
     );
     fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
-  }
-  const cards = list.length ? list.map((n, i) => {
+    const cards = list.length ? list.map((n, i) => {
     const lead = String(n.text || '').replace(/\s+/g, ' ').slice(0, 155);
     const loc = esc(n.city) + (n.district ? ' • ' + esc(n.district) : '');
     const meta = tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(n.catLabel)) + tag('span', '', loc) + tag('span', '', '• ' + esc(n.date)) + tag('span', 'class="badge-age"', esc(n.age)));
@@ -156,30 +155,66 @@ function buildHtml(news, weather, rates) {
       : tag('article', 'class="news-card" ' + attr, tag('img', 'class="news-thumb" src="./' + esc(n.cover) + '" alt="" loading="lazy"') + tag('div', '', meta + tag('h3', 'class="news-title"', esc(n.title)) + tag('p', 'class="news-excerpt"', esc(lead) + '...')));
   }).join('') : tag('div', 'class="widget"', tag('p', 'style="color:var(--muted)"', 'Лента новостей обновляется. Первые сводки появятся в 07:00 по Владивостоку.'));
 
-  // Настройка городов, фильтров, навигации и футера
+  const wCities = ['Владивосток','Уссурийск','Находка','Артём','Большой Камень','Арсеньев','Спасск-Дальний','Партизанск','Дальнегорск'].map((c, i) => tag('option', 'value="' + i + '"', c)).join('');
+  const fCities = [
+    ['all','Весь край'], ['Владивосток','Владивосток (весь)'], ['Первомайский','↳ Первомайский (Чуркин)'],
+    ['Ленинский','↳ Ленинский р-н'], ['Первореченский','↳ Первореченский р-н'], ['Советский','↳ Советский р-н'],
+    ['Фрунзенский','↳ Фрунзенский (Центр)'], ['Русский','↳ о. Русский'], ['Уссурийск','Уссурийск'],
+    ['Находка','Находка'], ['Артём','Артём'], ['Большой Камень','Большой Камень']
+  ].map(c => tag('option', 'value="' + c.at(0) + '"', c.at(1))).join('');
+
+  const tabsHtml = [
+    ['all','Главное',1], ['chp','ЧП и 112',0], ['city','Город и ЖКХ',0],
+    ['law','Законы и Власть',0], ['svo','СВО и Защита',0], ['family','Общество',0], ['sport','Спорт и Афиша',0]
+  ].map(t => tag('button', 'type="button" class="tab' + (t.at(2) ? ' active' : '') + '" onclick="filterCat(' + SQ + t.at(0) + SQ + ',this)"', t.at(1))).join('');
+
+  const socLinks = [
+    [['https:', '', 't.me'].join(SLASH), '✈ Telegram'],
+    [['https:', '', 'max.ru'].join(SLASH), '💬 МАКС'],
+    [['https:', '', 'vk.ru'].join(SLASH), '🌐 ВК'],
+    [['https:', '', 'dzen.ru'].join(SLASH), '🔥 Дзен']
+  ].map(s => tag('a', 'href="' + s.at(0) + '" target="_blank" rel="noopener" class="soc-pill"', s.at(1))).join('');
+
+  const pCities = ['Все города','Владивосток','Уссурийск','Находка','Артём','Большой Камень'].map(c => tag('option', 'value="' + c + '"', c === 'Все города' ? 'Экстренные службы края' : c)).join('');
+  const repCities = ['Владивосток','Уссурийск','Находка','Артём','Большой Камень','Другой город Приморья'].map(c => tag('option', '', c)).join('');
+
   const headHtml = tag('head', '',
     tag('meta', 'charset="UTF-8"') +
     tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
+    tag('meta', 'name="yandex-verification" content="0dc10018fffed4cc"') +
     tag('title', '', 'Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)') +
     tag('link', 'rel="canonical" href="https://primdozor.ru"') +
     tag('link', 'rel="stylesheet" href="/style.css?v=150"')
   );
 
-  // Сборка основных блоков страницы, модальных окон и скриптов
-  const dirClean = Object.assign({}, dir, { afisha: freeAfisha });
-  const scriptsHtml =
-    tag('script', '', NL + 'window.NEWS=' + safeJson(list) + ';window.WEATHER=' + safeJson(weather) + ';window.DIRECTORIES=' + safeJson(dirClean) + ';' + NL) +
-    tag('script', 'src="/app.js?v=' + Date.now() + '"', '');
+  const infobarHtml = tag('div', 'class="infobar"',
+    tag('div', 'class="wrap infobar-inner"',
+      tag('div', 'class="infobar-left"',
+        tag('span', 'class="live-dot"', '') +
+        tag('strong', 'id="clock"', 'Владивосток') +
+        tag('select', 'class="pill-btn" id="w-sel" onchange="setWeather(this.value)"', wCities) +
+        tag('strong', 'id="w-top"', esc(w0.now))
+      ) +
+      tag('div', 'class="infobar-right"',
+        tag('span', 'class="hide-mob"', '$' + esc(rates.usd) + ' | €' + esc(rates.eur) + ' | ¥' + esc(rates.cny)) +
+        tag('button', 'type="button" class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'big-font' + SQ + ')"', 'А+') +
+        tag('button', 'type="button" class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
+      )
+    )
+  );
 
-  fs.writeFileSync('index.html', '<!DOCTYPE html>' + tag('html', 'lang="ru"', headHtml + tag('body', '', infobarHtml + headerHtml + navHtml + mainWrapHtml + modalsHtml + scriptsHtml)), 'utf8');
+  const headerHtml = tag('header', 'class="site-header"',
+    tag('div', 'class="wrap header-inner"',
+      tag('a', 'href="/" class="brand"',
+        tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР') +
+        tag('span', 'class="brand-sub"', 'Приморский край 24/7') +
+        tag('span', 'class="brand-age"', '18+')
+      ) +
+      tag('div', 'class="header-actions"',
+        tag('select', 'class="filter-city" onchange="filterCity(this.value)"', fCities) +
+        tag('button', 'type="button" class="btn-cta" onclick="openReport()"', '+ Прислать новость')
+      )
+    )
+  );
 
-  // Генерация sitemap.xml и robots.txt
-  const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
-  for (const n of list) {
-    urls.push(tag('url', '', tag('loc', '', 'https://' + HOST + '/news/' + n.id + '.html') + tag('priority', '', '0.8')));
-  }
-  fs.writeFileSync('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>' + NL + tag('urlset', 'xmlns="http://sitemaps.org"', NL + urls.join(NL) + NL), 'utf8');
-  fs.writeFileSync('robots.txt', ['User-agent: *', 'Allow: /', 'Disallow: /data/', 'Host: https://' + HOST, 'Sitemap: https://' + HOST + '/sitemap.xml'].join(NL), 'utf8');
-}
-
-module.exports = { buildHtml };
+  const navHtml = tag('div', 'class="nav-strip"', tag('div', 'class="wrap"', tag('nav', 'class="tabs"', tabsHtml)));
