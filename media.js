@@ -58,35 +58,52 @@ async function drawThemedCover(post, imgUrl) {
 
   if (!okImg) {
     const g = ctx.createLinearGradient(0, 0, w, h);
-    g.addColorStop(0, '#0f172a'); g.addColorStop(1, '#1e293b');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    g.addColorStop(0, '#0f172a');
+    g.addColorStop(1, '#1e293b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
   }
 
-  const grad = ctx.createLinearGradient(0, h - 280, 0, h);
-  grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(9,13,22,0.96)');
-  ctx.fillStyle = grad; ctx.fillRect(0, h - 280, w, 280);
+  const grad = ctx.createLinearGradient(0, h - 320, 0, h);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, 'rgba(9,13,22,0.96)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, h - 320, w, 320);
 
-  ctx.fillStyle = '#c81e1e'; ctx.fillRect(40, 32, 220, 42);
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 21px sans-serif';
+  ctx.fillStyle = '#c81e1e';
+  ctx.fillRect(40, 32, 220, 42);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 21px sans-serif';
   ctx.fillText('ПРИМ_ДОЗОР', 56, 60);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.font = 'bold 24px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.font = 'bold 24px sans-serif';
   ctx.fillText('PRIMDOZOR.RU', w - 245, 60);
 
-  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 34px sans-serif';
-  const words = post.title.split(' ');
-  let line = '', y = h - 115;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 34px sans-serif';
+  const words = String(post.title || '').split(' ');
+  const lines = [];
+  let line = '';
   for (const word of words) {
     if (ctx.measureText(line + ' ' + word).width > 1100) {
-      ctx.fillText(line, 40, y); line = word; y += 44;
+      if (line) lines.push(line);
+      line = word;
     } else {
       line = line ? line + ' ' + word : word;
     }
   }
-  if (line) ctx.fillText(line, 40, y);
+  if (line) lines.push(line);
 
-  ctx.fillStyle = '#94a3b8'; ctx.font = 'bold 16px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU  •  ' + post.city.toUpperCase() + '  •  ' + post.age, 40, h - 22);
+  let y = h - 65 - (lines.slice(0, 3).length - 1) * 44;
+  for (const l of lines.slice(0, 3)) {
+    ctx.fillText(l, 40, y);
+    y += 44;
+  }
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.fillText('PRIMDOZOR.RU  •  ' + String(post.city || 'Приморье').toUpperCase() + '  •  ' + (post.age || '16+'), 40, h - 22);
 
   const file = 'covers/c_' + post.id + '.jpg';
   fs.writeFileSync(file, canvas.toBuffer('image/jpeg', { quality: 0.85 }));
