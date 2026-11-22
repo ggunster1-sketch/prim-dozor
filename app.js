@@ -38,30 +38,29 @@ function setWeather(i) {
 }
 
 function fetchLiveWeather(selectedIndex) {
-  var lats = PRIM_CITIES.map(function(c) { return c.lat; }).join(',');
-  var lons = PRIM_CITIES.map(function(c) { return c.lon; }).join(',');
-  var url = 'https://open-meteo.com' + lats + '&longitude=' + lons +
+  var sel = document.getElementById('w-sel');
+  var idx = selectedIndex !== undefined ? Number(selectedIndex) : (sel ? Number(sel.value) : 0);
+  var city = PRIM_CITIES.at(idx) || PRIM_CITIES.at(0);
+  var host = ['api', 'open-meteo', 'com'].join('.');
+  var url = 'https://' + host + '/v1/forecast?latitude=' + city.lat + '&longitude=' + city.lon +
     '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok';
-  fetch(url).then(function(r) { return r.json(); }).then(function(list) {
-    if (!Array.isArray(list)) return;
+
+  fetch(url).then(function(r) { return r.json(); }).then(function(r) {
+    if (!r || !r.current) return;
     var ico = function(c) { return c === 0 ? '☀' : c <= 3 ? '🌤' : (c >= 71 && c <= 77) ? '❄' : c >= 51 ? '🌧' : '☁'; };
-    window.WEATHER = list.map(function(r, idx) {
-      var h = (r.hourly && r.hourly.temperature_2m) || [];
-      var d = (r.daily && r.daily.temperature_2m_max) || [];
-      var curT = r.current.temperature_2m;
-      var cityObj = PRIM_CITIES.at(idx) || { name: 'Приморье' };
-      return {
-        name: cityObj.name,
-        now: fmtTemp(curT) + ' ' + ico(r.current.weather_code),
-        morning: fmtTemp(h.length > 8 ? h.at(8) : curT),
-        day: fmtTemp(h.length > 14 ? h.at(14) : curT),
-        evening: fmtTemp(h.length > 20 ? h.at(20) : curT),
-        tomorrow: fmtTemp(d.length > 1 ? d.at(1) : curT)
-      };
-    });
-    var sel = document.getElementById('w-sel');
-    var curIdx = selectedIndex !== undefined ? selectedIndex : (sel ? Number(sel.value) : 0);
-    applyWeatherObj(window.WEATHER.at(curIdx) || window.WEATHER.at(0));
+    var h = (r.hourly && r.hourly.temperature_2m) || [];
+    var d = (r.daily && r.daily.temperature_2m_max) || [];
+    var curT = r.current.temperature_2m;
+    var fresh = {
+      name: city.name,
+      now: fmtTemp(curT) + ' ' + ico(r.current.weather_code),
+      morning: fmtTemp(h.length > 8 ? h.at(8) : curT),
+      day: fmtTemp(h.length > 14 ? h.at(14) : curT),
+      evening: fmtTemp(h.length > 20 ? h.at(20) : curT),
+      tomorrow: fmtTemp(d.length > 1 ? d.at(1) : curT)
+    };
+    if (Array.isArray(window.WEATHER)) window.WEATHER[idx] = fresh;
+    applyWeatherObj(fresh);
   }).catch(function() {});
 }
 
@@ -187,8 +186,8 @@ function renderSeasonBanner() {
     { start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
     { start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
     { start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
-{ start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
-{ start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
+    { start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
+    { start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
 { start: '07-02', end: '07-02', icon: '⚓', title: 'С Днём города Владивостока!', text: 'С днём рождения, столица Дальнего Востока! Процветания городу у моря!' },
 { start: '07-26', end: '07-26', icon: '🚢', title: 'С Днём Военно-Морского Флота!', text: 'Слава Тихоокеанскому флоту и всем военным морякам Приморья!' },
 { start: '09-01', end: '09-01', icon: '📚', title: 'С Днём знаний — 1 Сентября!', text: 'Успешного учебного года школьникам, студентам и педагогам Приморского края!' },
