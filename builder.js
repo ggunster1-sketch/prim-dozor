@@ -51,6 +51,29 @@ function buildHtml(news, weather, rates) {
     try { dir = JSON.parse(fs.readFileSync('data/directories.json', 'utf8')); } catch (e) {}
   }
 
+  let traffic = [
+    { name: 'Золотой мост', level: 'ok', status: 'Свободно' },
+    { name: 'Русский мост', level: 'ok', status: 'Свободно' },
+    { name: 'Де-Фриз — Седанка', level: 'ok', status: 'Свободно' },
+    { name: 'Трасса А-370 (Уссури)', level: 'ok', status: 'Свободно' },
+    { name: 'Трасса на Находку', level: 'ok', status: 'Свободно' }
+  ];
+  if (fs.existsSync('data/traffic.json')) {
+    try {
+      const parsedT = JSON.parse(fs.readFileSync('data/traffic.json', 'utf8'));
+      if (Array.isArray(parsedT) && parsedT.length > 0) traffic = parsedT;
+    } catch (e) {}
+  }
+
+  const trafficHtml = traffic.map(t => {
+    const dotColor = t.level === 'danger' ? '#ef4444' : t.level === 'warn' ? '#f59e0b' : '#10b981';
+    const click = t.newsId ? ' onclick="openArt(\'' + esc(t.newsId) + '\')" style="cursor:pointer"' : '';
+    return tag('span', 'class="soc-pill"' + click,
+      tag('span', 'style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dotColor + ';margin-right:6px"', '') +
+      esc(t.name) + ': ' + tag('strong', '', esc(t.status))
+    );
+  }).join('');
+
   const freeAfisha = (dir.afisha || []).filter(a => !/руб|₽|билет от/i.test(String(a.price || '')));
 
   const jkhHtml = (dir.outages || []).map(o =>
@@ -78,11 +101,12 @@ function buildHtml(news, weather, rates) {
     const shareUrl = encodeURIComponent('https://' + HOST + '/news/' + p.id + '.html');
     const shareTitle = encodeURIComponent(p.title);
     const tgShare = ['https:', '', 't.me', 'share', 'url?url=' + shareUrl + '&text=' + shareTitle].join(SLASH);
+    const locLabel = esc(p.city) + (p.district ? ' (' + esc(p.district) + ')' : '');
 
     const body = tag('article', 'class="widget" style="padding:24px"',
       tag('div', 'class="news-meta"',
         tag('span', 'class="badge-cat"', esc(p.catLabel)) +
-        tag('span', '', esc(p.city)) +
+        tag('span', '', locLabel) +
         tag('span', '', '• ' + esc(p.date)) +
         tag('span', 'class="badge-age"', esc(p.age))
       ) +
@@ -104,7 +128,7 @@ function buildHtml(news, weather, rates) {
         tag('title', '', esc(p.title) + ' — Прим_Дозор') +
         tag('meta', 'name="description" content="' + esc(String(p.text || '').replace(/\s+/g, ' ').slice(0, 160)) + '"') +
         tag('link', 'rel="canonical" href="https://' + HOST + '/news/' + p.id + '.html"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=90"')
+        tag('link', 'rel="stylesheet" href="/style.css?v=100"')
       ) +
       tag('body', '',
         tag('header', 'class="site-header"',
@@ -123,9 +147,10 @@ function buildHtml(news, weather, rates) {
   const cards = list.length
     ? list.map((n, i) => {
         const lead = String(n.text || '').replace(/\s+/g, ' ').slice(0, 155);
+        const locLabel = esc(n.city) + (n.district ? ' • ' + esc(n.district) : '');
         const meta = tag('div', 'class="news-meta"',
           tag('span', 'class="badge-cat"', esc(n.catLabel)) +
-          tag('span', '', esc(n.city)) +
+          tag('span', '', locLabel) +
           tag('span', '', '• ' + esc(n.date)) +
           tag('span', 'class="badge-age"', esc(n.age))
         );
@@ -146,8 +171,22 @@ function buildHtml(news, weather, rates) {
   const wCities = ['Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень', 'Арсеньев', 'Спасск-Дальний', 'Партизанск', 'Дальнегорск']
     .map((c, idx) => tag('option', 'value="' + idx + '"', c)).join('');
 
-  const fCities = ['all', 'Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень', 'Арсеньев', 'Спасск']
-    .map(c => tag('option', 'value="' + c + '"', c === 'all' ? 'Весь край' : c === 'Спасск' ? 'Спасск-Дальний' : c)).join('');
+  const fCities = [
+    ['all', 'Весь край'],
+    ['Владивосток', 'Владивосток (весь)'],
+    ['Первомайский', '↳ Первомайский (Чуркин)'],
+    ['Ленинский', '↳ Ленинский р-н'],
+    ['Первореченский', '↳ Первореченский р-н'],
+    ['Советский', '↳ Советский р-н'],
+    ['Фрунзенский', '↳ Фрунзенский (Центр)'],
+    ['Русский', '↳ о. Русский'],
+    ['Уссурийск', 'Уссурийск'],
+    ['Находка', 'Находка'],
+    ['Артём', 'Артём'],
+    ['Большой Камень', 'Большой Камень'],
+    ['Арсеньев', 'Арсеньев'],
+    ['Спасск', 'Спасск-Дальний']
+  ].map(c => tag('option', 'value="' + c.at(0) + '"', c.at(1))).join('');
 
   const tabsHtml = [
     ['all', 'Главное', true],
@@ -160,31 +199,27 @@ function buildHtml(news, weather, rates) {
   ].map(t => tag('button', 'class="tab' + (t.at(2) ? ' active' : '') + '" onclick="filterCat(' + SQ + t.at(0) + SQ + ',this)"', t.at(1))).join('');
 
   const ymSrc = ['https:', '', 'mc.yandex.ru', 'metrika', 'tag.js'].join(SLASH);
-  const ymCode = '(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts.length&&document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","' + ymSrc + '","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});';
-
-  const socLinks = [
-    [['https:', '', 't.me'].join(SLASH), '✈ Telegram'],
-    [['https:', '', 'max.ru'].join(SLASH), '💬 МАКС'],
-    [['https:', '', 'vk.ru'].join(SLASH), '🌐 ВК'],
-    [['https:', '', 'dzen.ru'].join(SLASH), '🔥 Дзен']
-  ].map(s => tag('a', 'href="' + s.at(0) + '" target="_blank" rel="noopener" class="soc-pill"', s.at(1))).join('');
-
-  const pCities = ['Все города', 'Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень']
-    .map(c => tag('option', 'value="' + c + '"', c === 'Все города' ? 'Экстренные службы края' : c)).join('');
-
-  const repCities = ['Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень', 'Другой город Приморья']
-    .map(c => tag('option', '', c)).join('');
-
-  const headHtml = tag('head', '',
-    tag('meta', 'charset="UTF-8"') +
-    tag('meta', 'name="viewport" content="width=device-width, initial-scale=1.0"') +
-    tag('meta', 'name="yandex-verification" content="0dc10018fffed4cc"') +
-    tag('title', '', 'Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)') +
-    tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, ЖКХ, отключения воды и света, погода, курсы валют, законы РФ, афиша."') +
-    tag('link', 'rel="canonical" href="https://primdozor.ru"') +
-    tag('link', 'rel="alternate" type="application/rss+xml" title="Прим_Дозор RSS" href="https://primdozor.ru"') +
+const ymCode = '(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts.length&&document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","' + ymSrc + '","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});';
+const socLinks = [
+[['https:', '', 't.me'].join(SLASH), '✈ Telegram'],
+[['https:', '', 'max.ru'].join(SLASH), '💬 МАКС'],
+[['https:', '', 'vk.ru'].join(SLASH), '🌐 ВК'],
+[['https:', '', 'dzen.ru'].join(SLASH), '🔥 Дзен']
+].map(s => tag('a', 'href="' + s.at(0) + '" target="_blank" rel="noopener" class="soc-pill"', s.at(1))).join('');
+const pCities = ['Все города', 'Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень']
+.map(c => tag('option', 'value="' + c + '"', c === 'Все города' ? 'Экстренные службы края' : c)).join('');
+const repCities = ['Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень', 'Другой город Приморья']
+.map(c => tag('option', '', c)).join('');
+const headHtml = tag('head', '',
+tag('meta', 'charset="UTF-8"') +
+tag('meta', 'name="viewport" content="width=device-width, initial-scale=1.0"') +
+tag('meta', 'name="yandex-verification" content="0dc10018fffed4cc"') +
+tag('title', '', 'Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)') +
+tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, ЖКХ, отключения воды и света, погода, курсы валют, законы РФ, афиша."') +
+tag('link', 'rel="canonical" href="https://primdozor.ru"') +
+tag('link', 'rel="alternate" type="application/rss+xml" title="Прим_Дозор RSS" href="primdozor.ru"') +
 tag('link', 'rel="manifest" href="/manifest.json"') +
-tag('link', 'rel="stylesheet" href="/style.css?v=90"') +
+tag('link', 'rel="stylesheet" href="/style.css?v=100"') +
 tag('script', 'type="text/javascript"', ymCode)
 );
 const infobarHtml = tag('div', 'class="infobar"',
@@ -260,11 +295,11 @@ tag('div', 'style="display:flex;flex-wrap:wrap;gap:8px"',
 tag('button', 'type="button" class="btn-cta" onclick="openReport()"', '📢 Сообщить в редакцию') +
 tag('a', 'href="mailto:prim_dozor@internet.ru?subject=%D0%A0%D0%B5%D0%BA%D0%BB%D0%B0%D0%BC%D0%B0%20%D0%BD%D0%B0%20PrimDozor.ru" class="soc-pill"', '💼 Разместить рекламу (38-ФЗ)')
 );
-const defaultAutumnSvg = '';
 const mainWrapHtml = tag('div', 'class="wrap"',
-tag('div', 'id="season-banner" class="season-banner" style="padding:0;overflow:hidden;height:112px;border-radius:14px;border:none;display:block"', defaultAutumnSvg) +
+tag('div', 'id="season-banner" class="season-banner"', '') +
+tag('div', 'class="soc-pills" style="margin-top:10px"', trafficHtml) +
 tag('div', 'class="sub-tools"',
-tag('input', 'type="search" class="search-input" placeholder="Поиск по новостям Приморья..." oninput="setSearch(this.value)"') +
+tag('input', 'type="search" class="search-input" placeholder="Поиск по новостям и районам Приморья..." oninput="setSearch(this.value)"') +
 tag('div', 'class="soc-pills"', socLinks)
 ) +
 tag('div', 'class="layout"',
@@ -310,8 +345,8 @@ NL + 'window.NEWS=' + safeJson(list) + ';' +
 NL + 'window.WEATHER=' + safeJson(weather) + ';' +
 NL + 'window.DIRECTORIES=' + safeJson(dirClean) + ';' + NL
 ) +
-tag('script', 'src="/config.js?v=90"', '') +
-tag('script', 'src="/app.js?v=90"', '');
+tag('script', 'src="/config.js?v=100"', '') +
+tag('script', 'src="/app.js?v=100"', '');
 const fullHtml = '' + tag('html', 'lang="ru"', headHtml + tag('body', '', infobarHtml + headerHtml + navHtml + mainWrapHtml + modalsHtml + scriptsHtml));
 fs.writeFileSync('index.html', fullHtml, 'utf8');
 const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
