@@ -99,7 +99,7 @@ function buildHtml(news, weather, rates) {
         tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
         tag('title', '', esc(p.title) + ' — Прим_Дозор') +
         tag('meta', 'name="description" content="' + esc(String(p.text || '').replace(/\s+/g, ' ').slice(0, 160)) + '"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=41"')
+        tag('link', 'rel="stylesheet" href="/style.css?v=50"')
       ) +
       tag('body', '',
         tag('header', 'class="site-header"',
@@ -178,7 +178,7 @@ function buildHtml(news, weather, rates) {
     tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, ЖКХ, отключения воды и света, погода, курсы валют, законы РФ, афиша."') +
     tag('link', 'rel="canonical" href="https://primdozor.ru"') +
     tag('link', 'rel="manifest" href="/manifest.json"') +
-    tag('link', 'rel="stylesheet" href="/style.css?v=41"') +
+    tag('link', 'rel="stylesheet" href="/style.css?v=50"') +
     tag('script', 'type="text/javascript"', ymCode)
   );
 
@@ -192,15 +192,13 @@ function buildHtml(news, weather, rates) {
       ) +
       tag('div', 'class="infobar-right"',
         tag('span', 'class="hide-mob"', '$' + esc(rates.usd) + ' | €' + esc(rates.eur) + ' | ¥' + esc(rates.cny)) +
-        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'big-font' + SQ + ')"', 'А+') +
-        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
-      )
-    )
-  );
-
-  const headerHtml = tag('header', 'class="site-header"',
-    tag('div', 'class="wrap header-inner"',
-      tag('a', 'href="/" class="brand"',
+        tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'big-font' + SQ + ')"', 'А+') +tag('button', 'class="pill-btn" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
+)
+)
+);
+const headerHtml = tag('header', 'class="site-header"',
+tag('div', 'class="wrap header-inner"',
+tag('a', 'href="/" class="brand"',
 tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР') +
 tag('span', 'class="brand-sub"', 'Приморский край 24/7') +
 tag('span', 'class="brand-age"', '18+')
@@ -296,8 +294,8 @@ NL + 'window.NEWS=' + safeJson(list) + ';' +
 NL + 'window.WEATHER=' + safeJson(weather) + ';' +
 NL + 'window.DIRECTORIES=' + safeJson(dir) + ';' + NL
 ) +
-tag('script', 'src="/config.js?v=41"', '') +
-tag('script', 'src="/app.js?v=41"', '');
+tag('script', 'src="/config.js?v=50"', '') +
+tag('script', 'src="/app.js?v=50"', '');
 const fullHtml = '' + tag('html', 'lang="ru"', headHtml + tag('body', '', infobarHtml + headerHtml + navHtml + mainWrapHtml + modalsHtml + scriptsHtml));
 fs.writeFileSync('index.html', fullHtml, 'utf8');
 const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
