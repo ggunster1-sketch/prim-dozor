@@ -157,6 +157,7 @@ function shareCard(id, btn) {
   var a = document.createElement('a');
   a.href = c.toDataURL('image/png');
   a.download = 'primdozor-' + n.id + '.png';
+  ;
   a.click();
   if (btn) btn.textContent = '✓ Карточка скачана';
 }
@@ -187,118 +188,77 @@ function openAfisha(idx) {
     '<div class="news-meta"><span class="badge-cat">' + (a.tag || 'Афиша') + '</span> <span>' + (a.city || 'Приморье') + '</span></div>' +
     '<h1 style="font-size:21px;margin:8px 0 14px">' + a.title + '</h1>' +
     '<div class="tldr"><div>📅 ' + (a.date || '') + '</div><div>📍 ' + (a.place || a.city || '') + '</div><div>🎟 Вход свободный</div></div>' +
-'' + (a.desc || '') + '';
-md.style.display = 'flex';
+    '<div style="line-height:1.7">' + (a.desc || '') + '</div>';
+  md.style.display = 'flex';
 }
+
 function switchDirTab(id, b) {
-document.querySelectorAll('.mini-tab').forEach(function(x) { x.classList.remove('active'); });
-if (b) b.classList.add('active');
-['dir-jkh', 'dir-phones', 'dir-afisha', 'dir-guide'].forEach(function(k) {
-var e = document.getElementById(k);
-if (e) e.style.display = (k === id) ? 'block' : 'none';
-});
+  document.querySelectorAll('.mini-tab').forEach(function(x) { x.classList.remove('active'); });
+  if (b) b.classList.add('active');
+  ['dir-jkh', 'dir-phones', 'dir-afisha', 'dir-guide'].forEach(function(k) {
+    var e = document.getElementById(k);
+    if (e) e.style.display = (k === id) ? 'block' : 'none';
+  });
 }
+
 function renderCityPhones(c) {
-var p = (window.DIRECTORIES || {}).phones || {};
-var l = p[c] || p['Все города'] || [];
-var b = document.getElementById('phones-list');
-if (b) {
-b.innerHTML = l.map(function(x) {
-return '' + x.name + '📞 ' + x.num + '';
-}).join('');
+  var p = (window.DIRECTORIES || {}).phones || {};
+  var l = p[c] || p['Все города'] || [];
+  var b = document.getElementById('phones-list');
+  if (b) {
+    b.innerHTML = l.map(function(x) {
+      return '<div class="w-row"><span style="flex:1;padding-right:8px">' + x.name + '</span><a href="tel:' + cleanDigits(x.num) + '" class="tel-pill">📞 ' + x.num + '</a></div>';
+    }).join('');
+  }
 }
-}
+
 function drawSeason() {
-var b = document.getElementById('season-banner');
-if (!b) return;
-b.style.padding = '0'; b.style.border = 'none'; b.style.borderRadius = '14px';
-b.style.overflow = 'hidden'; b.style.height = '100px'; b.style.display = 'block'; b.innerHTML = '';
-var c = document.createElement('canvas');
-c.width = 1200; c.height = 100; c.style.width = '100%'; c.style.height = '100%';
-b.appendChild(c);
-var x = c.getContext('2d');
-if (!x) return;
-var g = x.createLinearGradient(0, 0, 1200, 100);
-g.addColorStop(0, '#2d0c04'); g.addColorStop(0.5, '#9a3412'); g.addColorStop(1, '#d97706');
-x.fillStyle = g; x.fillRect(0, 0, 1200, 100);
-x.fillStyle = 'rgba(10,6,4,0.4)';
-x.beginPath(); x.moveTo(0, 100); x.lineTo(0, 72);
-x.quadraticCurveTo(320, 46, 640, 76); x.quadraticCurveTo(920, 96, 1200, 64);
-x.lineTo(1200, 100); x.fill();
+  var b = document.getElementById('season-banner');
+  if (!b) return;
+  b.style.padding = '0'; b.style.border = 'none'; b.style.borderRadius = '14px';
+  b.style.overflow = 'hidden'; b.style.height = '100px'; b.style.display = 'block'; b.innerHTML = '';
+  var c = document.createElement('canvas');
+  c.width = 1200; c.height = 100; c.style.width = '100%'; c.style.height = '100%';
+  b.appendChild(c);
+  var x = c.getContext('2d');
+  if (!x) return;
+  var g = x.createLinearGradient(0, 0, 1200, 100);
+  g.addColorStop(0, '#2d0c04'); g.addColorStop(0.5, '#9a3412'); g.addColorStop(1, '#d97706');
+  x.fillStyle = g; x.fillRect(0, 0, 1200, 100);
+  x.fillStyle = 'rgba(10,6,4,0.4)';
+  x.beginPath(); x.moveTo(0, 100); x.lineTo(0, 72);
+  x.quadraticCurveTo(320, 46, 640, 76); x.quadraticCurveTo(920, 96, 1200, 64);
+  x.lineTo(1200, 100); x.fill();
 }
+
 function openReport() {
-var m = document.getElementById('report-modal');
-if (m) m.style.display = 'flex';
+  var m = document.getElementById('report-modal');
+  if (m) m.style.display = 'flex';
 }
+
 function sendReport(e) {
-e.preventDefault();
-var c = (document.getElementById('rep-city') || {}).value || 'Приморье';
-var t = ((document.getElementById('rep-text') || {}).value || '').trim();
-if (!t) return;
-window.open('t.me' + encodeURIComponent('https://primdozor.ru') + '&text=' + encodeURIComponent('Народный контроль (' + c + '):\n' + t), '_blank');
-var m = document.getElementById('report-modal');
-if (m) m.style.display = 'none';
+  e.preventDefault();
+  var c = (document.getElementById('rep-city') || {}).value || 'Приморье';
+  var t = ((document.getElementById('rep-text') || {}).value || '').trim();
+  if (!t) return;
+  window.open('https://t.me' + encodeURIComponent('https://primdozor.ru') + '&text=' + encodeURIComponent('Народный контроль (' + c + '):\n' + t), '_blank');
+  var m = document.getElementById('report-modal');
+  if (m) m.style.display = 'none';
 }
-function bindFallbackClicks() {
-var catMap = { 'Главное': 'all', 'ЧП и 112': 'chp', 'Город и ЖКХ': 'city', 'Законы и Власть': 'law', 'СВО и Защита': 'svo', 'Общество': 'family', 'Спорт и Афиша': 'sport' };
-document.querySelectorAll('.tab').forEach(function(btn) {
-btn.onclick = function() {
-var label = (btn.textContent || '').trim();
-filterCat(catMap[label] || 'all', btn);
-};
-});
-var dirMap = { 'ЖКХ и свет': 'dir-jkh', 'Телефоны': 'dir-phones', 'Афиша': 'dir-afisha', '24/7': 'dir-guide' };
-document.querySelectorAll('.mini-tab').forEach(function(btn) {
-btn.onclick = function() {
-var label = (btn.textContent || '').trim();
-switchDirTab(dirMap[label] || 'dir-jkh', btn);
-};
-});
-document.querySelectorAll('.btn-cta').forEach(function(btn) {
-var txt = (btn.textContent || '').trim();
-if (txt.indexOf('Прислать') !== -1 || txt.indexOf('Сообщить') !== -1) {
-btn.onclick = openReport;
-}
-});
-}
+
 function initSite() {
-try { if (localStorage.getItem('ck')) { var ck = document.getElementById('ck'); if (ck) ck.style.display = 'none'; } } catch (e) {}
-bindFallbackClicks();
-drawSeason();
-renderCityPhones('Все города');
-renderGuide('');
-var fw = getByIdx(window.WEATHER, 0);
-if (fw) applyW(fw);
-fetchW(0);
-setInterval(function() {
-var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
-var cl = document.getElementById('clock');
-if (cl) cl.textContent = 'Владивосток ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
-}, 5000);
+  try { if (localStorage.getItem('ck')) { var ck = document.getElementById('ck'); if (ck) ck.style.display = 'none'; } } catch (e) {}
+  drawSeason();
+  renderCityPhones('Все города');
+  renderGuide('');
+  var fw = getByIdx(window.WEATHER, 0);
+  if (fw) applyW(fw);
+  fetchW(0);
+  setInterval(function() {
+    var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
+    var cl = document.getElementById('clock');
+    if (cl) cl.textContent = 'Владивосток ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0');
+  }, 5000);
 }
+
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initSite); } else { initSite(); }
-document.addEventListener('click', function(e) {
-  var btn = e.target.closest('button, a');
-  if (!btn) return;
-  var txt = (btn.textContent || '').trim();
-
-  if (btn.classList.contains('mini-tab')) {
-    e.preventDefault();
-    var map = { 'ЖКХ и свет': 'dir-jkh', 'Телефоны': 'dir-phones', 'Афиша': 'dir-afisha', '24/7': 'dir-guide' };
-    var targetId = map[txt] || 'dir-jkh';
-    document.querySelectorAll('.mini-tab').forEach(function(b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    ['dir-jkh', 'dir-phones', 'dir-afisha', 'dir-guide'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.style.display = (id === targetId) ? 'block' : 'none';
-    });
-    if (targetId === 'dir-guide' && typeof renderGuide === 'function') renderGuide('');
-    if (targetId === 'dir-phones' && typeof renderCityPhones === 'function') renderCityPhones('Все города');
-  }
-
-  if (txt.indexOf('Сообщить в редакцию') !== -1 || txt.indexOf('Прислать новость') !== -1) {
-    e.preventDefault();
-    var rm = document.getElementById('report-modal');
-    if (rm) rm.style.display = 'flex';
-  }
-}, true);
