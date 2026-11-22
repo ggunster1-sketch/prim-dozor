@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /tg_state.json
+Disallow: /data/
+Host: https://primdozor.ru
 Sitemap: https://primdozor.ru/sitemap.xml
