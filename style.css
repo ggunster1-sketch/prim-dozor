@@ -23,7 +23,6 @@ body.dark {
   --top: #06080c;
 }
 
-
 body.big-font { --scale: 1.16; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { overflow-x: hidden; width: 100%; max-width: 100%; }
@@ -69,7 +68,7 @@ select.pill-btn option { background: #0f172a; color: #fff; }
 .brand-age { font-size: 11px; font-weight: 800; color: var(--muted); border: 1px solid var(--border); padding: 2px 6px; border-radius: 5px; flex-shrink: 0; }
 .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .filter-city { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 13px; font-weight: 600; min-height: 36px; }
-.btn-cta { background: var(--accent); color: #fff; padding: 8px 13px; border-radius: 8px; font-size: 13px; font-weight: 700; white-space: nowrap; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
+.btn-cta { background: var(--accent); color: #fff; padding: 8px 13px; border-radius: 8px; font-size: 13px; font-weight: 700; white-space: nowrap; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; z-index: 5; }
 
 /* Рубрикатор */
 .nav-strip { background: var(--card); border-bottom: 1px solid var(--border); }
@@ -174,39 +173,33 @@ select.pill-btn option { background: #0f172a; color: #fff; }
 .mini-tab.active { background: var(--text); color: var(--card); }
 
 /* Нативный рекламный слот (38-ФЗ) */
-.ad-box { background: var(--card); border: 1px dashed var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
-.ad-tag { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.ad-box { background: var(--card); border: 1px dashed var(--border); border-radius: 12px; padding: 15px; margin-bottom: 14px; position: relative; z-index: 2; }
+.ad-tag { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 
-/* Модальные окна */
-.tldr { background: var(--bg); border-left: 3px solid var(--accent); padding: 12px 14px; border-radius: 0 8px 8px 0; font-size: 14px; margin: 12px 0; }
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; align-items: center; justify-content: center; padding: 12px; }
-.modal-sheet { background: var(--card); width: 100%; max-width: 760px; max-height: 90vh; overflow-y: auto; border-radius: 14px; padding: 18px; -webkit-overflow-scrolling: touch; }
-.input { width: 100%; padding: 10px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); color: var(--text); margin-bottom: 10px; font-size: 16px; }
+/* Модальные окна и формы */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.68); z-index: 90; justify-content: center; align-items: flex-start; padding: 20px 12px; overflow-y: auto; }
+.modal-sheet { background: var(--card); width: 100%; max-width: 720px; border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+.tldr { background: var(--accent-bg); border-left: 3px solid var(--accent); padding: 11px 14px; border-radius: 6px; font-size: 14px; margin: 12px 0 16px; }
+.input { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 14px; }
 
-.cookie-bar { position: fixed; bottom: 10px; left: 10px; right: 10px; max-width: 760px; margin: 0 auto; background: #0f172a; color: #f9fafb; padding: 10px 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; z-index: 90; }
-.site-footer { margin-top: 24px; border-top: 1px solid var(--border); padding: 20px 0 64px; font-size: 12.5px; color: var(--muted); text-align: center; }
+/* Cookie и подвал */
+.cookie-bar { position: fixed; bottom: 10px; left: 10px; right: 10px; max-width: 680px; margin: 0 auto; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; z-index: 80; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+.site-footer { background: var(--card); border-top: 1px solid var(--border); padding: 20px 0 70px; margin-top: 24px; font-size: 12.5px; color: var(--muted); }
 
-/* Адаптация под мобильные устройства */
-@media (max-width: 840px) {
-  .layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
   .sub-tools { flex-direction: column; align-items: stretch; }
-  .news-card { grid-template-columns: 110px minmax(0, 1fr); gap: 12px; padding: 12px; }
-  .news-thumb { aspect-ratio: 4/3; }
 }
 
 @media (max-width: 560px) {
   .hide-mob, .brand-sub { display: none; }
-  .infobar-left { gap: 5px; font-size: 11.5px; }
-#clock { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.header-inner { flex-wrap: wrap; gap: 8px; }
-.header-actions { width: 100%; justify-content: space-between; }
-.filter-city { flex: 1; max-width: 48%; }
-.btn-cta { flex: 1; padding: 8px 10px; font-size: 12.5px; }
-.brand-mark { font-size: 15.5px; padding: 5px 9px; }
-.season-banner { padding: 12px 14px; gap: 12px; }
-.season-emblem { width: 48px; height: 48px; font-size: 22px; }
-.hero-title { font-size: calc(18px * var(--scale)); }
-.news-title { font-size: calc(15px * var(--scale)); }
+  .brand-mark { font-size: 15px; padding: 4px 8px; }
+.filter-city { max-width: 122px; padding: 6px 8px; font-size: 12.5px; }
+.btn-cta { padding: 7px 10px; font-size: 12.5px; }
+.news-card { grid-template-columns: 112px minmax(0, 1fr); gap: 10px; padding: 10px; }
+.news-title { font-size: 14.5px; }
 .news-excerpt { display: none; }
-.cookie-bar { flex-direction: column; align-items: stretch; text-align: center; }
+.hero-title { font-size: 17px; }
+.season-banner { padding: 12px 14px; gap: 10px; }
+.season-emblem { width: 46px; height: 46px; font-size: 21px; }
 }
