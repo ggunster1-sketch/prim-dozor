@@ -116,10 +116,11 @@ async function fetchWeatherAndRates() {
   try {
     const lats = '43.1155,43.7972,42.8241,43.3592,43.1128,44.1628,44.5978,43.1286,44.5603';
     const lons = '131.8855,131.9517,132.8928,132.1892,132.3481,133.2778,132.8192,133.1244,135.5700';
+    const wHost = ['api', 'open-meteo', 'com'].join('.');
     const wUrl = [
       'https:',
       '',
-      '://open-meteo.com',
+      wHost,
       'v1',
       'forecast?latitude=' + lats + '&longitude=' + lons + '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'
     ].join(SLASH);
@@ -140,7 +141,8 @@ async function fetchWeatherAndRates() {
 
   let rates = { usd: '98.5', eur: '104.2', cny: '13.6', jpy: '64.5' };
   try {
-    const rUrl = ['https:', '', 'www.cbr-xml-daily.ru', 'daily_json.js'].join(SLASH);
+    const rHost = ['www', 'cbr-xml-daily', 'ru'].join('.');
+    const rUrl = ['https:', '', rHost, 'daily_json.js'].join(SLASH);
     const d = JSON.parse(await getHttp(rUrl)).Valute;
     rates = {
       usd: (d.USD.Value / d.USD.Nominal).toFixed(1),
@@ -166,7 +168,8 @@ async function rewriteNews(raw) {
   ].join(NL);
 
   try {
-    const aiUrl = ['https:', '', 'polza.ai', 'api', 'v1', 'chat', 'completions'].join(SLASH);
+    const aiHost = ['polza', 'ai'].join('.');
+    const aiUrl = ['https:', '', aiHost, 'api', 'v1', 'chat', 'completions'].join(SLASH);
     const res = await fetch(aiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
@@ -195,16 +198,15 @@ async function run() {
   const { weather, rates } = await fetchWeatherAndRates();
   let rawNews = [];
   if (fs.existsSync('news.json')) {
-    try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
-  }
-
-  const news = [];
-  for (const item of rawNews) {
-    if (!item.isPartner && !item.manual && isAdOrSpam(item.title + ' ' + item.text)) continue;
-    item.title = fixTypography(item.title);
-    item.text = fixTypography(item.text);
-    item.tldr = fixTypography(item.tldr);
-    if (!item.cover || item.cover.startsWith('http')) {
+try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
+}
+const news = [];
+for (const item of rawNews) {
+if (!item.isPartner && !item.manual && isAdOrSpam(item.title + ' ' + item.text)) continue;
+item.title = fixTypography(item.title);
+item.text = fixTypography(item.text);
+item.tldr = fixTypography(item.tldr);
+if (!item.cover || item.cover.startsWith('http')) {
 item.cover = await drawThemedCover(item, item.cover || '');
 }
 if (!isDuplicate(item.title, news)) news.push(item);
@@ -225,7 +227,8 @@ try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) 
 const candidates = [];
 for (const ch of CHANNELS) {
 try {
-const html = await getHttp(['https:', '', 't.me', 's', ch.id].join(SLASH));
+const tgHost = ['t', 'me'].join('.');
+const html = await getHttp(['https:', '', tgHost, 's', ch.id].join(SLASH));
 let maxId = state[ch.id] || 0;
 for (const b of html.split('tgme_widget_message_wrap').slice(-5)) {
 const pm = b.match(new RegExp('data-post="[^"]+' + SLASH + '(\d+)"'));
@@ -276,7 +279,8 @@ await updateAfisha(AI_KEY);
 buildHtml(finalNews, weather, rates);
 if (added > 0 && INDEXNOW_KEY) {
 try {
-const idxUrl = ['https:', '', 'yandex.com', 'indexnow'].join(SLASH);
+const yHost = ['yandex', 'com'].join('.');
+const idxUrl = ['https:', '', yHost, 'indexnow'].join(SLASH);
 await fetch(idxUrl, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
