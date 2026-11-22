@@ -158,3 +158,22 @@ function buildHtml(news, weather, rates) {
   const tabsHtml = [['all','Главное',1],['chp','ЧП и 112',0],['city','Город и ЖКХ',0],['law','Законы и Власть',0],['svo','СВО и Защита',0],['family','Общество',0],['sport','Спорт и Афиша',0]].map(t => tag('button', 'type="button" class="tab' + (t.at(2) ? ' active' : '') + '" onclick="filterCat(' + SQ + t.at(0) + SQ + ',this)"', t.at(1))).join('');
   const socLinks = [[['https:','','t.me'].join(SLASH),'✈ Telegram'],[['https:','','max.ru'].join(SLASH),'💬 МАКС'],[['https:','','vk.ru'].join(SLASH),'🌐 ВК'],[['https:','','dzen.ru'].join(SLASH),'🔥 Дзен']].map(s => tag('a', 'href="' + s.at(0) + '" target="_blank" class="soc-pill"', s.at(1))).join('');
   const pCities = ['Все города','Владивосток','Уссурийск','Находка','Артём','Большой Камень'].map(c => tag('option', 'value="' + c + '"', c)).join('');
+Run node bot.js
+/home/runner/work/prim-dozor/prim-dozor/builder.js:161
+
+
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1464:18)
+    at Module._compile (node:internal/modules/cjs/loader:1495:20)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/home/runner/work/prim-dozor/prim-dozor/bot.js:3:23)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.20.2
+Error: Process completed with exit code 1.
