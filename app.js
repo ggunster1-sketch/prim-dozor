@@ -254,10 +254,12 @@ ctx.fillText('Подробности и оперативные сводки: pri
 cvs.toBlob(function(blob) {
 if (!blob) return;
 var fileName = 'primdozor-' + n.id + '.png';
-var file = new File([blob], fileName, { type: 'image/png' });
-if (navigator.canShare && navigator.canShare({ files: [file] })) {
+var blobList = new Array(blob);
+var fileObj = new File(blobList, fileName, { type: 'image/png' });
+var filesList = new Array(fileObj);
+if (navigator.canShare && navigator.canShare({ files: filesList })) {
 navigator.share({
-files: [file],
+files: filesList,
 title: n.title,
 text: n.title + ' — primdozor.ru' + n.id + '.html'
 }).catch(function() {});
@@ -374,21 +376,20 @@ ctx.fillStyle = 'rgba(10, 6, 4, 0.42)';
 ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, 86);
 ctx.quadraticCurveTo(320, 56, 640, 88); ctx.quadraticCurveTo(920, 112, W, 74);
 ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
-if (theme === 'autumn' || theme === 'tiger') {
-var xs = new Array(150, 340, 530, 740, 930, 1090);
-var cs = new Array('#f97316', '#facc15', '#ef4444', '#fb923c', '#fde047', '#f97316');
-xs.forEach(function(lx, idx) {
-ctx.save(); ctx.translate(lx, 36 + (idx % 2) * 24); ctx.rotate(idx % 2 === 0 ? -0.35 : 0.4);
-ctx.fillStyle = cs[idx]; ctx.beginPath(); ctx.ellipse(0, 0, 15, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-});
-} else if (theme === 'newyear' || theme === 'winter') {
-for (var i = 0; i < 34; i++) {
-ctx.fillStyle = i % 3 === 0 ? 'rgba(253, 224, 71, 0.85)' : 'rgba(255, 255, 255, 0.8)';
-ctx.beginPath(); ctx.arc((i * 137) % W, (i * 53) % (H - 14), (i % 3) + 1.5, 0, Math.PI * 2); ctx.fill();
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
-}
-}
-function openReport() { var m = document.getElementById('report-modal'); if (m) m.style.display = 'flex'; }
 function sendReport(e) {
 e.preventDefault();
 var city = (document.getElementById('rep-city') || {}).value || 'Приморский край';
