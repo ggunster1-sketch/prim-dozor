@@ -1,10 +1,12 @@
 const fs = require('fs');
 const https = require('https');
-const { createCanvas, loadImage } = require('canvas');
 const { buildHtml } = require('./builder');
+const { isAdOrSpam, updateLiveOutages, drawThemedCover } = require('./media');
+const { postToTelegram } = require('./tg');
 
 const AI_KEY = (process.env.AI_API_KEY || '').trim();
 const INDEXNOW_KEY = (process.env.INDEXNOW_KEY || '').trim();
+const TG_TOKEN = (process.env.TG_BOT_TOKEN || '').trim();
 const HOST = 'primdozor.ru';
 const SLASH = String.fromCharCode(47);
 const LT = String.fromCharCode(60);
@@ -57,11 +59,11 @@ function isDuplicate(title, existingList) {
   const words = s => new Set(String(s || '').toLowerCase().replace(/[^а-яёa-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3));
   const w1 = words(title);
   if (w1.size < 2) return false;
-  for (const item of existingList.slice(0, 35)) {
+  for (const item of existingList.slice(0, 40)) {
     const w2 = words(item.title);
     let common = 0;
     for (const w of w1) if (w2.has(w)) common++;
-    if (common / Math.min(w1.size, w2.size) >= 0.55) return true;
+    if (common / Math.min(w1.size, w2.size) >= 0.52) return true;
   }
   return false;
 }
@@ -75,7 +77,7 @@ async function fetchWeatherAndRates() {
     { name: 'Большой Камень', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' }
   ];
   try {
-    const wUrl = ['https:', '', 'api.open-meteo.com', 'v1', 'forecast?latitude=43.1155,43.7972,42.8241,43.3592,43.1128&longitude=131.8855,131.9517,132.8928,132.1892,132.3481&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'].join(SLASH);
+    const wUrl = ['https:', '', '://open-meteo.com', 'v1', 'forecast?latitude=43.1155,43.7972,42.8241,43.3592,43.1128&longitude=131.8855,131.9517,132.8928,132.1892,132.3481&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok'].join(SLASH);
     const list = JSON.parse(await getHttp(wUrl));
     const fmt = v => (v > 0 ? '+' : '') + Math.round(v) + '°C';
     const ico = c => c === 0 ? '☀' : c <= 3 ? '🌤' : (c >= 71 && c <= 77) ? '❄' : c >= 51 ? '🌧' : '☁';
@@ -110,8 +112,8 @@ async function rewriteNews(raw) {
   const prompt = [
     'Ты старший корреспондент и редактор портала Приморского края «Прим_Дозор» (уровень РБК и VL.ru).',
     'Напиши полноценную, развёрнутую журналистскую статью (3-4 подробных абзаца, 950-1300 символов) живым, профессиональным языком без шаблонных фраз ИИ («подчеркивает важность», «вызывает широкий резонанс», «в заключение стоит отметить»). Сохрани все факты, адреса, имена ведомств и цифры.',
-    'СТРОГИЙ ФИЛЬТР ГЕОГРАФИИ: Публикуй ТОЛЬКО события Приморского края (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Спасск-Дальний, Партизанск, Дальнегорск, Лесозаводск, Хасан и др.), важные федеральные законы РФ для граждан, а также события СВО и изменения в законодательстве Украины (если тема касается СВО/Украины). Любые новости других регионов РФ (Красноярск, Хабаровск, Благовещенск, Москва без привязки к законам) отклоняй словом SKIP.',
-    'Рекламу, розыгрыши, акции салонов и астрологию отклоняй словом SKIP. Соблюдай законы РФ (436-ФЗ, УК, КоАП).',
+    'СТРОГИЙ ЗАПРЕТ РЕКЛАМЫ: Любые коммерческие предложения, услуги клиник, массаж, скидки, акции, розыгрыши, продвижение услуг или сторонних каналов отклоняй словом SKIP.',
+    'СТРОГИЙ ФИЛЬТР ГЕОГРАФИИ: Публикуй ТОЛЬКО события Приморского края (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Спасск-Дальний, Партизанск, Дальнегорск, Лесозаводск, Хасан и др.), важные федеральные законы РФ, а также события СВО и изменения в законодательстве Украины (если тема касается СВО/Украины). Другие регионы РФ отклоняй словом SKIP.',
     'Верни строго валидный JSON без markdown:',
     '{"title":"Информативный заголовок до 85 символов","cat":"chp|city|law|svo|family|sport","catLabel":"ЧП и 112|Город и ЖКХ|Законы и Власть|СВО и Защита|Общество|Спорт и Афиша","city":"Город Приморья","age":"0+|6+|12+|16+|18+","tldr":"• Факт 1 • Факт 2","text":"Полный текст статьи в 3-4 абзацах."}',
     'Исходный материал: ' + raw.slice(0, 2400)
@@ -129,64 +131,12 @@ async function rewriteNews(raw) {
     const txt = data.choices.at(0).message.content.trim();
     if (!txt || txt.includes('SKIP')) return null;
     const p = JSON.parse(txt.replace(/^```json|```$/g, '').trim());
+    if (isAdOrSpam(p.title + ' ' + p.text)) return null;
     if (/\b(Meta|Instagram|Facebook|Инстаграм|Фейсбук)\b/i.test(p.text)) {
       p.text += NL + NL + '*Деятельность Meta (Facebook и Instagram) запрещена в России как экстремистская.';
     }
     return p;
   } catch (e) { return null; }
-}
-
-async function drawCover(post, imgUrl) {
-  if (!fs.existsSync('covers')) fs.mkdirSync('covers', { recursive: true });
-  const w = 1200, h = 675;
-  const canvas = createCanvas(w, h);
-  const ctx = canvas.getContext('2d');
-  let okImg = false;
-  if (imgUrl && imgUrl.startsWith('http')) {
-    try {
-      const r = await fetch(imgUrl);
-      if (r.ok) {
-        const img = await loadImage(Buffer.from(await r.arrayBuffer()));
-        const sc = Math.max(w / img.width, h / img.height);
-        ctx.drawImage(img, (w - img.width * sc) / 2, (h - img.height * sc) / 2, img.width * sc, img.height * sc);
-        okImg = true;
-      }
-    } catch (e) {}
-  }
-  if (!okImg) {
-    const g = ctx.createLinearGradient(0, 0, w, h);
-    g.addColorStop(0, '#0f172a'); g.addColorStop(1, '#1e293b');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-  }
-  const grad = ctx.createLinearGradient(0, h - 260, 0, h);
-  grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(9,13,22,0.96)');
-  ctx.fillStyle = grad; ctx.fillRect(0, h - 260, w, 260);
-
-  ctx.fillStyle = '#c81e1e'; ctx.fillRect(40, 32, 220, 42);
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 21px sans-serif';
-  ctx.fillText('ПРИМ_ДОЗОР', 56, 60);
-
-  ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = 'bold 26px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU', w - 255, 60);
-
-  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 34px sans-serif';
-  const words = post.title.split(' ');
-  let line = '', y = h - 115;
-  for (const word of words) {
-    if (ctx.measureText(line + ' ' + word).width > 1100) {
-      ctx.fillText(line, 40, y); line = word; y += 44;
-    } else {
-      line = line ? line + ' ' + word : word;
-    }
-  }
-  if (line) ctx.fillText(line, 40, y);
-
-  ctx.fillStyle = '#94a3b8'; ctx.font = 'bold 16px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU  •  ' + post.city.toUpperCase() + '  •  ' + post.age, 40, h - 22);
-
-  const file = 'covers/c_' + post.id + '.jpg';
-  fs.writeFileSync(file, canvas.toBuffer('image/jpeg', { quality: 0.84 }));
-  return file;
 }
 
 async function run() {
@@ -196,57 +146,61 @@ async function run() {
 
   const news = [];
   for (const item of rawNews) {
-    if ((item.city || '').includes('Красноярск')) continue;
+    if (isAdOrSpam(item.title + ' ' + item.text)) continue;
     if (!isDuplicate(item.title, news)) news.push(item);
   }
 
   let state = {};
-if (fs.existsSync('tg_state.json')) { try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {} }
-const candidates = [];
-for (const ch of CHANNELS) {
-try {
-const html = await getHttp(['https:', '', 't.me', 's', ch.id].join(SLASH));
-let maxId = state[ch.id] || 0;
-for (const b of html.split('tgme_widget_message_wrap').slice(-5)) {
-const pm = b.match(new RegExp('data-post="[^"]+' + SLASH + '(\d+)"'));
-const num = pm ? Number(pm.at(1)) : 0;
-if (num && state[ch.id] && num <= state[ch.id]) continue;
-if (num > maxId) maxId = num;
-const idx = b.indexOf('tgme_widget_message_text');
-if (idx === -1) continue;
-const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
-if (txt.length < 90 || txt.includes('erid') || txt.includes('#реклама')) continue;
-const im = b.match(new RegExp("background-image:url\('(https?:" + SLASH + SLASH + "[^']+)'\)"));
-candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
-}
-if (maxId > 0) state[ch.id] = maxId;
-} catch (e) {}
-}
-fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
-let added = 0;
-for (const c of candidates) {
-if (added >= 6) break;
-const ai = await rewriteNews(c.raw);
-if (!ai || isDuplicate(ai.title, news)) continue;
-const vl = new Date(Date.now() + 10 * 3600000);
-const post = {
-id: Date.now() + added,
-date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
-cat: ai.cat || 'city',
-catLabel: ai.catLabel || 'Город и ЖКХ',
-city: ai.city || 'Приморье',
-age: ai.age || '16+',
-title: ai.title,
-tldr: ai.tldr,
-text: ai.text,
-src: c.src
-};
-post.cover = await drawCover(post, c.img);
-news.unshift(post);
-added++;
-}
+  if (fs.existsSync('tg_state.json')) { try { state = JSON.parse(fs.readFileSync('tg_state.json', 'utf8')); } catch (e) {} }
+
+  const candidates = [];
+  for (const ch of CHANNELS) {
+    try {
+      const html = await getHttp(['https:', '', 't.me', 's', ch.id].join(SLASH));
+      let maxId = state[ch.id] || 0;
+      for (const b of html.split('tgme_widget_message_wrap').slice(-5)) {
+        const pm = b.match(new RegExp('data-post="[^"]+' + SLASH + '(\\d+)"'));
+        const num = pm ? Number(pm.at(1)) : 0;
+        if (num && state[ch.id] && num <= state[ch.id]) continue;
+        if (num > maxId) maxId = num;
+        const idx = b.indexOf('tgme_widget_message_text');
+        if (idx === -1) continue;
+        const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
+        if (txt.length < 90 || isAdOrSpam(txt)) continue;
+        const im = b.match(new RegExp("background-image:url\\('(https?:" + SLASH + SLASH + "[^']+)'\\)"));
+        candidates.push({ raw: txt, img: im ? im.at(1) : '', src: ch.off ? 'По данным: ' + ch.name : '' });
+      }
+      if (maxId > 0) state[ch.id] = maxId;
+    } catch (e) {}
+  }
+  fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
+
+  let added = 0;
+  for (const c of candidates) {
+    if (added >= 5) break;
+    const ai = await rewriteNews(c.raw);
+    if (!ai || isDuplicate(ai.title, news)) continue;
+    const vl = new Date(Date.now() + 10 * 3600000);
+    const post = {
+      id: Date.now() + added,
+      date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
+      cat: ai.cat || 'city',
+      catLabel: ai.catLabel || 'Город и ЖКХ',
+      city: ai.city || 'Приморье',
+      age: ai.age || '16+',
+      title: ai.title,
+      tldr: ai.tldr,
+      text: ai.text,
+      src: c.src
+    };
+    post.cover = await drawThemedCover(post, c.img);
+    news.unshift(post);
+    added++;
+  }
+
 const finalNews = news.slice(0, 60);
 fs.writeFileSync('news.json', JSON.stringify(finalNews, null, 2), 'utf8');
+updateLiveOutages(finalNews);
 buildHtml(finalNews, weather, rates);
 if (added > 0 && INDEXNOW_KEY) {
 try {
@@ -257,9 +211,10 @@ headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + HOST + '/'] })
 });
 } catch (e) {}
-}  const { postToTelegram } = require('./tg');
-  if (added > 0) await postToTelegram(finalNews.slice(0, added), (process.env.TG_BOT_TOKEN || '').trim(), HOST);
-
+}
+if (added > 0 && TG_TOKEN) {
+await postToTelegram(finalNews.slice(0, added), TG_TOKEN, HOST);
+}
 console.log('Готово. Опубликовано новых уникальных статей: ' + added);
 }
 run();
