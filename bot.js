@@ -103,7 +103,7 @@ function isDuplicate(title, existingList) {
 
 async function fetchWeatherAndRates() {
   let weather = [
-    { name: 'Владивосток', now: '🌤 +1°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' },
+    { name: 'Владивосток', now: '🌤 0°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C' },
     { name: 'Уссурийск', now: '☀ 0°C', morning: '-5°C', day: '+1°C', evening: '-3°C', tomorrow: '+2°C' },
     { name: 'Находка', now: '🌤 +2°C', morning: '-1°C', day: '+3°C', evening: '+1°C', tomorrow: '+4°C' },
     { name: 'Артём', now: '🌤 +1°C', morning: '-3°C', day: '+2°C', evening: '-1°C', tomorrow: '+3°C' },
@@ -198,26 +198,31 @@ async function run() {
   const { weather, rates } = await fetchWeatherAndRates();
   let rawNews = [];
   if (fs.existsSync('news.json')) {
-try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
-}
-const news = [];
-for (const item of rawNews) {
-if (!item.isPartner && !item.manual && isAdOrSpam(item.title + ' ' + item.text)) continue;
-item.title = fixTypography(item.title);
-item.text = fixTypography(item.text);
+    try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
+  }
+
+  const news = [];
+  for (const item of rawNews) {
+    if (!item.isPartner && !item.manual && isAdOrSpam(item.title + ' ' + item.text)) continue;
+    item.title = fixTypography(item.title);
+    item.text = fixTypography(item.text);
 item.tldr = fixTypography(item.tldr);
 if (!item.cover || item.cover.startsWith('http')) {
 item.cover = await drawThemedCover(item, item.cover || '');
 }
 if (!isDuplicate(item.title, news)) news.push(item);
 }
-// Старт публикаций строго с 07:00 23 ноября 2026 года по Владивостоку (21:00 UTC 22 ноября 2026)
+// Афиша обновляется в реальном времени при каждом запуске
+if (typeof updateAfisha === 'function') {
+await updateAfisha(AI_KEY);
+}
+// Старт публикаций новостей строго с 07:00 23 ноября 2026 года по Владивостоку (21:00 UTC 22 ноября 2026)
 const startUtc = Date.UTC(2026, 10, 22, 21, 0, 0);
 if (Date.now() < startUtc) {
 fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
 updateLiveOutages(news);
 buildHtml(news, weather, rates);
-console.log('Ожидание старта 07:00 23.11.2026 (Владивосток). Погода и курсы обновлены.');
+console.log('Ожидание старта новостей в 07:00 23.11.2026 (Владивосток). Погода, курсы и Афиша обновлены.');
 return;
 }
 let state = {};
@@ -273,9 +278,6 @@ added++;
 const finalNews = news.slice(0, 60);
 fs.writeFileSync('news.json', JSON.stringify(finalNews, null, 2), 'utf8');
 updateLiveOutages(finalNews);
-if (typeof updateAfisha === 'function') {
-await updateAfisha(AI_KEY);
-}
 buildHtml(finalNews, weather, rates);
 if (added > 0 && INDEXNOW_KEY) {
 try {
