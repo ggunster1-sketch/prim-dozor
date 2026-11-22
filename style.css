@@ -23,6 +23,7 @@ body.dark {
   --top: #06080c;
 }
 
+
 body.big-font { --scale: 1.16; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { overflow-x: hidden; width: 100%; max-width: 100%; }
