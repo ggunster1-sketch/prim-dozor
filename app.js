@@ -277,3 +277,28 @@ if (cl) cl.textContent = 'Владивосток ' + String(vl.getHours()).padSt
 }, 5000);
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initSite); } else { initSite(); }
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('button, a');
+  if (!btn) return;
+  var txt = (btn.textContent || '').trim();
+
+  if (btn.classList.contains('mini-tab')) {
+    e.preventDefault();
+    var map = { 'ЖКХ и свет': 'dir-jkh', 'Телефоны': 'dir-phones', 'Афиша': 'dir-afisha', '24/7': 'dir-guide' };
+    var targetId = map[txt] || 'dir-jkh';
+    document.querySelectorAll('.mini-tab').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    ['dir-jkh', 'dir-phones', 'dir-afisha', 'dir-guide'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = (id === targetId) ? 'block' : 'none';
+    });
+    if (targetId === 'dir-guide' && typeof renderGuide === 'function') renderGuide('');
+    if (targetId === 'dir-phones' && typeof renderCityPhones === 'function') renderCityPhones('Все города');
+  }
+
+  if (txt.indexOf('Сообщить в редакцию') !== -1 || txt.indexOf('Прислать новость') !== -1) {
+    e.preventDefault();
+    var rm = document.getElementById('report-modal');
+    if (rm) rm.style.display = 'flex';
+  }
+}, true);
