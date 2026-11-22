@@ -71,9 +71,10 @@ function buildHtml(news, weather, rates) {
   const afishaHtml = (dir.afisha || []).map((a, idx) =>
     tag('div', 'class="w-row afisha-item" onclick="openAfisha(' + idx + ')"',
       tag('div', 'style="flex:1"',
-        tag('div', 'style="font-size:11.5px;color:var(--accent);font-weight:700"', esc(a.city) + ' • ' + esc(a.date) + ' • ' + esc(a.tag)) +
-        tag('div', 'style="font-weight:700;margin-top:2px"', esc(a.title)) +
-        tag('div', 'style="font-size:11.5px;color:var(--muted);margin-top:2px"', 'Нажмите для подробностей (где и во сколько) →')
+        tag('div', 'style="font-size:11.5px;color:var(--accent);font-weight:700"', '📅 ' + esc(a.date) + ' • ' + esc(a.city)) +
+        tag('div', 'style="font-weight:700;font-size:13.5px;margin:3px 0"', esc(a.title)) +
+        tag('div', 'style="font-size:12px;color:var(--text);opacity:0.85"', '📍 ' + esc(a.place || a.city)) +
+        tag('div', 'style="font-size:11.5px;color:var(--muted);margin-top:3px"', '🎟 ' + esc(a.price || 'Вход свободный') + ' • Подробнее →')
       )
     )
   ).join('');
@@ -108,7 +109,7 @@ function buildHtml(news, weather, rates) {
         tag('title', '', esc(p.title) + ' — Прим_Дозор') +
         tag('meta', 'name="description" content="' + esc(String(p.text || '').replace(/\s+/g, ' ').slice(0, 160)) + '"') +
         tag('link', 'rel="canonical" href="https://' + HOST + '/news/' + p.id + '.html"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=70"')
+        tag('link', 'rel="stylesheet" href="/style.css?v=75"')
       ) +
       tag('body', '',
         tag('header', 'class="site-header"',
@@ -187,9 +188,9 @@ function buildHtml(news, weather, rates) {
     tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, ЖКХ, отключения воды и света, погода, курсы валют, законы РФ, афиша."') +
     tag('link', 'rel="canonical" href="https://primdozor.ru"') +
     tag('link', 'rel="alternate" type="application/rss+xml" title="Прим_Дозор RSS" href="https://primdozor.ru"') +
-    tag('link', 'rel="manifest" href="/manifest.json"') +
-    tag('link', 'rel="stylesheet" href="/style.css?v=70"') +
-    tag('script', 'type="text/javascript"', ymCode)
+tag('link', 'rel="manifest" href="/manifest.json"') +
+tag('link', 'rel="stylesheet" href="/style.css?v=75"') +
+tag('script', 'type="text/javascript"', ymCode)
 );
 const infobarHtml = tag('div', 'class="infobar"',
 tag('div', 'class="wrap infobar-inner"',
@@ -312,11 +313,10 @@ NL + 'window.NEWS=' + safeJson(list) + ';' +
 NL + 'window.WEATHER=' + safeJson(weather) + ';' +
 NL + 'window.DIRECTORIES=' + safeJson(dir) + ';' + NL
 ) +
-tag('script', 'src="/config.js?v=70"', '') +
-tag('script', 'src="/app.js?v=70"', '');
+tag('script', 'src="/config.js?v=75"', '') +
+tag('script', 'src="/app.js?v=75"', '');
 const fullHtml = '' + tag('html', 'lang="ru"', headHtml + tag('body', '', infobarHtml + headerHtml + navHtml + mainWrapHtml + modalsHtml + scriptsHtml));
 fs.writeFileSync('index.html', fullHtml, 'utf8');
-// Генерация sitemap.xml
 const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
 for (const n of list) {
 urls.push(tag('url', '', tag('loc', '', 'https://' + HOST + '/news/' + n.id + '.html') + tag('priority', '', '0.8')));
@@ -326,7 +326,6 @@ fs.writeFileSync(
 '' + NL + tag('urlset', 'xmlns="sitemaps.org"', NL + urls.join(NL) + NL),
 'utf8'
 );
-// Генерация robots.txt для Яндекса и Google
 const robotsTxt = [
 'User-agent: *',
 'Allow: /',
@@ -335,25 +334,3 @@ const robotsTxt = [
 'Sitemap: https://' + HOST + '/sitemap.xml'
 ].join(NL);
 fs.writeFileSync('robots.txt', robotsTxt, 'utf8');
-// Генерация RSS-ленты для Дзена и агрегаторов
-const rssItems = list.slice(0, 20).map(n =>
-tag('item', '',
-tag('title', '', esc(n.title)) +
-tag('link', '', 'https://' + HOST + '/news/' + n.id + '.html') +
-tag('guid', '', 'https://' + HOST + '/news/' + n.id + '.html') +
-tag('description', '', esc(String(n.text || '').slice(0, 500)))
-)
-).join(NL);
-const rssXml = '' + NL +
-tag('rss', 'version="2.0"',
-tag('channel', '',
-tag('title', '', 'Прим_Дозор — Новости Владивостока и Приморского края') +
-tag('link', '', 'https://' + HOST + '/') +
-tag('description', '', 'Главные новости Приморского края 24/7') +
-tag('language', '', 'ru') +
-rssItems
-)
-);
-fs.writeFileSync('rss.xml', rssXml, 'utf8');
-}
-module.exports = { buildHtml };
