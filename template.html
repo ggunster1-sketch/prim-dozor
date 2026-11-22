@@ -8,7 +8,7 @@
 <meta name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и Приморского края 24/7: ЧП, ЖКХ, отключения воды и света, погода, курсы валют, законы РФ, афиша.">
 <link rel="canonical" href="https://primdozor.ru">
 <link rel="manifest" href="/manifest.json">
-<link rel="stylesheet" href="/style.css?v=21">
+<link rel="stylesheet" href="/style.css?v=23">
 <script type="text/javascript">(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t),k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://yandex.ru","ym");ym(114370869,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});</script>
 
 </head>
@@ -186,7 +186,7 @@
   <div class="wrap">© 2026 Прим_Дозор (18+). Региональный информационный портал Приморского края. Администратор: Козин А.И. • <a href="/legal.html" style="text-decoration:underline;">Правовая информация и 152-ФЗ</a></div>
 </footer>
 
-<script src="/config.js?v=21"></script>
+<script src="/config.js?v=23"></script>
 <script>
 window.NEWS = {{NEWS_JSON}};
 window.WEATHER = {{WEATHER_JSON}};
@@ -235,18 +235,21 @@ function fetchLiveWeather(selectedIndex) {
     var fmt = function(v) { return (v > 0 ? '+' : '') + Math.round(v) + '°C'; };
     var ico = function(c) { return c === 0 ? '☀' : c <= 3 ? '🌤' : (c >= 71 && c <= 77) ? '❄' : c >= 51 ? '🌧' : '☁'; };
     window.WEATHER = list.map(function(r, idx) {
+      var h = (r.hourly && r.hourly.temperature_2m) || [];
+      var d = (r.daily && r.daily.temperature_2m_max) || [];
+      var curT = r.current.temperature_2m;
       return {
         name: PRIM_CITIES[idx].name,
-        now: fmt(r.current.temperature_2m) + ' ' + ico(r.current.weather_code),
-        morning: fmt(r.hourly.temperature_2m[8]),
-        day: fmt(r.hourly.temperature_2m[14]),
-        evening: fmt(r.hourly.temperature_2m[20]),
-        tomorrow: fmt(r.daily.temperature_2m_max[1])
+        now: fmt(curT) + ' ' + ico(r.current.weather_code),
+        morning: fmt(h.length > 8 ? h : curT),
+        day: fmt(h.length > 14 ? h : curT),
+        evening: fmt(h.length > 20 ? h : curT),
+        tomorrow: fmt(d.length > 1 ? d : curT)
       };
     });
     var sel = document.getElementById('w-sel');
     var curIdx = selectedIndex !== undefined ? selectedIndex : (sel ? Number(sel.value) : 0);
-    applyWeatherObj(window.WEATHER[curIdx] || window.WEATHER[0]);
+    applyWeatherObj(window.WEATHER[curIdx] || window.WEATHER);
   }).catch(function() {});
 }
 
@@ -338,7 +341,8 @@ function switchDirTab(tabId, btn) {
 }
 
 function makeTelHref(num) {
-  var first = String(num || '').split('/')[0].trim();
+  var parts = String(num || '').split('/');
+  var first = parts.length > 0 ? parts : '';
   var clean = first.replace(/[^\d+]/g, '');
   if (clean.length === 7 && clean.indexOf('+') !== 0) clean = '+7423' + clean;
   if (clean.indexOf('8') === 0 && clean.length === 11) clean = '+7' + clean.slice(1);
@@ -365,13 +369,13 @@ function renderSeasonBanner() {
   var m = now.getMonth() + 1;
   var mmdd = String(m).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-var holidays = (cfg.holidays || []).concat([
-{ start: '01-25', end: '01-25', icon: '🎓', title: 'С Днём российского студенчества (Татьянин день)!', text: 'Редакция «Прим_Дозора» поздравляет студентов и преподавателей ДВФУ, ВВГУ и всех вузов Приморья!' },
-{ start: '02-23', end: '02-23', icon: '🎖', title: 'С Днём защитника Отечества!', text: 'Поздравляем моряков Тихоокеанского флота, бойцов СВО и всех защитников России!' },
-{ start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
-{ start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
-{ start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
-{ start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
+  var holidays = (cfg.holidays || []).concat([
+    { start: '01-25', end: '01-25', icon: '🎓', title: 'С Днём российского студенчества (Татьянин день)!', text: 'Редакция «Прим_Дозора» поздравляет студентов и преподавателей ДВФУ, ВВГУ и всех вузов Приморья!' },
+    { start: '02-23', end: '02-23', icon: '🎖', title: 'С Днём защитника Отечества!', text: 'Поздравляем моряков Тихоокеанского флота, бойцов СВО и всех защитников России!' },
+    { start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
+    { start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
+    { start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
+    { start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
 { start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
 { start: '07-02', end: '07-02', icon: '⚓', title: 'С Днём города Владивостока!', text: 'С днём рождения, столица Дальнего Востока! Процветания городу у моря!' },
 { start: '07-26', end: '07-26', icon: '🚢', title: 'С Днём Военно-Морского Флота!', text: 'Слава Тихоокеанскому флоту и всем военным морякам Приморья!' },
@@ -433,6 +437,9 @@ if (ck) ck.style.display = 'none';
 } catch (e) {}
 renderSeasonBanner();
 renderCityPhones('Все города');
+if (Array.isArray(window.WEATHER) && window.WEATHER.length > 0) {
+applyWeatherObj(window.WEATHER);
+}
 fetchLiveWeather(0);
 setInterval(function() { fetchLiveWeather(); }, 600000);
 var cfg = window.PRIM_DOZOR_CONFIG || {};
