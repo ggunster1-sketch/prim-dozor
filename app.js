@@ -45,15 +45,26 @@ function filterCat(c, btn) {
   renderFeed();
 }
 
-function filterCity(c) { cCity = c; renderFeed(); }
-function setSearch(val) { cQuery = val.trim(); renderFeed(); }
+function filterCity(c) {
+  cCity = c;
+  renderFeed();
+}
+
+function setSearch(val) {
+  cQuery = val.trim();
+  renderFeed();
+}
 
 function openArt(id) {
   const n = (window.NEWS || []).find(x => String(x.id) === String(id));
   if (!n) return;
   const cfg = window.PRIM_DOZOR_CONFIG || {};
   const soc = cfg.socials || {};
-  document.getElementById('m-body').innerHTML =
+  const mBody = document.getElementById('m-body');
+  const modal = document.getElementById('modal');
+  if (!mBody || !modal) return;
+
+  mBody.innerHTML =
     '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span><span>' + n.city + '</span><span>• ' + n.date + '</span><span class="badge-age">' + n.age + '</span></div>' +
     '<h1 style="font-size:22px;line-height:1.3;margin:8px 0 14px">' + n.title + '</h1>' +
     '<img src="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px">' +
@@ -61,12 +72,12 @@ function openArt(id) {
     '<div style="white-space:pre-line;line-height:1.75;font-size:15.5px;margin-bottom:16px">' + n.text + '</div>' +
     (n.src ? '<p style="font-size:12px;color:var(--muted);margin-bottom:14px">' + n.src + '</p>' : '') +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid var(--border)">' +
-      '<a href="' + (soc.telegram || 'https://t.me') + '" target="_blank" class="btn-cta">✈ Telegram ЧП</a>' +
-      '<a href="' + (soc.max || 'https://max.ru') + '" target="_blank" class="soc-pill">💬 МАКС</a>' +
-      '<a href="' + (soc.vk || 'https://vk.ru') + '" target="_blank" class="soc-pill">🌐 ВК</a>' +
-      '<a href="' + (soc.dzen || 'https://dzen.ru') + '" target="_blank" class="soc-pill">🔥 Дзен</a>' +
+    '<a href="' + (soc.telegram || 'https://t.me') + '" target="_blank" class="btn-cta">✈ Telegram ЧП</a>' +
+    '<a href="' + (soc.max || 'https://max.ru') + '" target="_blank" class="soc-pill">💬 МАКС</a>' +
+    '<a href="' + (soc.vk || 'https://vk.ru') + '" target="_blank" class="soc-pill">🌐 ВК</a>' +
+    '<a href="' + (soc.dzen || 'https://dzen.ru') + '" target="_blank" class="soc-pill">🔥 Дзен</a>' +
     '</div>';
-  document.getElementById('modal').style.display = 'flex';
+  modal.style.display = 'flex';
 }
 
 function switchDirTab(tabId, btn) {
@@ -139,12 +150,12 @@ function initBannerAndAds() {
     adBox.innerHTML =
       '<div class="ad-tag"><span>' + ad.label + '</span><span>' + ad.advertiserInfo + ' • erid: ' + ad.erid + '</span></div>' +
       '<div style="display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:center">' +
-        '<img src="https://' + uHost + '/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=400&q=80" alt="Аварийный комиссар Приморье" style="width:100%;height:96px;object-fit:cover;border-radius:8px">' +
-        '<div>' +
-          '<div style="font-weight:800;font-size:15px;margin-bottom:4px">' + ad.title + '</div>' +
-          '<div style="font-size:13px;color:var(--muted);margin-bottom:8px">' + ad.description + '</div>' +
-          '<a href="tel:' + ad.phone.replace(/[^+\d]/g, '') + '" class="btn-cta" style="display:inline-block">' + ad.buttonText + ': ' + ad.phone + '</a>' +
-        '</div>' +
+      '<img src="https://' + uHost + '/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=400&q=80" alt="Аварийный комиссар Приморье" style="width:100%;height:96px;object-fit:cover;border-radius:8px">' +
+      '<div>' +
+      '<div style="font-weight:800;font-size:15px;margin-bottom:4px">' + ad.title + '</div>' +
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:8px">' + ad.description + '</div>' +
+      '<a href="tel:' + ad.phone.replace(/[^+\d]/g, '') + '" class="btn-cta" style="display:inline-block">' + ad.buttonText + ': ' + ad.phone + '</a>' +
+      '</div>' +
       '</div>';
     adBox.style.display = 'block';
   }
@@ -157,12 +168,22 @@ function openReport() {
 
 function sendReport(e) {
   e.preventDefault();
-  const city = document.getElementById('rep-city').value;
-  const text = document.getElementById('rep-text').value.trim();
-  if (!text) return;
+  const cityEl = document.getElementById('rep-city');
+  const textEl = document.getElementById('rep-text');
+  const city = cityEl ? cityEl.value : 'Приморский край';
+
+const text = textEl ? textEl.value.trim() : '';
+if (!text) return;
+const cfg = window.PRIM_DOZOR_CONFIG || {};
+const soc = cfg.socials || {};
+const tgBase = (soc.telegram || 't.me').replace(//$/, '');
 const msg = encodeURIComponent('Народный контроль (' + city + '):\n' + text);
-window.open('t.me' + msg, '_blank');
-document.getElementById('report-modal').style.display = 'none';
+const targetUrl = tgBase.includes('share/url')
+? tgBase + '&text=' + msg
+: 't.me' + encodeURIComponent('https://primdozor.ru') + '&text=' + msg;
+window.open(targetUrl, '_blank');
+const m = document.getElementById('report-modal');
+if (m) m.style.display = 'none';
 }
 window.addEventListener('DOMContentLoaded', () => {
 if (localStorage.getItem('ck')) {
