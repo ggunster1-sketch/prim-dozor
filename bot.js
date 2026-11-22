@@ -110,12 +110,13 @@ async function fetchWeatherAndRates() {
 async function rewriteNews(raw) {
   if (!AI_KEY) return null;
   const prompt = [
-    'Ты старший корреспондент и редактор портала Приморского края «Прим_Дозор» (уровень РБК и VL.ru).',
-    'Напиши полноценную, развёрнутую журналистскую статью (3-4 подробных абзаца, 950-1300 символов) живым, профессиональным языком без шаблонных фраз ИИ («подчеркивает важность», «вызывает широкий резонанс», «в заключение стоит отметить»). Сохрани все факты, адреса, имена ведомств и цифры.',
-    'СТРОГИЙ ЗАПРЕТ РЕКЛАМЫ: Любые коммерческие предложения, услуги клиник, массаж, скидки, акции, розыгрыши, продвижение услуг или сторонних каналов отклоняй словом SKIP.',
+    'Ты опытный шеф-редактор и журналист ведущего СМИ Приморского края «Прим_Дозор» (уровень VL.ru и РБК).',
+    'Напиши захватывающую, глубокую, SEO-оптимизированную журналистскую статью (4 содержательных абзаца, 1100-1500 символов) живым человеческим языком без штампов ИИ. Сохрани все факты, улицы, суммы, номера маршрутов и официальные комментарии.',
+    'Также напиши отдельный вовлекающий анонс для Telegram-канала (tgText: 2 живых абзаца, 480-600 символов, с интригой и ключевыми деталями, чтобы читателю захотелось перейти на сайт).',
+    'СТРОГИЙ ЗАПРЕТ РЕКЛАМЫ: Любые коммерческие предложения, услуги клиник, массаж, скидки, акции, розыгрыши и продвижение чужих каналов отклоняй словом SKIP.',
     'СТРОГИЙ ФИЛЬТР ГЕОГРАФИИ: Публикуй ТОЛЬКО события Приморского края (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Спасск-Дальний, Партизанск, Дальнегорск, Лесозаводск, Хасан и др.), важные федеральные законы РФ, а также события СВО и изменения в законодательстве Украины (если тема касается СВО/Украины). Другие регионы РФ отклоняй словом SKIP.',
     'Верни строго валидный JSON без markdown:',
-    '{"title":"Информативный заголовок до 85 символов","cat":"chp|city|law|svo|family|sport","catLabel":"ЧП и 112|Город и ЖКХ|Законы и Власть|СВО и Защита|Общество|Спорт и Афиша","city":"Город Приморья","age":"0+|6+|12+|16+|18+","tldr":"• Факт 1 • Факт 2","text":"Полный текст статьи в 3-4 абзацах."}',
+    '{"title":"Цепляющий SEO-заголовок до 85 символов","cat":"chp|city|law|svo|family|sport","catLabel":"ЧП и 112|Город и ЖКХ|Законы и Власть|СВО и Защита|Общество|Спорт и Афиша","city":"Город Приморья","age":"0+|6+|12+|16+|18+","urgent":false,"tldr":"• Факт 1 • Факт 2","tgText":"2 живых абзаца для Telegram (480-600 символов).","text":"Полная SEO-статья в 4 абзацах (1100-1500 символов)."}',
     'Исходный материал: ' + raw.slice(0, 2400)
   ].join(NL);
 
@@ -124,7 +125,7 @@ async function rewriteNews(raw) {
     const res = await fetch(aiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
-      body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.35 })
+      body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.4 })
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -148,6 +149,16 @@ async function run() {
   for (const item of rawNews) {
     if (isAdOrSpam(item.title + ' ' + item.text)) continue;
     if (!isDuplicate(item.title, news)) news.push(item);
+  }
+
+  // Старт публикаций строго с 07:00 23 ноября 2026 года по Владивостоку (21:00 UTC 22 ноября 2026)
+  const startUtc = Date.UTC(2026, 10, 22, 21, 0, 0);
+  if (Date.now() < startUtc) {
+    fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
+    updateLiveOutages(news);
+    buildHtml(news, weather, rates);
+    console.log('Ожидание старта 07:00 23.11.2026 (Владивосток). Погода и курсы обновлены.');
+    return;
   }
 
   let state = {};
@@ -177,27 +188,28 @@ async function run() {
 
   let added = 0;
   for (const c of candidates) {
-    if (added >= 5) break;
-    const ai = await rewriteNews(c.raw);
-    if (!ai || isDuplicate(ai.title, news)) continue;
-    const vl = new Date(Date.now() + 10 * 3600000);
-    const post = {
-      id: Date.now() + added,
-      date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
-      cat: ai.cat || 'city',
-      catLabel: ai.catLabel || 'Город и ЖКХ',
-      city: ai.city || 'Приморье',
-      age: ai.age || '16+',
-      title: ai.title,
-      tldr: ai.tldr,
-      text: ai.text,
-      src: c.src
-    };
-    post.cover = await drawThemedCover(post, c.img);
-    news.unshift(post);
-    added++;
-  }
-
+if (added >= 2) break;
+const ai = await rewriteNews(c.raw);
+if (!ai || isDuplicate(ai.title, news)) continue;
+if (added >= 1 && !ai.urgent && ai.cat !== 'chp') break;
+const vl = new Date(Date.now() + 10 * 3600000);
+const post = {
+id: Date.now() + added,
+date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
+cat: ai.cat || 'city',
+catLabel: ai.catLabel || 'Город и ЖКХ',
+city: ai.city || 'Приморье',
+age: ai.age || '16+',
+title: ai.title,
+tldr: ai.tldr,
+tgText: ai.tgText || '',
+text: ai.text,
+src: c.src
+};
+post.cover = await drawThemedCover(post, c.img);
+news.unshift(post);
+added++;
+}
 const finalNews = news.slice(0, 60);
 fs.writeFileSync('news.json', JSON.stringify(finalNews, null, 2), 'utf8');
 updateLiveOutages(finalNews);
