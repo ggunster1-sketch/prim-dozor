@@ -24,8 +24,11 @@ function updateLiveOutages(posts) {
   if (!fs.existsSync('data/directories.json')) return;
   try {
     const dir = JSON.parse(fs.readFileSync('data/directories.json', 'utf8'));
-    const outageKeywords = /(отключен|авари|без воды|без света|нет электричеств|отключили отоплен|порыв на сетях|ремонт теплотрасс|водоснабжен|электроснабжен)/i;
-    const found = posts.filter(p => outageKeywords.test(p.title + ' ' + p.text)).slice(0, 6);
+    const outageKeywords = /(отключен|без воды|без света|без электричеств|нет электричеств|отключили отоплен|нет отоплен|порыв на сетях|прорыв труб|ремонт теплотрасс|водоснабжен|электроснабжен|авария на сетях|авария на лэп|авария на подстанц)/i;
+    const excludeDtp = /(дтп|столкновени|перевернул|наезд|автомобил|машин|трасс|дорог|гибдд|парковк|тротуар)/i;
+    const found = posts
+      .filter(p => outageKeywords.test(p.title + ' ' + p.text) && !excludeDtp.test(p.title))
+      .slice(0, 6);
     if (found.length > 0) {
       dir.outages = found.map(p => ({
         city: p.city || 'Приморье',
