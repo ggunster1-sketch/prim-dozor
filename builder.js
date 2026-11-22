@@ -218,3 +218,62 @@ function buildHtml(news, weather, rates) {
   );
 
   const navHtml = tag('div', 'class="nav-strip"', tag('div', 'class="wrap"', tag('nav', 'class="tabs"', tabsHtml)));
+  const guideHtml = tag('input', 'type="search" class="input" style="margin-bottom:8px;padding:6px 10px;font-size:13px" placeholder="Травмпункт, аптека, паром..." oninput="renderGuide(this.value)"') + tag('div', 'id="guide-items"', '');
+
+  const asideHtml = tag('aside', '',
+    tag('div', 'class="widget"',
+      tag('div', 'class="widget-title"', 'Отключения и службы 24/7') +
+      tag('div', 'class="mini-tabs"',
+        tag('button', 'type="button" class="mini-tab active" onclick="switchDirTab(' + SQ + 'dir-jkh' + SQ + ',this)"', 'ЖКХ и свет') +
+        tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-phones' + SQ + ',this)"', 'Телефоны') +
+        tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-afisha' + SQ + ',this)"', 'Афиша') +
+        tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-guide' + SQ + ',this)"', '24/7')
+      ) +
+      tag('div', 'id="dir-jkh"', jkhHtml) +
+      tag('div', 'id="dir-phones" style="display:none"', tag('select', 'class="input" style="margin-bottom:8px;padding:6px 8px;font-size:13px" onchange="renderCityPhones(this.value)"', pCities) + tag('div', 'id="phones-list"', '')) +
+      tag('div', 'id="dir-afisha" style="display:none"', afishaHtml) +
+      tag('div', 'id="dir-guide" style="display:none"', guideHtml)
+    ) +
+    tag('div', 'class="widget"',
+      tag('div', 'class="widget-title"', 'Погода: ' + tag('span', 'id="w-name"', esc(w0.name))) +
+      tag('div', 'class="w-row"', tag('span', '', 'Сейчас') + tag('strong', 'id="w-now"', esc(w0.now))) +
+      tag('div', 'class="w-row"', tag('span', '', 'Утром') + tag('strong', 'id="w-m"', esc(w0.morning))) +
+      tag('div', 'class="w-row"', tag('span', '', 'Днём') + tag('strong', 'id="w-d"', esc(w0.day))) +
+      tag('div', 'class="w-row"', tag('span', '', 'Вечером') + tag('strong', 'id="w-e"', esc(w0.evening))) +
+      tag('div', 'class="w-row"', tag('span', '', 'Завтра') + tag('strong', 'id="w-t"', esc(w0.tomorrow)))
+    ) +
+    tag('div', 'class="widget"',
+      tag('div', 'class="widget-title"', 'Курсы ЦБ РФ') +
+      tag('div', 'class="w-row"', tag('span', '', 'Доллар (USD)') + tag('strong', '', esc(rates.usd) + ' ₽')) +
+      tag('div', 'class="w-row"', tag('span', '', 'Евро (EUR)') + tag('strong', '', esc(rates.eur) + ' ₽')) +
+      tag('div', 'class="w-row"', tag('span', '', 'Юань (CNY)') + tag('strong', '', esc(rates.cny) + ' ₽')) +
+      tag('div', 'class="w-row"', tag('span', '', '100 Иен (JPY)') + tag('strong', '', esc(rates.jpy) + ' ₽'))
+    ) +
+    tag('div', 'class="widget"',
+      tag('div', 'class="widget-title"', 'Редакция и СМИ') +
+      tag('a', 'href="mailto:prim_dozor@internet.ru" class="w-row"', tag('span', '', 'Почта редакции') + tag('strong', '', 'prim_dozor@internet.ru')) +
+      tag('a', 'href="/legal.html" class="w-row"', tag('span', '', '⚖ Правовая информация (152-ФЗ)') + tag('strong', '', '→'))
+    )
+  );
+  // Редакционный блок, основной контейнер и модальные окна (сообщить о проблеме, куки, футер)
+  const editorialSlotHtml = /* код рекламного/редакционного блока */
+  const mainWrapHtml = /* обертка макета страницы и ленты новостей */
+  const modalsHtml = /* модальные окна обратной связи и футер */
+
+  const dirClean = Object.assign({}, dir, { afisha: freeAfisha });
+  const scriptsHtml =
+    tag('script', '', NL + 'window.NEWS=' + safeJson(list) + ';window.WEATHER=' + safeJson(weather) + ';window.DIRECTORIES=' + safeJson(dirClean) + ';' + NL) +
+    tag('script', 'src="/app.js?v=' + Date.now() + '"', '');
+
+  fs.writeFileSync('index.html', '<!DOCTYPE html>' + tag('html', 'lang="ru"', headHtml + tag('body', '', infobarHtml + headerHtml + navHtml + mainWrapHtml + modalsHtml + scriptsHtml)), 'utf8');
+
+  // Генерация sitemap.xml и robots.txt
+  const urls = [tag('url', '', tag('loc', '', 'https://' + HOST + '/') + tag('priority', '', '1.0'))];
+  for (const n of list) {
+    urls.push(tag('url', '', tag('loc', '', 'https://' + HOST + '/news/' + n.id + '.html') + tag('priority', '', '0.8')));
+  }
+  fs.writeFileSync('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>' + NL + tag('urlset', 'xmlns="http://sitemaps.org"', NL + urls.join(NL) + NL), 'utf8');
+  fs.writeFileSync('robots.txt', ['User-agent: *', 'Allow: /', 'Disallow: /data/', 'Host: https://' + HOST, 'Sitemap: https://' + HOST + '/sitemap.xml'].join(NL), 'utf8');
+}
+
+module.exports = { buildHtml };
