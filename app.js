@@ -196,16 +196,91 @@ function injectGuideTab() {
   renderGuideList('');
 }
 
-function openArt(id) {
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+  var words = String(text || '').split(' ');
+  var line = '', lines = 0;
+  for (var i = 0; i < words.length; i++) {
+    var testLine = line + words[i] + ' ';
+    if (ctx.measureText(testLine).width > maxWidth && i > 0) {
+      ctx.fillText(line.trim(), x, y);
+      line = words[i] + ' ';
+      y += lineHeight;
+      lines++;
+      if (lines >= maxLines - 1) break;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, y);
+}
+
+function shareNewsCard(id, btnEl) {
   var n = (window.NEWS || []).find(function(x) { return String(x.id) === String(id); });
   if (!n) return;
-  var soc = (window.PRIM_DOZOR_CONFIG || {}).socials || {};
-  var mBody = document.getElementById('m-body'), modal = document.getElementById('modal');
-  if (!mBody || !modal) return;
-  var locLabel = n.city + (n.district ? ' (' + n.district + ')' : '');
-  mBody.innerHTML =
-    '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + locLabel + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + n.age + '</span></div>' +
-    '<h1 style="font-size:21px;line-height:1.3;margin:8px 0 14px">' + n.title + '</h1>' +
+  if (btnEl) btnEl.textContent = '⏳ Создаём карточку...';
+
+var cvs = document.createElement('canvas');
+var W = 1080, H = 620;
+cvs.width = W; cvs.height = H;
+var ctx = cvs.getContext('2d');
+if (!ctx) return;
+var grad = ctx.createLinearGradient(0, 0, W, H);
+grad.addColorStop(0, '#0f172a');
+grad.addColorStop(1, '#1e293b');
+ctx.fillStyle = grad;
+ctx.fillRect(0, 0, W, H);
+ctx.fillStyle = '#c81e1e';
+ctx.fillRect(0, 0, W, 14);
+ctx.fillRect(56, 48, 250, 48);
+ctx.fillStyle = '#ffffff';
+ctx.font = '900 24px sans-serif';
+ctx.fillText('ПРИМ_ДОЗОР • 24/7', 74, 80);
+ctx.fillStyle = '#fca5a5';
+ctx.font = '700 24px sans-serif';
+var locText = (n.city || 'Приморье') + (n.district ? ' • ' + n.district : '') + ' • ' + (n.date || '');
+ctx.fillText(locText, 330, 80);
+ctx.fillStyle = '#ffffff';
+ctx.font = '800 44px sans-serif';
+wrapCanvasText(ctx, n.title, 56, 165, W - 112, 56, 4);
+ctx.fillStyle = 'rgba(255,255,255,0.12)';
+ctx.fillRect(56, 405, W - 112, 2);
+ctx.fillStyle = '#cbd5e1';
+ctx.font = '500 26px sans-serif';
+var summary = String(n.tldr || n.text || '').replace(/\s+/g, ' ').slice(0, 140) + '...';
+wrapCanvasText(ctx, summary, 56, 452, W - 112, 36, 2);
+ctx.fillStyle = '#94a3b8';
+ctx.font = '700 22px sans-serif';
+ctx.fillText('Подробности и оперативные сводки: primdozor.ru', 56, 574);
+cvs.toBlob(function(blob) {
+if (!blob) return;
+var fileName = 'primdozor-' + n.id + '.png';
+var file = new File([blob], fileName, { type: 'image/png' });
+if (navigator.canShare && navigator.canShare({ files: [file] })) {
+navigator.share({
+files: [file],
+title: n.title,
+text: n.title + ' — primdozor.ru' + n.id + '.html'
+}).catch(function() {});
+} else {
+var a = document.createElement('a');
+a.href = URL.createObjectURL(blob);
+a.download = fileName;
+a.click();
+}
+if (btnEl) btnEl.textContent = '✓ Карточка готова';
+setTimeout(function() { if (btnEl) btnEl.textContent = '🖼 Карточка для чата'; }, 3000);
+}, 'image/png');
+}
+function openArt(id) {
+var n = (window.NEWS || []).find(function(x) { return String(x.id) === String(id); });
+if (!n) return;
+var soc = (window.PRIM_DOZOR_CONFIG || {}).socials || {};
+var mBody = document.getElementById('m-body'), modal = document.getElementById('modal');
+if (!mBody || !modal) return;
+var locLabel = n.city + (n.district ? ' (' + n.district + ')' : '');
+mBody.innerHTML =
+'' + n.catLabel + ' ' + locLabel + ' • ' + n.date + ' ' + n.age + '' +
+'' + n.title + '' +
 '' +
 'Главное:
 ' + (n.tldr || '').replace(/\n/g, '
@@ -213,10 +288,10 @@ function openArt(id) {
 '' + n.text + '' +
 (n.src ? '' + n.src + '' : '') +
 '' +
+'🖼 Карточка для чата ' +
 '✈ Telegram ЧП ' +
 '💬 МАКС ' +
-'🌐 ВК ' +
-'🔥 Дзен';
+'🌐 ВК';
 modal.style.display = 'flex';
 }
 function openAfisha(idx) {
