@@ -186,7 +186,7 @@
   <div class="wrap">© 2026 Прим_Дозор (18+). Региональный информационный портал Приморского края. Администратор: Козин А.И. • <a href="/legal.html" style="text-decoration:underline;">Правовая информация и 152-ФЗ</a></div>
 </footer>
 
-<script src="/config.js?v=23"></script>
+<script src="/config.js?v=24"></script>
 <script>
 window.NEWS = {{NEWS_JSON}};
 window.WEATHER = {{WEATHER_JSON}};
@@ -220,7 +220,7 @@ function applyWeatherObj(w) {
 
 function setWeather(i) {
   var idx = Number(i) || 0;
-  var w = (window.WEATHER || [])[idx];
+  var w = (window.WEATHER || []).at(idx);
   if (w) applyWeatherObj(w);
   fetchLiveWeather(idx);
 }
@@ -238,18 +238,19 @@ function fetchLiveWeather(selectedIndex) {
       var h = (r.hourly && r.hourly.temperature_2m) || [];
       var d = (r.daily && r.daily.temperature_2m_max) || [];
       var curT = r.current.temperature_2m;
+      var cityObj = PRIM_CITIES.at(idx) || { name: 'Приморье' };
       return {
-        name: PRIM_CITIES[idx].name,
+        name: cityObj.name,
         now: fmt(curT) + ' ' + ico(r.current.weather_code),
-        morning: fmt(h.length > 8 ? h : curT),
-        day: fmt(h.length > 14 ? h : curT),
-        evening: fmt(h.length > 20 ? h : curT),
-        tomorrow: fmt(d.length > 1 ? d : curT)
+        morning: fmt(h.length > 8 ? h.at(8) : curT),
+        day: fmt(h.length > 14 ? h.at(14) : curT),
+        evening: fmt(h.length > 20 ? h.at(20) : curT),
+        tomorrow: fmt(d.length > 1 ? d.at(1) : curT)
       };
     });
     var sel = document.getElementById('w-sel');
     var curIdx = selectedIndex !== undefined ? selectedIndex : (sel ? Number(sel.value) : 0);
-    applyWeatherObj(window.WEATHER[curIdx] || window.WEATHER);
+    applyWeatherObj(window.WEATHER.at(curIdx) || window.WEATHER.at(0));
   }).catch(function() {});
 }
 
@@ -312,7 +313,7 @@ function openArt(id) {
 
 function openAfisha(idx) {
   var dir = window.DIRECTORIES || {};
-  var a = (dir.afisha || [])[Number(idx)];
+  var a = (dir.afisha || []).at(Number(idx));
   if (!a) return;
   var mBody = document.getElementById('m-body');
   var modal = document.getElementById('modal');
@@ -342,7 +343,7 @@ function switchDirTab(tabId, btn) {
 
 function makeTelHref(num) {
   var parts = String(num || '').split('/');
-  var first = parts.length > 0 ? parts : '';
+  var first = parts.length > 0 ? parts.at(0) : '';
   var clean = first.replace(/[^\d+]/g, '');
   if (clean.length === 7 && clean.indexOf('+') !== 0) clean = '+7423' + clean;
   if (clean.indexOf('8') === 0 && clean.length === 11) clean = '+7' + clean.slice(1);
@@ -375,7 +376,7 @@ function renderSeasonBanner() {
     { start: '03-08', end: '03-08', icon: '🌷', title: 'С Международным женским днём 8 Марта!', text: 'Дорогие жительницы Приморского края, с праздником весны, тепла и красоты!' },
     { start: '05-01', end: '05-01', icon: '🌿', title: 'С Праздником Весны и Труда — 1 Мая!', text: 'Мира, созидания и весеннего настроения всем жителям Приморского края!' },
     { start: '05-09', end: '05-09', icon: '🎗', title: 'С Днём Великой Победы!', text: 'Вечная слава героям! Поздравляем Приморье и всю страну с 9 Мая!' },
-    { start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
+{ start: '05-28', end: '05-28', icon: '🛡', title: 'С Днём пограничника!', text: 'Благодарим пограничников Приморья за надёжную охрану дальневосточных рубежей!' },
 { start: '06-12', end: '06-12', icon: '🇷🇺', title: 'С Днём России!', text: 'Гордимся великой страной и нашим родным Приморским краем!' },
 { start: '07-02', end: '07-02', icon: '⚓', title: 'С Днём города Владивостока!', text: 'С днём рождения, столица Дальнего Востока! Процветания городу у моря!' },
 { start: '07-26', end: '07-26', icon: '🚢', title: 'С Днём Военно-Морского Флота!', text: 'Слава Тихоокеанскому флоту и всем военным морякам Приморья!' },
@@ -438,7 +439,7 @@ if (ck) ck.style.display = 'none';
 renderSeasonBanner();
 renderCityPhones('Все города');
 if (Array.isArray(window.WEATHER) && window.WEATHER.length > 0) {
-applyWeatherObj(window.WEATHER);
+applyWeatherObj(window.WEATHER.at(0));
 }
 fetchLiveWeather(0);
 setInterval(function() { fetchLiveWeather(); }, 600000);
@@ -464,3 +465,4 @@ document.addEventListener('DOMContentLoaded', initSite);
 } else {
 initSite();
 }
+
