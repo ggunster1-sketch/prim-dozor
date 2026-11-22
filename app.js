@@ -278,7 +278,6 @@ var ad = cfg.partnerAd;
 var adBox = document.getElementById('ad-slot');
 if (ad && ad.enabled && adBox) {
 var dialNum = cleanPhoneDigits(ad.phone) || '+79673888889';
-var telLink = 'tel:' + dialNum;
 adBox.innerHTML =
 '' + ad.label + ' ' + ad.advertiserInfo + ' • erid: ' + ad.erid + ' \n' +
 '' + ad.title + ' \n' +
