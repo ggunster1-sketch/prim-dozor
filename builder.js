@@ -275,22 +275,27 @@ function buildHtml(news, weather, rates) {
     )
   );
 
-  const dirTabs = tag('div', 'style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"',
+    const dirTabs = tag('div', 'style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"',
     tag('button', 'type="button" class="mini-tab active" onclick="switchDirTab(' + SQ + 'dir-jkh' + SQ + ',this)"', '⚡ ЖКХ') +
-    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-phones' + SQ + ',this)"', '📞 Телефоны') +
-    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-afisha' + SQ + ',this)"', '🎟 Афиша') +
-    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-guide' + SQ + ',this)"', '🏥 24/7')
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-phones' + SQ + ',this)"', '📞 Службы') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-apteki' + SQ + ',this)"', '💊 Аптеки 24/7') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-travma' + SQ + ',this)"', '🚑 Травмпункты') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-afisha' + SQ + ',this)"', '🎟 Афиша')
   );
 
   const dirWidget = tag('div', 'class="widget" style="padding:16px"',
     dirTabs +
     tag('div', 'id="dir-jkh"', jkhHtml) +
     tag('div', 'id="dir-phones" style="display:none"', tag('div', 'id="phones-list"', '')) +
-    tag('div', 'id="dir-afisha" style="display:none"', afishaHtml) +
-    tag('div', 'id="dir-guide" style="display:none"',
-      tag('input', 'type="search" class="input" style="margin-bottom:8px;padding:6px 10px;font-size:13px" placeholder="Поиск травмпункта, аптеки 24/7..." oninput="renderGuide(this.value)"') +
-      tag('div', 'id="guide-items"', '')
-    )
+    tag('div', 'id="dir-apteki" style="display:none"',
+      tag('input', 'type="search" class="input" style="margin-bottom:8px;padding:6px 10px;font-size:13px" placeholder="Поиск аптеки 24/7 по городу или улице..." oninput="renderAp(this.value)"') +
+      tag('div', 'id="apteki-items"', '')
+    ) +
+    tag('div', 'id="dir-travma" style="display:none"',
+      tag('input', 'type="search" class="input" style="margin-bottom:8px;padding:6px 10px;font-size:13px" placeholder="Поиск травмпункта по городу или улице..." oninput="renderTr(this.value)"') +
+      tag('div', 'id="travma-items"', '')
+    ) +
+    tag('div', 'id="dir-afisha" style="display:none"', afishaHtml)
   );
 
   const modalsHtml =
