@@ -1,14 +1,16 @@
 {
-  "dpskontrol_125rus": 65293,
-  "dpsvl": 39709,
-  "newsvlc": 81470,
-  "vlnews25": 11862,
-  "svodka25": 40745,
-  "prim_police": 26934,
-  "prosecutor_pk": 13260,
-  "sledcom25": 5321,
-  "shestakovblog": 19186,
+  "dpskontrol_125rus": 65341,
+  "dpsvl": 39741,
+  "newsvlc": 81523,
+  "vlnews25": 11874,
+  "svodka25": 40767,
+  "prim_police": 26953,
+  "prosecutor_pk": 13265,
+  "sledcom25": 5322,
+  "shestakovblog": 19195,
   "ussurmedia": 1,
-  "primamedia": 104382,
-  "primvodokanal": 2127
+  "primamedia": 104441,
+  "primvodokanal": 2130,
+  "prim_dozor": 14936,
+  "lastMorningW": "2026-11-24"
 }
