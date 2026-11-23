@@ -71,7 +71,17 @@ function buildHtml(news, weather, rates) {
 
   const freeAfisha = (dir.afisha || []).filter(a => !/руб|₽|билет от/i.test(String(a.price || '')));
 
-  const jkhHtml = tag('input', 'type="search" class="input" style="margin-bottom:8px;padding:6px 10px;font-size:13px" placeholder="Поиск отключения по улице..." oninput="filterJkh(this.value)"') +
+    const allOut = dir.outages || [];
+  const cntLight = allOut.filter(o => /(свет|электрич|лэп|подстанц)/i.test(o.status)).length;
+  const cntWater = allOut.filter(o => /(вод|водоснабж|труб)/i.test(o.status)).length;
+  const cntHeat = allOut.filter(o => /(тепл|отоплен|гвс|горяч)/i.test(o.status)).length;
+  const jkhCounters = tag('div', 'style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap"',
+    tag('span', 'class="soc-pill" style="font-size:12px"', '⚡ Свет: ' + tag('strong', '', String(cntLight))) +
+    tag('span', 'class="soc-pill" style="font-size:12px"', '💧 Вода: ' + tag('strong', '', String(cntWater))) +
+    tag('span', 'class="soc-pill" style="font-size:12px"', '🔥 Тепло: ' + tag('strong', '', String(cntHeat)))
+  );
+  const jkhHtml = jkhCounters + tag('input', 'type="search" class="input" style="margin-bottom:8px;padding:6px 10px;font-size:13px" placeholder="Поиск отключения по улице..." oninput="filterJkh(this.value)"') +
+    
     (dir.outages || []).map(o =>
       tag('div', 'class="w-row"',
         tag('div', 'style="flex:1;padding-right:8px"',
@@ -253,8 +263,12 @@ function buildHtml(news, weather, rates) {
     tag('script', 'src="./app.js?v=150"', '')
   );
 
-  const footerHtml = tag('footer', 'class="site-footer"',
-    tag('div', 'class="wrap"', '© 2026 Прим_Дозор (18+). Региональный информационный портал Приморского края. Администратор: Козин А.И. • prim_dozor@internet.ru')
+    const footerHtml = tag('footer', 'class="site-footer"',
+    tag('div', 'class="wrap" style="line-height:1.6"',
+      '© 2026 ИА «Прим_Дозор» (18+). Оперативные новости Владивостока и Приморского края 24/7.' + tag('br') +
+      'Администратор и редакция: Козин А.И. • Почта для читателей и рекламы (38-ФЗ): prim_dozor@internet.ru • ' +
+      tag('a', 'href="https://t.me" target="_blank" rel="noopener" style="color:var(--accent)"', 'Telegram @prim_dozor')
+    )
   );
 
   fs.writeFileSync('index.html', '<!DOCTYPE html>' + tag('html', 'lang="ru"', headHtml + tag('body', '', headerHtml + mainHtml + footerHtml)), 'utf8');
