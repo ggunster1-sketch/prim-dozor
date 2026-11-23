@@ -107,24 +107,53 @@ function buildHtml(news, weather, rates) {
       publisher: { '@type': 'Organization', name: 'Прим_Дозор — Приморский край 24/7' }
     }).replace(/</g, '\\u003c');
 
+        const crumbJson = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://' + HOST + '/' },
+        { '@type': 'ListItem', position: 2, name: p.catLabel || 'Новости Приморья', item: 'https://' + HOST + '/' },
+        { '@type': 'ListItem', position: 3, name: p.title, item: artUrl }
+      ]
+    }).replace(/</g, '\\u003c');
+
+    const crumbs = tag('nav', 'aria-label="Хлебные крошки" style="font-size:13px;color:var(--muted);margin-bottom:12px"',
+      tag('a', 'href="/" style="color:var(--accent);text-decoration:none;font-weight:600"', 'Главная') +
+      ' → ' + esc(p.city || 'Приморский край') + ' → ' + esc(p.catLabel)
+    ) + tag('script', 'type="application/ld+json"', crumbJson);
+
     const reactBar = tag('div', 'class="react-bar" data-react-id="' + esc(p.id) + '" style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"',
       ['🔥', '😡', '👍'].map(emo =>
         tag('button', 'type="button" class="soc-pill react-btn" data-emo="' + emo + '" onclick="event.stopPropagation();if(window.toggleReact)toggleReact(' + SQ + esc(p.id) + SQ + ',' + SQ + emo + SQ + ',this)"', emo + ' ' + tag('span', 'class="r-cnt"', '0'))
       ).join('')
     );
 
-    const body = tag('article', 'class="widget" style="padding:24px"',
+    const body = crumbs + tag('article', 'class="widget" style="padding:24px"',
       tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(p.catLabel)) + tag('span', '', esc(p.city)) + tag('span', '', '• ' + esc(p.date))) +
       tag('h1', 'style="font-size:24px;line-height:1.3;margin:10px 0 14px"', esc(p.title)) +
       tag('img', 'class="hero-img" src="/' + esc(p.cover) + '" alt="" style="border-radius:10px;margin-bottom:14px"') +
       tag('div', 'class="tldr"', esc(p.tldr).split(NL).join(tag('br'))) +
-      tag('div', 'style="font-size:16px;white-space:pre-line;line-height:1.75"', esc(p.text)) +
+            tag('div', 'style="font-size:16px;white-space:pre-line;line-height:1.75"', esc(p.text)) +
+      (p.src ? tag('div', 'style="margin-top:14px;font-size:13px;color:var(--muted);font-style:italic"', esc(p.src)) : '') +
       reactBar +
       tag('div', 'style="margin-top:20px;padding:14px;background:var(--bg);border-radius:10px;font-size:13px;color:var(--muted)"',
         tag('div', 'style="margin-bottom:8px;font-weight:700"', 'При цитировании ссылка на «Прим_Дозор» (primdozor.ru) обязательна.') +
-        tag('button', 'type="button" class="btn-cta" data-cite="' + esc(citeText) + '" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.cite);this.textContent=' + SQ + '✓ Скопировано' + SQ + '"', '📋 Скопировать цитату')
+        tag('div', 'style="display:flex;gap:8px;flex-wrap:wrap"',
+          tag('button', 'type="button" class="btn-cta" data-cite="' + esc(citeText) + '" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.cite);this.textContent=' + SQ + '✓ Скопировано' + SQ + '"', '📋 Скопировать цитату') +
+          tag('a', 'href="https://t.me" target="_blank" rel="noopener" class="soc-pill"', '📲 Подписаться в Telegram')
+        )
       )
-    );
+    ) +
+    (list.filter(x => x.id !== p.id).length ? tag('section', 'class="widget" style="padding:20px;margin-top:16px"',
+      tag('h2', 'style="font-size:18px;margin:0 0 12px"', 'Читайте также в Приморье') +
+      list.filter(x => x.id !== p.id).slice(0, 3).map(rel =>
+        tag('div', 'class="w-row" style="padding:10px 0"',
+          tag('a', 'href="/news/' + esc(rel.id) + '.html" style="text-decoration:none;color:inherit;font-weight:700;font-size:15px"',
+            tag('span', 'style="color:var(--accent);font-size:12px;margin-right:6px"', esc(rel.city || 'Приморье') + ' •') + esc(rel.title)
+          )
+        )
+      ).join('')
+    ) : '');
 
     const artHtml = '<!DOCTYPE html>' + tag('html', 'lang="ru"',
       tag('head', '',
@@ -166,10 +195,27 @@ function buildHtml(news, weather, rates) {
   const r = rates || { usd: '82.2', eur: '90.3', cny: '12.3', jpy: '51.5' };
   const cities = ['Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень', 'Арсеньев', 'Спасск-Дальний', 'Партизанск', 'Дальнегорск'];
   const cityOpts = cities.map(c => tag('option', 'value="' + esc(c) + '"', esc(c))).join('');
+    const orgJson = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'NewsMediaOrganization',
+    name: 'Прим_Дозор',
+    url: 'https://' + HOST + '/',
+    email: 'prim_dozor@internet.ru',
+    areaServed: 'Приморский край, Россия'
+  }).replace(/</g, '\\u003c');
+
   const headHtml = tag('head', '',
     tag('meta', 'charset="UTF-8"') +
     tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
     tag('title', '', 'Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)') +
+    tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и всего Приморского края 24/7. Происшествия, ЖКХ, отключения, погода, курсы валют и трассы."') +
+    tag('link', 'rel="canonical" href="https://' + HOST + '/"') +
+    tag('meta', 'property="og:type" content="website"') +
+    tag('meta', 'property="og:site_name" content="Прим_Дозор"') +
+    tag('meta', 'property="og:title" content="Прим_Дозор — Главные новости Приморского края 24/7 (18+)"') +
+    tag('meta', 'property="og:description" content="Сводки ЧП, отключения воды и света, обстановка на мостах и трассах, погода в 9 городах Приморья."') +
+    tag('meta', 'property="og:url" content="https://' + HOST + '/"') +
+    tag('script', 'type="application/ld+json"', orgJson) +
     tag('link', 'rel="stylesheet" href="./style.css?v=150"') +
     tag('script', '', 'window.NEWS_DATA=' + safeJson(list) + ';window.WEATHER_DATA=' + safeJson(weather) + ';window.DIR_DATA=' + safeJson(dir) + ';')
   );
