@@ -12,19 +12,25 @@ var PRIM_CITIES = [
   { name: 'Дальнегорск', lat: 44.5603, lon: 135.5700 }
 ];
 
-var PRIM_GUIDE = [
-  { cat: 'Травмпункты 24/7', title: 'Травмпункт №1 (Ленинский / Первомайский)', addr: 'Владивосток, ул. Уткинская, 7', phone: '+74232400386' },
-  { cat: 'Травмпункты 24/7', title: 'Травмпункт №2 (Первореченский / Центр)', addr: 'Владивосток, ул. Калинина, 78', phone: '+74232276483' },
-  { cat: 'Травмпункты 24/7', title: 'Травмпункт №3 (Советский / Вторая Речка)', addr: 'Владивосток, ул. Давыдова, 3', phone: '+74232319015' },
-  { cat: 'Травмпункты 24/7', title: 'Детский краевой травмпункт 24/7', addr: 'Владивосток, пр-т Острякова, 27', phone: '+74232451907' },
-  { cat: 'Аптеки 24/7', title: 'Дежурная аптека «Монастырёв» (Центр)', addr: 'Владивосток, Океанский пр-т, 18', phone: '+74232402402' },
-  { cat: 'Аптеки 24/7', title: 'Круглосуточная аптека «Госаптека» (Чуркин)', addr: 'Владивосток, ул. Калинина, 42', phone: '+74232273510' },
-  { cat: 'Аптеки 24/7', title: 'Аптека 24/7 «Овита» (Вторая Речка)', addr: 'Владивосток, ул. Русская, 46', phone: '+74232320808' },
-  { cat: 'Паромы и катера', title: 'Морской вокзал (о. Попова, о. Рейнеке, Славянка)', addr: 'Владивосток, ул. Нижнепортовая, 1', phone: '+74232497301' },
-  { cat: 'Паромы и катера', title: 'Справочная автовокзала Приморья', addr: 'Владивосток, ул. Русская, 2А', phone: '+74232323378' },
-  { cat: 'Ветпомощь 24/7', title: 'Круглосуточная ветклиника «Друг»', addr: 'Владивосток, ул. Борисенко, 33', phone: '+74232608760' }
+var PRIM_APTEKI = [
+  { city: 'Владивосток', title: 'Аптека 24/7 «Монастырёв» (Центр)', addr: 'Океанский пр-т, 18', phone: '+74232402402' },
+  { city: 'Владивосток', title: 'Дежурная «Госаптека» 24/7 (Чуркин)', addr: 'ул. Калинина, 42', phone: '+74232273510' },
+  { city: 'Владивосток', title: 'Аптека 24/7 «Овита» (Вторая Речка)', addr: 'ул. Русская, 46', phone: '+74232320808' },
+  { city: 'Владивосток', title: 'Аптека 24/7 «Монастырёв» (Луговая)', addr: 'ул. Светланская, 167', phone: '+74232402402' },
+  { city: 'Уссурийск', title: 'Дежурная аптека 24/7 «Монастырёв»', addr: 'ул. Некрасова, 64', phone: '+74234321010' },
+  { city: 'Находка', title: 'Круглосуточная аптека 24/7 «Овита»', addr: 'Находкинский пр-т, 12', phone: '+74236655220' },
+  { city: 'Артём', title: 'Дежурная аптека 24/7 «Монастырёв»', addr: 'ул. Кирова, 48', phone: '+74233742500' }
 ];
 
+var PRIM_TRAVMA = [
+  { city: 'Владивосток', title: 'Травмпункт №1 (Ленинский / Первомайский)', addr: 'ул. Уткинская, 7', phone: '+74232400386' },
+  { city: 'Владивосток', title: 'Травмпункт №2 (Первореченский / Центр)', addr: 'ул. Калинина, 78', phone: '+74232276483' },
+  { city: 'Владивосток', title: 'Травмпункт №3 (Советский / Вторая Речка)', addr: 'ул. Давыдова, 3', phone: '+74232319015' },
+  { city: 'Владивосток', title: 'Детский краевой травмпункт 24/7', addr: 'пр-т Острякова, 27', phone: '+74232451907' },
+  { city: 'Уссурийск', title: 'Травматологический пункт городской больницы 24/7', addr: 'ул. Пролетарская, 50', phone: '+74234322581' },
+  { city: 'Находка', title: 'Травмпункт Находкинской городской больницы 24/7', addr: 'ул. Пирогова, 9', phone: '+74236622014' },
+  { city: 'Артём', title: 'Травмпункт Артёмовской городской больницы №1 24/7', addr: 'ул. Партизанская, 13', phone: '+74233742473' }
+];
 function getByIdx(a, i) {
   if (!Array.isArray(a)) return null;
   var t = Number(i) || 0, f = null;
@@ -48,6 +54,7 @@ function fmtT(v) {
   var n = Math.round(Number(v) || 0);
   return n === 0 ? '0°C' : (n > 0 ? '+' : '') + n + '°C';
 }
+
 function applyW(w) {
   if (!w) return;
   var s = function(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
@@ -80,7 +87,6 @@ function fetchW(si) {
     });
   }).catch(function() {});
 }
-
 function makeReactHtml(id) {
   var st = getReactStore(), picked = st[id] || '';
   return '<div class="react-bar" data-react-id="' + id + '" style="display:flex;gap:6px;margin-top:8px">' +
@@ -113,6 +119,7 @@ function renderFeed() {
       : '<article class="news-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./' + n.cover + '" alt=""><div class="news-body">' + meta + '<h3 class="news-title">' + n.title + '</h3>' + rb + '</div></article>';
   }).join('');
 }
+
 function filterCat(c, b) {
   cCat = c;
   document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); });
@@ -130,17 +137,19 @@ function filterJkh(q) {
     r.style.display = (!qr || (r.textContent || '').toLowerCase().indexOf(qr) !== -1) ? 'flex' : 'none';
   });
 }
-
-function renderGuide(q) {
-  var lb = document.getElementById('guide-items');
+function renderListItems(boxId, arr, q) {
+  var lb = document.getElementById(boxId);
   if (!lb) return;
   var qr = String(q || '').toLowerCase().trim();
-  lb.innerHTML = PRIM_GUIDE.filter(function(it) {
-    return !qr || (it.cat + ' ' + it.title + ' ' + it.addr).toLowerCase().indexOf(qr) !== -1;
+  lb.innerHTML = arr.filter(function(it) {
+    return !qr || (it.city + ' ' + it.title + ' ' + it.addr).toLowerCase().indexOf(qr) !== -1;
   }).map(function(g) {
-    return '<div class="w-row"><div style="flex:1;padding-right:8px"><div style="font-size:11px;color:var(--accent);font-weight:700">' + g.cat + '</div><div style="font-weight:700;font-size:13px">' + g.title + '</div><div style="font-size:11.5px;color:var(--muted)">📍 ' + g.addr + '</div></div><a href="tel:' + g.phone + '" class="tel-pill">📞 Позвонить</a></div>';
+    return '<div class="w-row"><div style="flex:1;padding-right:8px"><div style="font-size:11px;color:var(--accent);font-weight:700">' + g.city + ' • 24/7</div><div style="font-weight:700;font-size:13px">' + g.title + '</div><div style="font-size:11.5px;color:var(--muted)">📍 ' + g.addr + '</div></div><a href="tel:' + g.phone + '" class="tel-pill">📞 Позвонить</a></div>';
   }).join('');
 }
+
+function renderAp(q) { renderListItems('apteki-items', PRIM_APTEKI, q); }
+function renderTr(q) { renderListItems('travma-items', PRIM_TRAVMA, q); }
 
 function shareCard(id, btn) {
   var n = (window.NEWS || []).find(function(x) { return String(x.id) === String(id); });
@@ -202,7 +211,7 @@ function openAfisha(idx) {
 function switchDirTab(id, b) {
   document.querySelectorAll('.mini-tab').forEach(function(x) { x.classList.remove('active'); });
   if (b) b.classList.add('active');
-  ['dir-jkh', 'dir-phones', 'dir-afisha', 'dir-guide'].forEach(function(k) {
+  ['dir-jkh', 'dir-phones', 'dir-apteki', 'dir-travma', 'dir-afisha'].forEach(function(k) {
     var e = document.getElementById(k);
     if (e) e.style.display = (k === id) ? 'block' : 'none';
   });
@@ -314,7 +323,8 @@ function initSite() {
   try { if (localStorage.getItem('ck')) { var ck = document.getElementById('ck'); if (ck) ck.style.display = 'none'; } } catch (e) {}
   drawSeason();
   renderCityPhones('Все города');
-  renderGuide('');
+  renderAp('');
+  renderTr('');
   renderAllReacts();
   var fw = getByIdx(window.WEATHER, 0);
   if (fw) applyW(fw);
