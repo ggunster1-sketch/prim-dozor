@@ -205,7 +205,7 @@ function buildHtml(news, weather, rates) {
   const r = rates || { usd: '82.2', eur: '90.3', cny: '12.3', jpy: '51.5' };
   const cities = ['Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень', 'Арсеньев', 'Спасск-Дальний', 'Партизанск', 'Дальнегорск'];
   const cityOpts = cities.map(c => tag('option', 'value="' + esc(c) + '"', esc(c))).join('');
-    const orgJson = JSON.stringify({
+      const orgJson = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'NewsMediaOrganization',
     name: 'Прим_Дозор',
@@ -220,50 +220,109 @@ function buildHtml(news, weather, rates) {
     tag('title', '', 'Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)') +
     tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и всего Приморского края 24/7. Происшествия, ЖКХ, отключения, погода, курсы валют и трассы."') +
     tag('link', 'rel="canonical" href="https://' + HOST + '/"') +
-    tag('meta', 'property="og:type" content="website"') +
-    tag('meta', 'property="og:site_name" content="Прим_Дозор"') +
-    tag('meta', 'property="og:title" content="Прим_Дозор — Главные новости Приморского края 24/7 (18+)"') +
-    tag('meta', 'property="og:description" content="Сводки ЧП, отключения воды и света, обстановка на мостах и трассах, погода в 9 городах Приморья."') +
-    tag('meta', 'property="og:url" content="https://' + HOST + '/"') +
     tag('script', 'type="application/ld+json"', orgJson) +
     tag('link', 'rel="stylesheet" href="./style.css?v=150"') +
-    tag('script', '', 'window.NEWS_DATA=' + safeJson(list) + ';window.WEATHER_DATA=' + safeJson(weather) + ';window.DIR_DATA=' + safeJson(dir) + ';')
+    tag('script', '', 'window.NEWS=' + safeJson(list) + ';window.WEATHER=' + safeJson(weather) + ';window.DIRECTORIES=' + safeJson(dir) + ';')
   );
+
+  const wOpts = (weather || []).map((w, idx) => tag('option', 'value="' + idx + '"', esc(w.name))).join('');
+  const catTabs = [
+    ['all', 'Все новости'], ['chp', 'ЧП и 112'], ['city', 'Город и ЖКХ'],
+    ['law', 'Власть и Закон'], ['svo', 'СВО'], ['family', 'Общество'], ['sport', 'Спорт и Афиша']
+  ].map((c, idx) => tag('button', 'type="button" class="tab' + (idx === 0 ? ' active' : '') + '" onclick="filterCat(' + SQ + c + SQ + ',this)"', c)).join('');
+
+  const distOpts = ['all', 'Ленинский', 'Первомайский', 'Первореченский', 'Советский', 'Фрунзенский', 'Русский']
+    .map(d => tag('option', 'value="' + esc(d) + '"', d === 'all' ? 'Все районы / города' : d)).join('');
 
   const headerHtml = tag('header', 'class="site-header"',
     tag('div', 'class="wrap header-inner"',
       tag('div', 'style="display:flex;align-items:center;gap:10px"',
         tag('a', 'href="./" class="brand"', tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР')) +
-        tag('select', 'id="city-select" class="soc-pill" onchange="changeCity(this.value)"', cityOpts)
+        tag('span', 'id="clock" class="soc-pill" style="font-size:12px"', 'Владивосток 24/7')
       ) +
       tag('div', 'style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"',
-        tag('span', 'id="header-weather" class="soc-pill"', esc(w0.now)) +
+        tag('span', 'id="w-top" class="soc-pill"', esc(w0.now)) +
         tag('span', 'class="soc-pill"', '$' + esc(r.usd) + ' | €' + esc(r.eur) + ' | ¥' + esc(r.cny)) +
-        tag('button', 'type="button" class="soc-pill" onclick="toggleFont()"', 'А+') +
-        tag('button', 'type="button" class="soc-pill" onclick="toggleTheme()"', '🌙')
+        tag('button', 'type="button" class="soc-pill" onclick="document.body.classList.toggle(' + SQ + 'large-font' + SQ + ');document.documentElement.style.fontSize=document.body.classList.contains(' + SQ + 'large-font' + SQ + ')?' + SQ + '118%' + SQ + ':' + SQ + '' + SQ + '"', 'А+') +
+        tag('button', 'type="button" class="soc-pill" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ');document.documentElement.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
       )
     )
   );
+  const weatherWidget = tag('div', 'class="widget" style="padding:16px;margin-bottom:14px"',
+    tag('div', 'style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"',
+      tag('strong', 'id="w-name"', esc(w0.name)) +
+      tag('select', 'id="w-sel" class="soc-pill" onchange="setWeather(this.value)"', wOpts)
+    ) +
+    tag('div', 'style="font-size:22px;font-weight:800;margin-bottom:8px" id="w-now"', esc(w0.now)) +
+    tag('div', 'style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:12px;text-align:center"',
+      tag('div', '', 'Утро<br><strong id="w-m">' + esc(w0.morning) + '</strong>') +
+      tag('div', '', 'День<br><strong id="w-d">' + esc(w0.day) + '</strong>') +
+      tag('div', '', 'Вечер<br><strong id="w-e">' + esc(w0.evening) + '</strong>') +
+      tag('div', '', 'Завтра<br><strong id="w-t">' + esc(w0.tomorrow) + '</strong>')
+    )
+  );
 
-  const mainHtml = tag('main', 'class="wrap"',
-    tag('div', 'class="traffic-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"', trafficHtml) +
-    tag('div', 'class="grid-layout"',
-      tag('section', 'id="news-feed"', cards) +
-      tag('aside', 'class="sidebar"',
-        tag('div', 'class="widget" style="padding:16px;margin-bottom:14px"',
-          tag('h3', 'style="margin:0 0 8px"', 'Народный контроль Приморья • 24/7') +
-          tag('button', 'type="button" class="btn-cta" onclick="openSuggest()"', '📢 Сообщить в редакцию')
-        ) +
-        tag('div', 'class="widget" style="padding:16px"',
-          tag('div', 'id="tab-jkh"', jkhHtml) +
-          tag('div', 'id="tab-afisha" style="margin-top:14px"', afishaHtml)
-        )
+  const dirTabs = tag('div', 'style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"',
+    tag('button', 'type="button" class="mini-tab active" onclick="switchDirTab(' + SQ + 'dir-jkh' + SQ + ',this)"', '⚡ ЖКХ') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-phones' + SQ + ',this)"', '📞 Телефоны') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-afisha' + SQ + ',this)"', '🎟 Афиша') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-guide' + SQ + ',this)"', '🏥 24/7')
+  );
+
+  const dirWidget = tag('div', 'class="widget" style="padding:16px"',
+    dirTabs +
+    tag('div', 'id="dir-jkh"', jkhHtml) +
+    tag('div', 'id="dir-phones" style="display:none"', tag('div', 'id="phones-list"', '')) +
+    tag('div', 'id="dir-afisha" style="display:none"', afishaHtml) +
+    tag('div', 'id="dir-guide" style="display:none"',
+      tag('input', 'type="search" class="input" style="margin-bottom:8px;padding:6px 10px;font-size:13px" placeholder="Поиск травмпункта, аптеки 24/7..." oninput="renderGuide(this.value)"') +
+      tag('div', 'id="guide-items"', '')
+    )
+  );
+
+  const modalsHtml =
+    tag('div', 'id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.style.display=' + SQ + 'none' + SQ + '"',
+      tag('div', 'class="widget" style="max-width:740px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;position:relative"',
+        tag('button', 'type="button" class="soc-pill" style="float:right;margin-bottom:8px" onclick="document.getElementById(' + SQ + 'modal' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', '✕ Закрыть') +
+        tag('div', 'id="m-body"', '')
       )
     ) +
+    tag('div', 'id="report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.style.display=' + SQ + 'none' + SQ + '"',
+      tag('form', 'class="widget" style="max-width:480px;width:100%;padding:22px" onsubmit="sendReport(event)"',
+        tag('h3', 'style="margin:0 0 10px"', '📢 Сообщить новость в редакцию') +
+        tag('select', 'id="rep-city" class="input" style="margin-bottom:10px"', cityOpts) +
+        tag('textarea', 'id="rep-text" class="input" rows="4" placeholder="Опишите событие, адрес или приложите детали..." style="margin-bottom:12px"', '') +
+        tag('div', 'style="display:flex;gap:8px;justify-content:flex-end"',
+          tag('button', 'type="button" class="soc-pill" onclick="document.getElementById(' + SQ + 'report-modal' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', 'Отмена') +
+          tag('button', 'type="submit" class="btn-cta"', 'Отправить в редакцию')
+        )
+      )
+    );
+
+  const mainHtml = tag('main', 'class="wrap"',
+    tag('div', 'id="season-banner" style="margin:12px 0"', '') +
+    tag('div', 'class="traffic-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"', trafficHtml) +
+    tag('div', 'style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0"',
+      catTabs +
+      tag('select', 'class="soc-pill" onchange="filterCity(this.value)"', distOpts) +
+      tag('input', 'type="search" class="input" style="max-width:240px;padding:6px 10px;font-size:13px" placeholder="Поиск по новостям..." oninput="setSearch(this.value)"')
+    ) +
+    tag('div', 'class="grid-layout"',
+      tag('section', 'id="feed"', cards) +
+      tag('aside', 'class="sidebar"',
+        weatherWidget +
+        tag('div', 'class="widget" style="padding:16px;margin-bottom:14px"',
+          tag('h3', 'style="margin:0 0 8px"', 'Народный контроль Приморья • 24/7') +
+          tag('button', 'type="button" class="btn-cta" onclick="openReport()"', '📢 Сообщить в редакцию')
+        ) +
+        dirWidget
+      )
+    ) +
+    modalsHtml +
     tag('script', 'src="./app.js?v=150"', '')
   );
 
-    const footerHtml = tag('footer', 'class="site-footer"',
+  const footerHtml = tag('footer', 'class="site-footer"',
     tag('div', 'class="wrap" style="line-height:1.6"',
       '© 2026 ИА «Прим_Дозор» (18+). Оперативные новости Владивостока и Приморского края 24/7.' + tag('br') +
       'Администратор и редакция: Козин А.И. • Почта для читателей и рекламы (38-ФЗ): prim_dozor@internet.ru • ' +
@@ -281,3 +340,4 @@ function buildHtml(news, weather, rates) {
 }
 
 module.exports = { buildHtml };
+
