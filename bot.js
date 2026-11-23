@@ -367,3 +367,6 @@ async function run() {
   }
 
   console.log('Готово. Опубликовано новых уникальных статей: ' + added);
+  }
+run();
+
