@@ -229,8 +229,7 @@ function buildHtml(news, weather, rates) {
   const catTabs = [
     ['all', 'Все новости'], ['chp', 'ЧП и 112'], ['city', 'Город и ЖКХ'],
     ['law', 'Власть и Закон'], ['svo', 'СВО'], ['family', 'Общество'], ['sport', 'Спорт и Афиша']
-  ].map((c, idx) => tag('button', 'type="button" class="tab' + (idx === 0 ? ' active' : '') + '" onclick="filterCat(' + SQ + c + SQ + ',this)"', c)).join('');
-
+    ].map((c, idx) => tag('button', 'type="button" class="tab' + (idx === 0 ? ' active' : '') + '" onclick="filterCat(' + SQ + c.at(0) + SQ + ',this)"', c.at(1))).join('');
   const distOpts = ['all', 'Ленинский', 'Первомайский', 'Первореченский', 'Советский', 'Фрунзенский', 'Русский']
     .map(d => tag('option', 'value="' + esc(d) + '"', d === 'all' ? 'Все районы / города' : d)).join('');
 
