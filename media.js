@@ -11,64 +11,67 @@ function isAdOrSpam(text) {
   return bad.some(w => s.includes(w));
 }
 
-function updateLiveOutages(posts) {
-  if (!fs.existsSync('data/directories.json')) return;
-  try {
-    const dir = JSON.parse(fs.readFileSync('data/directories.json', 'utf8'));
-    const outageKeywords = /(отключен|без воды|без света|без электричеств|нет электричеств|отключили отоплен|нет отоплен|порыв на сетях|прорыв труб|ремонт теплотрасс|водоснабжен|электроснабжен|авария на сетях|авария на лэп|авария на подстанц)/i;
-    const excludeDtp = /(дтп|столкновени|перевернул|наезд|автомобил|машин|трасс|дорог|гибдд|парковк|тротуар)/i;
-    const found = posts
-      .filter(p => outageKeywords.test(p.title + ' ' + p.text) && !excludeDtp.test(p.title))
-      .slice(0, 6);
-    if (found.length > 0) {
-      dir.outages = found.map(p => ({
-        city: p.city || 'Приморье',
-        type: p.date,
-        status: p.title,
-        phone: p.city === 'Уссурийск' ? '32-11-78' : p.city === 'Находка' ? '65-68-01' : p.city === 'Артём' ? '4-25-32' : '222-23-33'
-      }));
-      fs.writeFileSync('data/directories.json', JSON.stringify(dir, null, 2), 'utf8');
-    }
-  } catch (e) {}
+function detectJkhResource(text) {
+  const s = String(text || '').toLowerCase();
+  if (/(электроснабж|электричеств|без света|отключен.*свет|подстанц|лэп|впэс|дрск)/i.test(s)) return 'Свет';
+  if (/(водоснабж|без воды|холодн.*вод|порыв.*вод|примводоканал|водоканал)/i.test(s)) return 'Вода';
+  if (/(отоплен|теплоснабж|горяч.*вод|гвс|теплотрасс|без тепла|дгк)/i.test(s)) return 'Тепло';
+  return 'ЖКХ';
 }
+
+function detectJkhCity(text) {
+  const s = String(text || '').toLowerCase();
+  if (/уссурийск/i.test(s)) return { city: 'Уссурийск', phone: '32-11-78' };
+  if (/находк/i.test(s)) return { city: 'Находка', phone: '65-68-01' };
+  if (/арт[её]м/i.test(s)) return { city: 'Артём', phone: '4-25-32' };
+  if (/больш(ой|ом)\s*камн/i.test(s)) return { city: 'Большой Камень', phone: '5-11-12' };
+  if (/арсеньев/i.test(s)) return { city: 'Арсеньев', phone: '4-22-44' };
+  return { city: 'Владивосток', phone: '222-23-33' };
+}
+function updateLiveOutages(rawItems) {
+  if (!fs.existsSync('data')) fs.mkdirSync('data', { recursive: true });
+  let dir = { outages: [], phones: {}, afisha: [] };
+  if (fs.existsSync('data/directories.json')) {
+    try { dir = JSON.parse(fs.readFileSync('data/directories.json', 'utf8')); } catch (e) {}
+  }
+  const outageKeywords = /(отключен|без воды|без света|без электричеств|нет электричеств|отключили отоплен|нет отоплен|порыв на сетях|прорыв труб|ремонт теплотрасс|водоснабжен|электроснабжен|авария на сетях|авария на лэп|авария на подстанц|плановые работы.*ул\.|ограничение.*водоснабж|ограничение.*электроснабж)/i;
+  const excludeDtp = /(дтп|столкновени|перевернул|наезд|автомобил|машин|трасс|дорог|гибдд|парковк|тротуар)/i;
+  const items = Array.isArray(rawItems) ? rawItems : [];
+  const fresh = [];
+
+  for (const it of items) {
+    const full = String((it.title || '') + ' ' + (it.text || it.raw || '')).replace(/\s+/g, ' ').trim();
+    if (full.length < 25 || !outageKeywords.test(full) || excludeDtp.test(full)) continue;
+    const resType = detectJkhResource(full);
+    const loc = detectJkhCity(full);
+    const shortText = full.slice(0, 175) + (full.length > 175 ? '...' : '');
+    if (!fresh.some(x => x.status.slice(0, 45) === shortText.slice(0, 45))) {
+      fresh.push({
+        city: loc.city,
+        type: resType,
+        status: shortText,
+        phone: loc.phone
+      });
+    }
+    if (fresh.length >= 20) break;
+  }
+
+  if (fresh.length > 0) {
+    dir.outages = fresh;
+    fs.writeFileSync('data/directories.json', JSON.stringify(dir, null, 2), 'utf8');
+  }
+}
+
 function detectTheme(post) {
   const s = ((post.title || '') + ' ' + (post.text || '')).toLowerCase();
-  if (/(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#1e1b4b', c2: '#7f1d1d', glow: '#ef4444', tag: 'ДОРОГИ И ДТП' };
-  if (/(пожар|возгоран|огонь|мчс|спасател|дым)/i.test(s)) return { c1: '#450a0a', c2: '#9a3412', glow: '#f97316', tag: 'ЭКСТРЕННО • МЧС' };
-  if (/(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#0f172a', c2: '#1e3a8a', glow: '#3b82f6', tag: 'КРИМИНАЛ И ЗАКОН' };
-  if (/(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОД И ЖКХ' };
-  if (/(погод|снег|голол|шторм|ветер|циклон|температур|мороз|дожд)/i.test(s)) return { c1: '#082f49', c2: '#0369a1', glow: '#38bdf8', tag: 'ПОГОДА В ПРИМОРЬЕ' };
-  if (post.cat === 'svo') return { c1: '#14532d', c2: '#1f2937', glow: '#22c55e', tag: 'СВО И ЗАЩИТА' };
-  if (post.cat === 'sport') return { c1: '#311042', c2: '#4c1d95', glow: '#a855f7', tag: 'СПОРТ И СОБЫТИЯ' };
-  return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: String(post.catLabel || 'НОВОСТИ ПРИМОРЬЯ').toUpperCase() };
-}
-
-function drawArtBackdrop(ctx, w, h, th) {
-  const g = ctx.createLinearGradient(0, 0, w, h);
-  g.addColorStop(0, th.c1);
-  g.addColorStop(1, th.c2);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, w, h);
-
-  // Световое пятно и графическая сетка портала
-  const rad = ctx.createRadialGradient(w * 0.78, h * 0.28, 20, w * 0.78, h * 0.28, 460);
-  rad.addColorStop(0, th.glow + '55');
-  rad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = rad;
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  ctx.lineWidth = 2;
-  for (let x = 0; x < w; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-  for (let y = 0; y < h; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-
-  // Стилизованный силуэт моста / сопок Приморья справа
-  ctx.strokeStyle = th.glow + '88';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(680, 420); ctx.lineTo(840, 120); ctx.lineTo(1000, 420);
-  ctx.moveTo(760, 270); ctx.lineTo(920, 270);
-  ctx.stroke();
+  if (/(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#111827', c2: '#7f1d1d', glow: '#ef4444', tag: 'ДОРОГИ И ПРОИСШЕСТВИЯ' };
+  if (/(пожар|возгоран|огонь|мчс|спасател|дым)/i.test(s)) return { c1: '#270909', c2: '#9a3412', glow: '#f97316', tag: 'ЭКСТРЕННАЯ СВОДКА • МЧС' };
+  if (/(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#090d16', c2: '#1e3a8a', glow: '#3b82f6', tag: 'ПРАВОПОРЯДОК И ЗАКОН' };
+  if (/(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОДСКОЕ ХОЗЯЙСТВО' };
+  if (/(погод|снег|голол|шторм|ветер|циклон|температур|мороз|дожд)/i.test(s)) return { c1: '#082f49', c2: '#0369a1', glow: '#38bdf8', tag: 'МЕТЕОСВОДКА ПРИМОРЬЯ' };
+  if (post.cat === 'econ') return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: 'ЭКОНОМИКА И АВТО' };
+  if (post.cat === 'sport') return { c1: '#1e1b4b', c2: '#4c1d95', glow: '#a855f7', tag: 'СПОРТ И КУЛЬТУРА' };
+  return { c1: '#0f172a', c2: '#1e293b', glow: '#cbd5e1', tag: String(post.catLabel || 'НОВОСТИ ПРИМОРЬЯ').toUpperCase() };
 }
 async function drawThemedCover(post) {
   if (!fs.existsSync('covers')) fs.mkdirSync('covers', { recursive: true });
@@ -77,16 +80,37 @@ async function drawThemedCover(post) {
   const ctx = canvas.getContext('2d');
   const th = detectTheme(post);
 
-  drawArtBackdrop(ctx, w, h, th);
+  const g = ctx.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, th.c1);
+  g.addColorStop(1, th.c2);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
 
-  // Полупрозрачный диагональный водяной знак по центру
+  const rad = ctx.createRadialGradient(w * 0.8, h * 0.25, 20, w * 0.8, h * 0.25, 480);
+  rad.addColorStop(0, th.glow + '44');
+  rad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rad;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 2;
+  for (let x = 0; x < w; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = 0; y < h; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+  ctx.strokeStyle = th.glow + '77';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(740, 410); ctx.lineTo(880, 130); ctx.lineTo(1020, 410);
+  ctx.moveTo(810, 270); ctx.lineTo(950, 270);
+  ctx.stroke();
+
   ctx.save();
   ctx.translate(w / 2, h / 2);
   ctx.rotate(-0.22);
-  ctx.fillStyle = 'rgba(255,255,255,0.07)';
-  ctx.font = 'bold 74px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.font = 'bold 70px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('ПРИМ_ДОЗОР • PRIMDOZOR.RU', 0, 15);
+  ctx.fillText('ИА «ПРИМ_ДОЗОР» • PRIMDOZOR.RU', 0, 15);
   ctx.restore();
 
   const grad = ctx.createLinearGradient(0, h - 340, 0, h);
@@ -95,19 +119,19 @@ async function drawThemedCover(post) {
   ctx.fillStyle = grad;
   ctx.fillRect(0, h - 340, w, 340);
 
-  ctx.fillStyle = '#c81e1e';
-  ctx.fillRect(40, 32, 225, 44);
+  ctx.fillStyle = '#b91c1c';
+  ctx.fillRect(40, 32, 235, 44);
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.fillText('ПРИМ_ДОЗОР', 56, 61);
+  ctx.font = 'bold 21px sans-serif';
+  ctx.fillText('ПРИМ_ДОЗОР', 58, 61);
 
   ctx.fillStyle = th.glow;
-  ctx.font = 'bold 20px sans-serif';
-  ctx.fillText(th.tag, 285, 61);
+  ctx.font = 'bold 19px sans-serif';
+  ctx.fillText(th.tag, 295, 61);
 
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU', w - 235, 61);
+  ctx.font = 'bold 21px sans-serif';
+  ctx.fillText('PRIMDOZOR.RU', w - 230, 61);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 34px sans-serif';
