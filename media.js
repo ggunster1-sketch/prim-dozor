@@ -1,16 +1,5 @@
 const fs = require('fs');
-const { createCanvas, loadImage } = require('canvas');
-
-const TOPIC_IMAGES = {
-  chp: 'https://unsplash.com',
-  city: 'https://unsplash.com',
-  law: 'https://unsplash.com',
-  svo: 'https://unsplash.com',
-  family: 'https://unsplash.com',
-  sport: 'https://unsplash.com'
-};
-
-
+const { createCanvas } = require('canvas');
 
 function isAdOrSpam(text) {
   const s = String(text || '').toLowerCase();
@@ -42,48 +31,83 @@ function updateLiveOutages(posts) {
     }
   } catch (e) {}
 }
+function detectTheme(post) {
+  const s = ((post.title || '') + ' ' + (post.text || '')).toLowerCase();
+  if (/(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#1e1b4b', c2: '#7f1d1d', glow: '#ef4444', tag: 'ДОРОГИ И ДТП' };
+  if (/(пожар|возгоран|огонь|мчс|спасател|дым)/i.test(s)) return { c1: '#450a0a', c2: '#9a3412', glow: '#f97316', tag: 'ЭКСТРЕННО • МЧС' };
+  if (/(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#0f172a', c2: '#1e3a8a', glow: '#3b82f6', tag: 'КРИМИНАЛ И ЗАКОН' };
+  if (/(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОД И ЖКХ' };
+  if (/(погод|снег|голол|шторм|ветер|циклон|температур|мороз|дожд)/i.test(s)) return { c1: '#082f49', c2: '#0369a1', glow: '#38bdf8', tag: 'ПОГОДА В ПРИМОРЬЕ' };
+  if (post.cat === 'svo') return { c1: '#14532d', c2: '#1f2937', glow: '#22c55e', tag: 'СВО И ЗАЩИТА' };
+  if (post.cat === 'sport') return { c1: '#311042', c2: '#4c1d95', glow: '#a855f7', tag: 'СПОРТ И СОБЫТИЯ' };
+  return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: String(post.catLabel || 'НОВОСТИ ПРИМОРЬЯ').toUpperCase() };
+}
 
-async function drawThemedCover(post, imgUrl) {
+function drawArtBackdrop(ctx, w, h, th) {
+  const g = ctx.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, th.c1);
+  g.addColorStop(1, th.c2);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+
+  // Световое пятно и графическая сетка портала
+  const rad = ctx.createRadialGradient(w * 0.78, h * 0.28, 20, w * 0.78, h * 0.28, 460);
+  rad.addColorStop(0, th.glow + '55');
+  rad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rad;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 2;
+  for (let x = 0; x < w; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = 0; y < h; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+  // Стилизованный силуэт моста / сопок Приморья справа
+  ctx.strokeStyle = th.glow + '88';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(680, 420); ctx.lineTo(840, 120); ctx.lineTo(1000, 420);
+  ctx.moveTo(760, 270); ctx.lineTo(920, 270);
+  ctx.stroke();
+}
+async function drawThemedCover(post) {
   if (!fs.existsSync('covers')) fs.mkdirSync('covers', { recursive: true });
   const w = 1200, h = 675;
   const canvas = createCanvas(w, h);
   const ctx = canvas.getContext('2d');
-  const srcUrl = (imgUrl && imgUrl.startsWith('http')) ? imgUrl : (TOPIC_IMAGES[post.cat] || TOPIC_IMAGES.city);
+  const th = detectTheme(post);
 
-  let okImg = false;
-  try {
-    const r = await fetch(srcUrl);
-    if (r.ok) {
-      const img = await loadImage(Buffer.from(await r.arrayBuffer()));
-      const sc = Math.max(w / img.width, h / img.height);
-      ctx.drawImage(img, (w - img.width * sc) / 2, (h - img.height * sc) / 2, img.width * sc, img.height * sc);
-      okImg = true;
-    }
-  } catch (e) {}
+  drawArtBackdrop(ctx, w, h, th);
 
-  if (!okImg) {
-    const g = ctx.createLinearGradient(0, 0, w, h);
-    g.addColorStop(0, '#0f172a');
-    g.addColorStop(1, '#1e293b');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
-  }
+  // Полупрозрачный диагональный водяной знак по центру
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(-0.22);
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.font = 'bold 74px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('ПРИМ_ДОЗОР • PRIMDOZOR.RU', 0, 15);
+  ctx.restore();
 
-  const grad = ctx.createLinearGradient(0, h - 320, 0, h);
+  const grad = ctx.createLinearGradient(0, h - 340, 0, h);
   grad.addColorStop(0, 'rgba(0,0,0,0)');
   grad.addColorStop(1, 'rgba(9,13,22,0.96)');
   ctx.fillStyle = grad;
-  ctx.fillRect(0, h - 320, w, 320);
+  ctx.fillRect(0, h - 340, w, 340);
 
   ctx.fillStyle = '#c81e1e';
-  ctx.fillRect(40, 32, 220, 42);
+  ctx.fillRect(40, 32, 225, 44);
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 21px sans-serif';
-  ctx.fillText('ПРИМ_ДОЗОР', 56, 60);
+  ctx.font = 'bold 22px sans-serif';
+  ctx.fillText('ПРИМ_ДОЗОР', 56, 61);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.28)';
-  ctx.font = 'bold 24px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU', w - 245, 60);
+  ctx.fillStyle = th.glow;
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText(th.tag, 285, 61);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.fillText('PRIMDOZOR.RU', w - 235, 61);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 34px sans-serif';
@@ -100,18 +124,18 @@ async function drawThemedCover(post, imgUrl) {
   }
   if (line) lines.push(line);
 
-  let y = h - 65 - (lines.slice(0, 3).length - 1) * 44;
+  let y = h - 70 - (lines.slice(0, 3).length - 1) * 44;
   for (const l of lines.slice(0, 3)) {
     ctx.fillText(l, 40, y);
     y += 44;
   }
 
-  ctx.fillStyle = '#94a3b8';
+  ctx.fillStyle = '#cbd5e1';
   ctx.font = 'bold 16px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU  •  ' + String(post.city || 'Приморье').toUpperCase() + '  •  ' + (post.age || '16+'), 40, h - 22);
+  ctx.fillText('PRIMDOZOR.RU  •  ' + String(post.city || 'Приморский край').toUpperCase() + '  •  ' + (post.age || '18+'), 40, h - 22);
 
   const file = 'covers/c_' + post.id + '.jpg';
-  fs.writeFileSync(file, canvas.toBuffer('image/jpeg', { quality: 0.85 }));
+  fs.writeFileSync(file, canvas.toBuffer('image/jpeg', { quality: 0.88 }));
   return file;
 }
 
