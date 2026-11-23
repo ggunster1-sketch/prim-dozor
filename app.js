@@ -48,7 +48,6 @@ function fmtT(v) {
   var n = Math.round(Number(v) || 0);
   return n === 0 ? '0°C' : (n > 0 ? '+' : '') + n + '°C';
 }
-
 function applyW(w) {
   if (!w) return;
   var s = function(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
@@ -82,6 +81,15 @@ function fetchW(si) {
   }).catch(function() {});
 }
 
+function makeReactHtml(id) {
+  var st = getReactStore(), picked = st[id] || '';
+  return '<div class="react-bar" data-react-id="' + id + '" style="display:flex;gap:6px;margin-top:8px">' +
+    ['🔥', '😡', '👍'].map(function(emo) {
+      var act = picked === emo;
+      return '<button type="button" class="soc-pill react-btn" style="padding:3px 8px;font-size:12px;' + (act ? 'border-color:var(--accent);font-weight:700;' : '') + '" data-emo="' + emo + '" onclick="event.stopPropagation();toggleReact(\'' + id + '\',\'' + emo + '\')">' + emo + ' <span class="r-cnt">' + (act ? '1' : '0') + '</span></button>';
+    }).join('') + '</div>';
+}
+
 function renderFeed() {
   var box = document.getElementById('feed');
   if (!box) return;
@@ -92,19 +100,19 @@ function renderFeed() {
     return okC && (tl === 'all' || ls.indexOf(tl) !== -1) && (!q || ls.indexOf(q) !== -1);
   });
   if (!list.length) {
-    box.innerHTML = '<div class="widget"><p style="color:var(--muted)">По выбранному фильтру новостей пока нет.</p></div>';
+    box.innerHTML = '<div class="widget" style="padding:20px;text-align:center;color:var(--muted)">По выбранному фильтру новостей пока нет.</div>';
     return;
   }
   box.innerHTML = list.map(function(n, i) {
     var lead = (n.text || '').replace(/\s+/g, ' ').slice(0, 155);
     var ll = n.city + (n.district ? ' • ' + n.district : '');
-    var meta = '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + ll + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + n.age + '</span></div>';
+    var meta = '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + ll + '</span> <span>• ' + n.date + '</span> <span class="badge-age">' + (n.age || '18+') + '</span></div>';
+    var rb = makeReactHtml(n.id);
     return i === 0
-      ? '<article class="hero-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="hero-img" src="./' + n.cover + '" alt=""><div class="hero-body">' + meta + '<h2 class="hero-title">' + n.title + '</h2><p class="hero-lead">' + lead + '...</p></div></article>'
-      : '<article class="news-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./' + n.cover + '" alt=""><div>' + meta + '<h3 class="news-title">' + n.title + '</h3><p class="news-excerpt">' + lead + '...</p></div></article>';
+      ? '<article class="hero-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="hero-img" src="./' + n.cover + '" alt=""><div class="hero-body">' + meta + '<h2 class="hero-title">' + n.title + '</h2><p class="hero-lead">' + lead + '...</p>' + rb + '</div></article>'
+      : '<article class="news-card" data-id="' + n.id + '" onclick="openArt(this.dataset.id)"><img class="news-thumb" src="./' + n.cover + '" alt=""><div class="news-body">' + meta + '<h3 class="news-title">' + n.title + '</h3>' + rb + '</div></article>';
   }).join('');
 }
-
 function filterCat(c, b) {
   cCat = c;
   document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); });
@@ -153,11 +161,10 @@ function shareCard(id, btn) {
     else l = t;
   }
   x.fillText(l, 56, y);
-  x.fillStyle = '#94a3b8'; x.font = '700 22px sans-serif'; x.fillText('primdozor.ru', 56, 574);
+  x.fillStyle = '#94a3b8'; x.font = '700 22px sans-serif'; x.fillText('PRIMDOZOR.RU  •  ' + (n.city || 'Приморье'), 56, 574);
   var a = document.createElement('a');
   a.href = c.toDataURL('image/png');
   a.download = 'primdozor-' + n.id + '.png';
-  ;
   a.click();
   if (btn) btn.textContent = '✓ Карточка скачана';
 }
@@ -173,12 +180,12 @@ function openArt(id) {
     '<img src="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px">' +
     '<div class="tldr"><strong>Главное:</strong><br>' + (n.tldr || '').replace(/\n/g, '<br>') + '</div>' +
     '<div style="white-space:pre-line;line-height:1.75;margin-bottom:16px">' + n.text + '</div>' +
-    '<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid var(--border)">' +
+    makeReactHtml(n.id) +
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;margin-top:12px;border-top:1px solid var(--border)">' +
     '<button type="button" class="btn-cta" onclick="shareCard(\'' + n.id + '\',this)">🖼 Карточка для чата</button> ' +
-    '<a href="https://t.me" target="_blank" class="soc-pill">✈ Telegram</a></div>';
+    '<a href="https://t.me" target="_blank" rel="noopener" class="soc-pill">✈ Наш Telegram</a></div>';
   md.style.display = 'flex';
 }
-
 function openAfisha(idx) {
   var a = getByIdx((window.DIRECTORIES || {}).afisha, idx);
   if (!a) return;
@@ -212,23 +219,56 @@ function renderCityPhones(c) {
   }
 }
 
+function getHolidayOrSeason(vl) {
+  var m = vl.getMonth() + 1, d = vl.getDate();
+  var hols = [
+    { m: 1, d1: 1, d2: 6, title: 'С Новым годом, Приморье!', sub: 'Редакция «Прим_Дозор» желает мира, здоровья и добрых вестей', c1: '#091e3a', c2: '#1d4ed8', acc: '#60a5fa' },
+    { m: 1, d1: 7, d2: 8, title: 'Со светлым Рождеством Христовым!', sub: 'Тепла и благополучия каждому дому Приморского края', c1: '#1e1b4b', c2: '#4338ca', acc: '#a5b4fc' },
+    { m: 2, d1: 22, d2: 23, title: 'С Днём защитника Отечества!', sub: 'Гордимся моряками Тихоокеанского флота и воинами Приморья', c1: '#0f291e', c2: '#15803d', acc: '#4ade80' },
+    { m: 3, d1: 7, d2: 8, title: 'С Международным женским днём 8 Марта!', sub: 'Весеннего настроения и счастья прекрасным жительницам Приморья', c1: '#4a044e', c2: '#be185d', acc: '#f472b6' },
+    { m: 5, d1: 1, d2: 2, title: 'С Праздником Весны и Труда — 1 Мая!', sub: 'Мирного неба, солнечных дней и успехов Приморскому краю', c1: '#064e3b', c2: '#059669', acc: '#34d399' },
+    { m: 5, d1: 8, d2: 9, title: 'С Днём Великой Победы — 9 Мая!', sub: 'Вечная слава и низкий поклон поколению победителей!', c1: '#3b0707', c2: '#b91c1c', acc: '#fbbf24' },
+    { m: 6, d1: 11, d2: 12, title: 'С Днём России!', sub: 'От Тихого океана до Балтики — мы гордимся нашей страной!', c1: '#0f172a', c2: '#1d4ed8', acc: '#f87171' },
+    { m: 7, d1: 2, d2: 2, title: 'С Днём рождения, Владивосток!', sub: 'Любимому городу у Тихого океана — процветания и попутного ветра!', c1: '#082f49', c2: '#0284c7', acc: '#38bdf8' },
+    { m: 9, d1: 1, d2: 1, title: 'С Днём знаний — 1 Сентября!', sub: 'Успехов школьникам, студентам ДВФУ и педагогам Приморья', c1: '#1e1b4b', c2: '#4f46e5', acc: '#fbbf24' },
+    { m: 10, d1: 20, d2: 20, title: 'С Днём образования Приморского края!', sub: 'Гордимся нашим уникальным краем у Тихого океана!', c1: '#064e3b', c2: '#047857', acc: '#fbbf24' },
+    { m: 11, d1: 3, d2: 4, title: 'С Днём народного единства!', sub: 'В единстве народов Приморья и России — наша сила!', c1: '#172554', c2: '#1e40af', acc: '#fb923c' }
+  ];
+  for (var i = 0; i < hols.length; i++) {
+    if (hols[i].m === m && d >= hols[i].d1 && d <= hols[i].d2) return hols[i];
+  }
+  if (m === 12 || m <= 2) return { title: 'Зима в Приморском крае • 24/7', sub: 'Оперативный мониторинг дорог, погоды, ЖКХ и событий региона', c1: '#0b192c', c2: '#1e3a8a', acc: '#7dd3fc' };
+  if (m >= 3 && m <= 5) return { title: 'Весна в Приморском крае • 24/7', sub: 'Главные новости Владивостока и всех городов Приморья', c1: '#064e3b', c2: '#0f766e', acc: '#5eead4' };
+  if (m >= 6 && m <= 8) return { title: 'Лето у Тихого океана • Приморье 24/7', sub: 'Сводки края, обстановка на трассах к морю, погода и афиша', c1: '#0c4a6e', c2: '#0369a1', acc: '#fde047' };
+  return { title: 'Золотая осень в Приморье • 24/7', sub: 'Главные события края, погода, трассы и народный контроль', c1: '#2d0c04', c2: '#9a3412', acc: '#fdba74' };
+}
+
 function drawSeason() {
   var b = document.getElementById('season-banner');
   if (!b) return;
   b.style.padding = '0'; b.style.border = 'none'; b.style.borderRadius = '14px';
-  b.style.overflow = 'hidden'; b.style.height = '100px'; b.style.display = 'block'; b.innerHTML = '';
+  b.style.overflow = 'hidden'; b.style.height = '112px'; b.style.display = 'block'; b.innerHTML = '';
   var c = document.createElement('canvas');
-  c.width = 1200; c.height = 100; c.style.width = '100%'; c.style.height = '100%';
+  c.width = 1200; c.height = 112; c.style.width = '100%'; c.style.height = '100%';
   b.appendChild(c);
   var x = c.getContext('2d');
   if (!x) return;
-  var g = x.createLinearGradient(0, 0, 1200, 100);
-  g.addColorStop(0, '#2d0c04'); g.addColorStop(0.5, '#9a3412'); g.addColorStop(1, '#d97706');
-  x.fillStyle = g; x.fillRect(0, 0, 1200, 100);
-  x.fillStyle = 'rgba(10,6,4,0.4)';
-  x.beginPath(); x.moveTo(0, 100); x.lineTo(0, 72);
-  x.quadraticCurveTo(320, 46, 640, 76); x.quadraticCurveTo(920, 96, 1200, 64);
-  x.lineTo(1200, 100); x.fill();
+  var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
+  var info = getHolidayOrSeason(vl);
+  var g = x.createLinearGradient(0, 0, 1200, 112);
+  g.addColorStop(0, info.c1); g.addColorStop(1, info.c2);
+  x.fillStyle = g; x.fillRect(0, 0, 1200, 112);
+  x.fillStyle = 'rgba(0,0,0,0.28)';
+  x.beginPath(); x.moveTo(0, 112); x.lineTo(0, 78);
+  x.quadraticCurveTo(300, 52, 620, 82); x.quadraticCurveTo(920, 100, 1200, 66);
+  x.lineTo(1200, 112); x.fill();
+  x.strokeStyle = info.acc; x.lineWidth = 3;
+  x.beginPath(); x.moveTo(960, 106); x.lineTo(1015, 22); x.lineTo(1070, 106);
+  x.moveTo(910, 82); x.quadraticCurveTo(1015, 58, 1120, 82); x.stroke();
+  x.fillStyle = '#ffffff'; x.font = '800 26px sans-serif';
+  x.fillText(info.title, 28, 48);
+  x.fillStyle = info.acc; x.font = '600 16px sans-serif';
+  x.fillText(info.sub, 28, 82);
 }
 
 function openReport() {
@@ -253,42 +293,12 @@ function getReactStore() {
 function renderAllReacts() {
   var st = getReactStore();
   document.querySelectorAll('.react-bar').forEach(function(bar) {
-    var id = bar.getAttribute('data-react-id');
-    var picked = st[id] || '';
+    var id = bar.getAttribute('data-react-id'), picked = st[id] || '';
     bar.querySelectorAll('.react-btn').forEach(function(btn) {
-      var emo = btn.getAttribute('data-emo');
-      var cnt = btn.querySelector('.r-cnt');
-      var active = (picked === emo);
-      btn.style.borderColor = active ? 'var(--accent)' : '';
-      btn.style.fontWeight = active ? '700' : '';
-      if (cnt) cnt.textContent = active ? '1' : '0';
-    });
-  });
-}
-
-window.toggleReact = function(id, emo) {
-  var st = getReactStore();
-  if (st[id] === emo) { delete st[id]; } else { st[id] = emo; }
-  try { localStorage.setItem('pd_reacts', JSON.stringify(st)); } catch (e) {}
-  renderAllReacts();
-};
-
-function getReactStore() {
-  try { return JSON.parse(localStorage.getItem('pd_reacts') || '{}'); } catch (e) { return {}; }
-}
-
-function renderAllReacts() {
-  var st = getReactStore();
-  document.querySelectorAll('.react-bar').forEach(function(bar) {
-    var id = bar.getAttribute('data-react-id');
-    var picked = st[id] || '';
-    bar.querySelectorAll('.react-btn').forEach(function(btn) {
-      var emo = btn.getAttribute('data-emo');
-      var cnt = btn.querySelector('.r-cnt');
-      var active = (picked === emo);
-      btn.style.borderColor = active ? 'var(--accent)' : '';
-      btn.style.fontWeight = active ? '700' : '';
-      if (cnt) cnt.textContent = active ? '1' : '0';
+      var emo = btn.getAttribute('data-emo'), cnt = btn.querySelector('.r-cnt'), act = (picked === emo);
+      btn.style.borderColor = act ? 'var(--accent)' : '';
+      btn.style.fontWeight = act ? '700' : '';
+      if (cnt) cnt.textContent = act ? '1' : '0';
     });
   });
 }
