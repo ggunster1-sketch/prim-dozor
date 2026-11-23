@@ -1,5 +1,3 @@
 User-agent: *
 Allow: /
-Disallow: /data/
-Host: https://primdozor.ru
 Sitemap: https://primdozor.ru/sitemap.xml
