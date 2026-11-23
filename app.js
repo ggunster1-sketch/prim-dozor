@@ -246,11 +246,66 @@ function sendReport(e) {
   if (m) m.style.display = 'none';
 }
 
+function getReactStore() {
+  try { return JSON.parse(localStorage.getItem('pd_reacts') || '{}'); } catch (e) { return {}; }
+}
+
+function renderAllReacts() {
+  var st = getReactStore();
+  document.querySelectorAll('.react-bar').forEach(function(bar) {
+    var id = bar.getAttribute('data-react-id');
+    var picked = st[id] || '';
+    bar.querySelectorAll('.react-btn').forEach(function(btn) {
+      var emo = btn.getAttribute('data-emo');
+      var cnt = btn.querySelector('.r-cnt');
+      var active = (picked === emo);
+      btn.style.borderColor = active ? 'var(--accent)' : '';
+      btn.style.fontWeight = active ? '700' : '';
+      if (cnt) cnt.textContent = active ? '1' : '0';
+    });
+  });
+}
+
+window.toggleReact = function(id, emo) {
+  var st = getReactStore();
+  if (st[id] === emo) { delete st[id]; } else { st[id] = emo; }
+  try { localStorage.setItem('pd_reacts', JSON.stringify(st)); } catch (e) {}
+  renderAllReacts();
+};
+
+function getReactStore() {
+  try { return JSON.parse(localStorage.getItem('pd_reacts') || '{}'); } catch (e) { return {}; }
+}
+
+function renderAllReacts() {
+  var st = getReactStore();
+  document.querySelectorAll('.react-bar').forEach(function(bar) {
+    var id = bar.getAttribute('data-react-id');
+    var picked = st[id] || '';
+    bar.querySelectorAll('.react-btn').forEach(function(btn) {
+      var emo = btn.getAttribute('data-emo');
+      var cnt = btn.querySelector('.r-cnt');
+      var active = (picked === emo);
+      btn.style.borderColor = active ? 'var(--accent)' : '';
+      btn.style.fontWeight = active ? '700' : '';
+      if (cnt) cnt.textContent = active ? '1' : '0';
+    });
+  });
+}
+
+window.toggleReact = function(id, emo) {
+  var st = getReactStore();
+  if (st[id] === emo) { delete st[id]; } else { st[id] = emo; }
+  try { localStorage.setItem('pd_reacts', JSON.stringify(st)); } catch (e) {}
+  renderAllReacts();
+};
+
 function initSite() {
   try { if (localStorage.getItem('ck')) { var ck = document.getElementById('ck'); if (ck) ck.style.display = 'none'; } } catch (e) {}
   drawSeason();
   renderCityPhones('Все города');
   renderGuide('');
+  renderAllReacts();
   var fw = getByIdx(window.WEATHER, 0);
   if (fw) applyW(fw);
   fetchW(0);
