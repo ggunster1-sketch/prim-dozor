@@ -291,7 +291,7 @@ async function run() {
     if (added >= 2) break;
     const ai = await rewriteNews(c.raw);
     if (!ai || isDuplicate(ai.title, news)) continue;
-    if (added >= 1 && !ai.urgent && ai.cat !== 'chp') break;
+        if (added >= 1 && !ai.urgent) break;
     const vl = new Date(Date.now() + 10 * 3600000);
     const post = {
       id: Date.now() + added,
