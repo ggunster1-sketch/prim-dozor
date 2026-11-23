@@ -327,7 +327,34 @@ async function run() {
       });
     } catch (e) {}
   }
-  if (added > 0 && TG_TOKEN) await postToTelegram(finalNews.slice(0, added), TG_TOKEN, HOST);
+    if (added > 0 && TG_TOKEN) await postToTelegram(finalNews.slice(0, added), TG_TOKEN, HOST);
+
+  const vlNow = new Date(Date.now() + 10 * 3600000);
+  const vlHour = vlNow.getUTCHours();
+  const dayKey = vlNow.toISOString().slice(0, 10);
+  if (TG_TOKEN && vlHour === 20 && state.lastDigest !== dayKey && finalNews.length >= 3) {
+    const top5 = finalNews.slice(0, 5);
+    const lines = top5.map((n, i) => (i + 1) + '. <a href="https://' + HOST + '/news/' + n.id + '.html">' + n.title + '</a> (' + (n.city || 'Приморье') + ')').join('\n\n');
+    const digestText =
+      '🌙 <b>ИТОГИ ДНЯ В ПРИМОРЬЕ • ' + dayKey.split('-').reverse().join('.') + '</b> (18+)\n\n' +
+      lines + '\n\n' +
+      '———\n' +
+      '👁 <a href="https://' + HOST + '">Все новости портала Прим_Дозор</a> | ✉ prim_dozor@internet.ru';
+    try {
+      const dgUrl = ['https:', '', 'api.telegram.org', 'bot' + TG_TOKEN, 'sendMessage'].join('/');
+      const r = await fetch(dgUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: '@prim_dozor', parse_mode: 'HTML', disable_web_page_preview: true, text: digestText })
+      });
+      const j = await r.json();
+      if (j.ok) {
+        state.lastDigest = dayKey;
+        fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
+        console.log('Вечерний дайджест успешно отправлен.');
+      }
+    } catch (e) {}
+  }
+
   console.log('Готово. Опубликовано новых уникальных статей: ' + added);
-}
-run();
+
