@@ -31,6 +31,20 @@ function detectJkhCity(text) {
   if (/дальнегорск/i.test(s)) return { city: 'Дальнегорск', phone: '+7 (42373) 3-21-51' };
   return { city: 'Владивосток', phone: '+7 (423) 222-23-33' };
 }
+function isOutdatedJkh(text) {
+  const vl = new Date(Date.now() + 10 * 3600000);
+  const curDay = vl.getUTCDate();
+  const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+  const curMonth = months.at(vl.getUTCMonth()) || '';
+  const m = String(text || '').toLowerCase().match(/(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/);
+  if (!m) return false;
+  const msgDay = Number(m.at(1));
+  const msgMonth = m.at(2);
+  if (msgMonth !== curMonth && !(curDay <= 2 && msgDay >= 28)) return true;
+  if (msgMonth === curMonth && msgDay < curDay) return true;
+  return false;
+}
+
 function updateLiveOutages(rawItems) {
   if (!fs.existsSync('data')) fs.mkdirSync('data', { recursive: true });
   let dir = { outages: [], phones: {}, afisha: [] };
@@ -43,27 +57,29 @@ function updateLiveOutages(rawItems) {
   const fresh = [];
 
   for (const it of items) {
-    const full = String((it.title || '') + ' ' + (it.text || it.raw || '')).replace(/\s+/g, ' ').trim();
-    if (full.length < 25 || !outageKeywords.test(full) || excludeDtp.test(full)) continue;
-    const resType = detectJkhResource(full);
-    const loc = detectJkhCity(full);
-    const preview = full.slice(0, 145) + (full.length > 145 ? '...' : '');
+    if (it.ts && (Date.now() - Number(it.ts)) > 18 * 3600000) continue;
+    const rawStr = String((it.title || '') + ' ' + (it.text || it.raw || ''))
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (rawStr.length < 25 || !outageKeywords.test(rawStr) || excludeDtp.test(rawStr) || isOutdatedJkh(rawStr)) continue;
+    const resType = detectJkhResource(rawStr);
+    const loc = detectJkhCity(rawStr);
+    const preview = rawStr.slice(0, 145) + (rawStr.length > 145 ? '...' : '');
     if (!fresh.some(x => x.status.slice(0, 45) === preview.slice(0, 45))) {
       fresh.push({
         city: loc.city,
         type: resType,
         status: preview,
-        fullText: full,
+        fullText: rawStr,
         phone: loc.phone
       });
     }
     if (fresh.length >= 25) break;
   }
 
-  if (fresh.length > 0) {
-    dir.outages = fresh;
-    fs.writeFileSync('data/directories.json', JSON.stringify(dir, null, 2), 'utf8');
-  }
+  dir.outages = fresh;
+  fs.writeFileSync('data/directories.json', JSON.stringify(dir, null, 2), 'utf8');
 }
 
 function detectTheme(post) {
