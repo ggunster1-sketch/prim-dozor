@@ -51,7 +51,10 @@ function detectDistrict(text) {
 }
 
 function buildTrafficRadar(rawFeedItems) {
-  const recent = (Array.isArray(rawFeedItems) ? rawFeedItems : []).slice(0, 35);
+  const now = Date.now();
+  const vl = new Date(now + 10 * 3600000);
+  const updTime = String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0');
+  const recent = (Array.isArray(rawFeedItems) ? rawFeedItems : []).filter(n => !n.ts || (now - Number(n.ts)) <= 3 * 3600000);
   const routes = [
     { name: 'Золотой мост', re: /золот(ой|ом|ого)\s*мост/i },
     { name: 'Русский мост', re: /русск(ий|ом|ого)\s*мост/i },
@@ -62,15 +65,15 @@ function buildTrafficRadar(rawFeedItems) {
 
   const radar = routes.map(rt => {
     const hit = recent.find(n => rt.re.test((n.title || '') + ' ' + (n.text || n.raw || '')));
-    if (!hit) return { name: rt.name, level: 'ok', status: 'Без инцидентов' };
+    if (!hit) return { name: rt.name, level: 'ok', status: 'Без инцидентов', updated: updTime };
     const full = ((hit.title || '') + ' ' + (hit.text || hit.raw || '')).toLowerCase();
     if (/(перекрыт|закрыт|ограничен|обвал|размыв)/i.test(full)) {
-      return { name: rt.name, level: 'danger', status: 'Перекрытие / Ограничено' };
+      return { name: rt.name, level: 'danger', status: 'Перекрытие / Ограничено', updated: updTime };
     }
     if (/(дтп|авари|столкновен|пробк|затор|гололёд|гололед|снег)/i.test(full)) {
-      return { name: rt.name, level: 'warn', status: 'ДТП / Затруднение' };
+      return { name: rt.name, level: 'warn', status: 'ДТП / Затруднение', updated: updTime };
     }
-    return { name: rt.name, level: 'ok', status: 'Без инцидентов' };
+    return { name: rt.name, level: 'ok', status: 'Без инцидентов', updated: updTime };
   });
 
   if (!fs.existsSync('data')) fs.mkdirSync('data', { recursive: true });
@@ -79,7 +82,7 @@ function buildTrafficRadar(rawFeedItems) {
 }
 function getHttp(url) {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { family: 4, timeout: 9000, headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
+    const req = https.get(url, { family: 4, timeout: 14000, headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
       if (res.statusCode !== 200) { res.resume(); return reject(new Error('HTTP ' + res.statusCode)); }
       let data = '';
       res.setEncoding('utf8');
@@ -154,17 +157,14 @@ async function fetchWeatherAndRates() {
     }
   } catch (e) {}
 
-  let rates = { usd: '82.2', eur: '90.3', cny: '12.3', jpy: '51.5', ai92: '58.4', dt: '69.8' };
+  let rates = { usd: '82,1911', eur: '90,3445', cny: '12,3150' };
   try {
     const rUrl = ['https:', '', ['www', 'cbr-xml-daily', 'ru'].join('.'), 'daily_json.js'].join(SLASH);
     const d = JSON.parse(await getHttp(rUrl)).Valute;
     rates = {
-      usd: (d.USD.Value / d.USD.Nominal).toFixed(1),
-      eur: (d.EUR.Value / d.EUR.Nominal).toFixed(1),
-      cny: (d.CNY.Value / d.CNY.Nominal).toFixed(1),
-      jpy: ((d.JPY.Value / d.JPY.Nominal) * 100).toFixed(1),
-      ai92: '58.4',
-      dt: '69.8'
+      usd: (d.USD.Value / d.USD.Nominal).toFixed(4).replace('.', ','),
+      eur: (d.EUR.Value / d.EUR.Nominal).toFixed(4).replace('.', ','),
+      cny: (d.CNY.Value / d.CNY.Nominal).toFixed(4).replace('.', ',')
     };
   } catch (e) {}
   return { weather, rates };
@@ -220,7 +220,6 @@ async function run() {
     try { rawNews = JSON.parse(fs.readFileSync('news.json', 'utf8')); } catch (e) {}
   }
 
-  // Удаляем старые тестовые посты (созданные до 24.11.2026 07:00 Владивостока)
   const news = [];
   for (const item of rawNews) {
     if (!item.id || Number(item.id) < startUtc) {
@@ -248,13 +247,16 @@ async function run() {
         if (idx === -1) continue;
         const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
         if (txt.length < 40 || isAdOrSpam(txt)) continue;
-        liveFeedRaw.push({ raw: txt, title: '', text: txt, jkh: Boolean(ch.jkh) });
+
+        const tm = b.match(/datetime="([^"]+)"/);
+        const msgTs = tm ? Date.parse(tm.at(1)) : 0;
+        liveFeedRaw.push({ raw: txt, title: '', text: txt, jkh: Boolean(ch.jkh), ts: msgTs || 0 });
 
         const pm = b.match(new RegExp('data-post="[^"]+' + SLASH + '(\\d+)"'));
         const num = pm ? Number(pm.at(1)) : 0;
         if (num && state[ch.id] && num <= state[ch.id]) continue;
         if (num > maxId) maxId = num;
-        if (txt.length >= 90) {
+        if (txt.length >= 90 && (!msgTs || (Date.now() - msgTs) <= 12 * 3600000)) {
           candidates.push({ raw: txt, src: ch.off ? 'По данным: ' + ch.name : '', own: Boolean(ch.own) });
         }
       }
@@ -272,7 +274,7 @@ async function run() {
   if (Date.now() < startUtc) {
     fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
     buildHtml(news, weather, rates);
-    console.log('Ожидание старта новостей 24.11.2026 в 07:00 (Владивосток). ЖКХ 24/7, радар трасс, афиша, погода и курсы обновлены.');
+    console.log('Ожидание старта новостей 24.11.2026 в 07:00 (Владивосток). ЖКХ 24/7, радар трасс, афиша, погода и курсы ЦБ РФ обновлены.');
     return;
   }
 
