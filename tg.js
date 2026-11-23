@@ -26,8 +26,8 @@ async function postToTelegram(posts, token, host) {
     return;
   }
   if (!token || !Array.isArray(posts) || !posts.length) return;
-  const chpPosts = posts.filter(p => p.cat === 'chp');
-  const queue = chpPosts.length > 0 ? chpPosts.slice(0, 2) : posts.slice(0, 1);
+    const urgentPosts = posts.filter(p => p.urgent);
+  const queue = urgentPosts.length > 0 ? posts.slice(0, 2) : posts.slice(0, 1);
 
   for (const p of queue) {
     try {
