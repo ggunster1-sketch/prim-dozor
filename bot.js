@@ -15,6 +15,7 @@ const GT = String.fromCharCode(62);
 const NL = String.fromCharCode(10);
 
 const CHANNELS = [
+  { id: 'prim_dozor', name: 'Редакция Прим_Дозор', off: true, own: true },
   { id: 'dpskontrol_125rus', name: 'ДПС Контроль Приморье', off: false },
   { id: 'dpsvl', name: 'ДПС Владивосток', off: false },
   { id: 'gibdd25', name: 'Госавтоинспекция Приморья', off: true },
@@ -280,16 +281,23 @@ async function run() {
         if (idx === -1) continue;
         const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
         if (txt.length < 90 || isAdOrSpam(txt)) continue;
-        candidates.push({ raw: txt, src: ch.off ? 'По данным: ' + ch.name : '' });
+                candidates.push({ raw: txt, src: ch.off ? 'По данным: ' + ch.name : '', own: Boolean(ch.own) });
       }
       if (maxId > 0) state[ch.id] = maxId;
     } catch (e) {}
   }
   fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
   let added = 0;
-  for (const c of candidates) {
+    for (const c of candidates) {
     if (added >= 2) break;
-    const ai = await rewriteNews(c.raw);
+    let ai = null;
+    if (c.own) {
+      const lines = c.raw.split('\n').map(s => s.trim()).filter(Boolean);
+      const head = (lines || 'Сообщение редакции Прим_Дозор').slice(0, 85);
+      ai = { title: head, cat: 'city', catLabel: 'Эксклюзив редакции', city: 'Приморский край', district: detectDistrict(c.raw), age: '18+', urgent: true, tldr: '• Сообщение редакции «Прим_Дозор»', text: c.raw, skipTg: true };
+    } else {
+      ai = await rewriteNews(c.raw);
+    }
     if (!ai || isDuplicate(ai.title, news)) continue;
         if (added >= 1 && !ai.urgent) break;
     const vl = new Date(Date.now() + 10 * 3600000);
@@ -301,11 +309,12 @@ async function run() {
       city: ai.city || 'Приморье',
       district: ai.district || '',
       age: ai.age || '18+',
-      title: ai.title,
+            title: ai.title,
       tldr: ai.tldr,
       tgText: ai.tgText || '',
       text: ai.text,
-      src: c.src
+      src: c.src,
+      skipTg: Boolean(ai.skipTg)
     };
     post.cover = await drawThemedCover(post, '');
     news.unshift(post);
@@ -327,7 +336,8 @@ async function run() {
       });
     } catch (e) {}
   }
-    if (added > 0 && TG_TOKEN) await postToTelegram(finalNews.slice(0, added), TG_TOKEN, HOST);
+  const toTg = finalNews.slice(0, added).filter(p => !p.skipTg);
+  if (toTg.length > 0 && TG_TOKEN) await postToTelegram(toTg, TG_TOKEN, HOST);
 
   const vlNow = new Date(Date.now() + 10 * 3600000);
   const vlHour = vlNow.getUTCHours();
@@ -357,4 +367,3 @@ async function run() {
   }
 
   console.log('Готово. Опубликовано новых уникальных статей: ' + added);
-
