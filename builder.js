@@ -225,24 +225,50 @@ function buildHtml(news, weather, rates) {
     tag('script', '', 'window.NEWS=' + safeJson(list) + ';window.WEATHER=' + safeJson(weather) + ';window.DIRECTORIES=' + safeJson(dir) + ';')
   );
 
-  const wOpts = (weather || []).map((w, idx) => tag('option', 'value="' + idx + '"', esc(w.name))).join('');
-  const catTabs = [
-    ['all', 'Все новости'], ['chp', 'ЧП и 112'], ['city', 'Город и ЖКХ'],
-    ['law', 'Власть и Закон'], ['svo', 'СВО'], ['family', 'Общество'], ['sport', 'Спорт и Афиша']
-      ].map((c, idx) => tag('button', 'type="button" class="tab' + (idx === 0 ? ' active' : '') + '" onclick="filterCat(' + SQ + c.at(0) + SQ + ',this)"', c.at(1))).join('');
-  const distOpts = ['all', 'Ленинский', 'Первомайский', 'Первореченский', 'Советский', 'Фрунзенский', 'Русский']
-    .map(d => tag('option', 'value="' + esc(d) + '"', d === 'all' ? 'Все районы / города' : d)).join('');
+  c  const wOpts = (weather || []).map((w, idx) => tag('option', 'value="' + idx + '"', esc(w.name))).join('');
+  const catList = [
+    { id: 'all', label: 'Все новости' },
+    { id: 'chp', label: 'ЧП и 112' },
+    { id: 'city', label: 'Город и ЖКХ' },
+    { id: 'law', label: 'Власть и Закон' },
+    { id: 'svo', label: 'СВО' },
+    { id: 'family', label: 'Общество' },
+    { id: 'sport', label: 'Спорт и Афиша' }
+  ];
+  const catTabs = catList.map((c, idx) =>
+    tag('button', 'type="button" class="tab' + (idx === 0 ? ' active' : '') + '" onclick="filterCat(' + SQ + c.id + SQ + ',this)"', c.label)
+  ).join('');
+
+  const locList = [
+    { val: 'all', label: 'Весь Приморский край' },
+    { val: 'Владивосток', label: 'Владивосток (все районы)' },
+    { val: 'Ленинский', label: '— Ленинский р-н' },
+    { val: 'Первомайский', label: '— Первомайский р-н' },
+    { val: 'Первореченский', label: '— Первореченский р-н' },
+    { val: 'Советский', label: '— Советский р-н' },
+    { val: 'Фрунзенский', label: '— Фрунзенский р-н' },
+    { val: 'Русский', label: '— о. Русский' },
+    { val: 'Уссурийск', label: 'Уссурийск' },
+    { val: 'Находка', label: 'Находка' },
+    { val: 'Артём', label: 'Артём' },
+    { val: 'Большой Камень', label: 'Большой Камень' },
+    { val: 'Арсеньев', label: 'Арсеньев' },
+    { val: 'Спасск-Дальний', label: 'Спасск-Дальний' },
+    { val: 'Партизанск', label: 'Партизанск' },
+    { val: 'Дальнегорск', label: 'Дальнегорск' }
+  ];
+  const distOpts = locList.map(d => tag('option', 'value="' + esc(d.val) + '"', esc(d.label))).join('');
 
   const headerHtml = tag('header', 'class="site-header"',
-    tag('div', 'class="wrap header-inner"',
-      tag('div', 'style="display:flex;align-items:center;gap:10px"',
+    tag('div', 'class="wrap header-inner" style="flex-wrap:wrap;gap:8px"',
+      tag('div', 'style="display:flex;align-items:center;gap:8px"',
         tag('a', 'href="./" class="brand"', tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР')) +
-        tag('span', 'id="clock" class="soc-pill" style="font-size:12px"', 'Владивосток 24/7')
+        tag('span', 'id="clock" class="soc-pill" style="font-size:12px"', 'Приморье 24/7')
       ) +
-      tag('div', 'style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"',
+      tag('div', 'style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"',
         tag('span', 'id="w-top" class="soc-pill"', esc(w0.now)) +
         tag('span', 'class="soc-pill"', '$' + esc(r.usd) + ' | €' + esc(r.eur) + ' | ¥' + esc(r.cny)) +
-        tag('button', 'type="button" class="soc-pill" onclick="document.body.classList.toggle(' + SQ + 'large-font' + SQ + ');document.documentElement.style.fontSize=document.body.classList.contains(' + SQ + 'large-font' + SQ + ')?' + SQ + '118%' + SQ + ':' + SQ + '' + SQ + '"', 'А+') +
+        tag('button', 'type="button" class="soc-pill" onclick="document.documentElement.style.fontSize=document.documentElement.style.fontSize?' + SQ + '' + SQ + ':' + SQ + '118%' + SQ + '"', 'А+') +
         tag('button', 'type="button" class="soc-pill" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ');document.documentElement.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
       )
     )
@@ -298,16 +324,20 @@ function buildHtml(news, weather, rates) {
       )
     );
 
-  const mainHtml = tag('main', 'class="wrap"',
+    const mobileFixCss = tag('style', '',
+    '@media(max-width:860px){.grid-layout{display:flex!important;flex-direction:column!important}.sidebar,.feed-col{width:100%!important;max-width:100%!important}.news-card{flex-direction:column!important}.news-thumb{width:100%!important;height:180px!important;object-fit:cover!important}}.cat-scroll{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}.cat-scroll::-webkit-scrollbar{display:none}.cat-scroll .tab{white-space:nowrap;flex-shrink:0}'
+  );
+
+  const mainHtml = mobileFixCss + tag('main', 'class="wrap"',
     tag('div', 'id="season-banner" style="margin:12px 0"', '') +
-    tag('div', 'class="traffic-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"', trafficHtml) +
-    tag('div', 'style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0"',
-      catTabs +
-      tag('select', 'class="soc-pill" onchange="filterCity(this.value)"', distOpts) +
-      tag('input', 'type="search" class="input" style="max-width:240px;padding:6px 10px;font-size:13px" placeholder="Поиск по новостям..." oninput="setSearch(this.value)"')
+    tag('div', 'class="traffic-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"', trafficHtml) +
+    tag('div', 'class="cat-scroll" style="margin:10px 0"', catTabs) +
+    tag('div', 'style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px"',
+      tag('select', 'class="soc-pill" style="flex:1 1 180px;min-height:38px" onchange="filterCity(this.value)"', distOpts) +
+      tag('input', 'type="search" class="input" style="flex:2 1 200px;min-height:38px;padding:6px 12px;font-size:14px" placeholder="Поиск по новостям края..." oninput="setSearch(this.value)"')
     ) +
     tag('div', 'class="grid-layout"',
-      tag('section', 'id="feed"', cards) +
+      tag('section', 'id="feed" class="feed-col"', cards) +
       tag('aside', 'class="sidebar"',
         weatherWidget +
         tag('div', 'class="widget" style="padding:16px;margin-bottom:14px"',
@@ -339,4 +369,5 @@ function buildHtml(news, weather, rates) {
 }
 
 module.exports = { buildHtml };
+
 
