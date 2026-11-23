@@ -21,12 +21,15 @@ function detectJkhResource(text) {
 
 function detectJkhCity(text) {
   const s = String(text || '').toLowerCase();
-  if (/уссурийск/i.test(s)) return { city: 'Уссурийск', phone: '32-11-78' };
-  if (/находк/i.test(s)) return { city: 'Находка', phone: '65-68-01' };
-  if (/арт[её]м/i.test(s)) return { city: 'Артём', phone: '4-25-32' };
-  if (/больш(ой|ом)\s*камн/i.test(s)) return { city: 'Большой Камень', phone: '5-11-12' };
-  if (/арсеньев/i.test(s)) return { city: 'Арсеньев', phone: '4-22-44' };
-  return { city: 'Владивосток', phone: '222-23-33' };
+  if (/уссурийск/i.test(s)) return { city: 'Уссурийск', phone: '+7 (4234) 32-11-78' };
+  if (/находк/i.test(s)) return { city: 'Находка', phone: '+7 (4236) 65-68-01' };
+  if (/арт[её]м/i.test(s)) return { city: 'Артём', phone: '+7 (42337) 4-25-32' };
+  if (/больш(ой|ом)\s*камн/i.test(s)) return { city: 'Большой Камень', phone: '+7 (42335) 5-11-12' };
+  if (/арсеньев/i.test(s)) return { city: 'Арсеньев', phone: '+7 (42361) 4-22-44' };
+  if (/спасск/i.test(s)) return { city: 'Спасск-Дальний', phone: '+7 (42352) 2-32-30' };
+  if (/партизанск/i.test(s)) return { city: 'Партизанск', phone: '+7 (42363) 6-24-34' };
+  if (/дальнегорск/i.test(s)) return { city: 'Дальнегорск', phone: '+7 (42373) 3-21-51' };
+  return { city: 'Владивосток', phone: '+7 (423) 222-23-33' };
 }
 function updateLiveOutages(rawItems) {
   if (!fs.existsSync('data')) fs.mkdirSync('data', { recursive: true });
@@ -44,16 +47,17 @@ function updateLiveOutages(rawItems) {
     if (full.length < 25 || !outageKeywords.test(full) || excludeDtp.test(full)) continue;
     const resType = detectJkhResource(full);
     const loc = detectJkhCity(full);
-    const shortText = full.slice(0, 175) + (full.length > 175 ? '...' : '');
-    if (!fresh.some(x => x.status.slice(0, 45) === shortText.slice(0, 45))) {
+    const preview = full.slice(0, 145) + (full.length > 145 ? '...' : '');
+    if (!fresh.some(x => x.status.slice(0, 45) === preview.slice(0, 45))) {
       fresh.push({
         city: loc.city,
         type: resType,
-        status: shortText,
+        status: preview,
+        fullText: full,
         phone: loc.phone
       });
     }
-    if (fresh.length >= 20) break;
+    if (fresh.length >= 25) break;
   }
 
   if (fresh.length > 0) {
@@ -64,12 +68,11 @@ function updateLiveOutages(rawItems) {
 
 function detectTheme(post) {
   const s = ((post.title || '') + ' ' + (post.text || '')).toLowerCase();
-  if (/(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#111827', c2: '#7f1d1d', glow: '#ef4444', tag: 'ДОРОГИ И ПРОИСШЕСТВИЯ' };
+  if (post.cat === 'auto' || /(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#111827', c2: '#7f1d1d', glow: '#ef4444', tag: 'АВТО И ДОРОГИ' };
   if (/(пожар|возгоран|огонь|мчс|спасател|дым)/i.test(s)) return { c1: '#270909', c2: '#9a3412', glow: '#f97316', tag: 'ЭКСТРЕННАЯ СВОДКА • МЧС' };
-  if (/(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#090d16', c2: '#1e3a8a', glow: '#3b82f6', tag: 'ПРАВОПОРЯДОК И ЗАКОН' };
-  if (/(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОДСКОЕ ХОЗЯЙСТВО' };
-  if (/(погод|снег|голол|шторм|ветер|циклон|температур|мороз|дожд)/i.test(s)) return { c1: '#082f49', c2: '#0369a1', glow: '#38bdf8', tag: 'МЕТЕОСВОДКА ПРИМОРЬЯ' };
-  if (post.cat === 'econ') return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: 'ЭКОНОМИКА И АВТО' };
+  if (post.cat === 'law' || /(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#090d16', c2: '#1e3a8a', glow: '#3b82f6', tag: 'ВЛАСТЬ И ЗАКОН' };
+  if (post.cat === 'city' || /(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОД И ЖКХ' };
+  if (post.cat === 'econ') return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: 'ЭКОНОМИКА И БИЗНЕС' };
   if (post.cat === 'sport') return { c1: '#1e1b4b', c2: '#4c1d95', glow: '#a855f7', tag: 'СПОРТ И КУЛЬТУРА' };
   return { c1: '#0f172a', c2: '#1e293b', glow: '#cbd5e1', tag: String(post.catLabel || 'НОВОСТИ ПРИМОРЬЯ').toUpperCase() };
 }
@@ -108,7 +111,7 @@ async function drawThemedCover(post) {
   ctx.translate(w / 2, h / 2);
   ctx.rotate(-0.22);
   ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  ctx.font = 'bold 70px sans-serif';
+  ctx.font = 'bold 68px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('ИА «ПРИМ_ДОЗОР» • PRIMDOZOR.RU', 0, 15);
   ctx.restore();
