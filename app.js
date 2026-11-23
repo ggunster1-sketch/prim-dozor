@@ -31,6 +31,19 @@ var PRIM_TRAVMA = [
   { city: 'Находка', title: 'Травмпункт Находкинской городской больницы 24/7', addr: 'ул. Пирогова, 9', phone: '+74236622014' },
   { city: 'Артём', title: 'Травмпункт Артёмовской городской больницы №1 24/7', addr: 'ул. Партизанская, 13', phone: '+74233742473' }
 ];
+
+var PRIM_PHONES = [
+  { name: 'Единая служба экстренных вызовов Приморья', num: '112' },
+  { name: 'ЕДДС Владивостока (ЖКХ, свет, вода, тепло 24/7)', num: '+7 (423) 222-23-33' },
+  { name: 'Дежурная часть УМВД по Приморскому краю', num: '+7 (423) 249-04-91' },
+  { name: 'Дежурная часть ГИБДД Приморского края (ДТП)', num: '+7 (423) 231-09-08' },
+  { name: 'Примводоканал (аварийная диспетчерская 24/7)', num: '+7 (423) 200-57-77' },
+  { name: 'ВПЭС (аварийная электросетей Владивостока)', num: '+7 (423) 209-90-00' },
+  { name: 'ЕДДС Уссурийского городского округа 24/7', num: '+7 (4234) 32-11-78' },
+  { name: 'ЕДДС Находкинского городского округа 24/7', num: '+7 (4236) 65-68-01' },
+  { name: 'ЕДДС Артёмовского городского округа 24/7', num: '+7 (42337) 4-25-32' },
+  { name: 'Справочная Морского вокзала (паромы и катера)', num: '+7 (423) 249-73-01' }
+];
 function getByIdx(a, i) {
   if (!Array.isArray(a)) return null;
   var t = Number(i) || 0, f = null;
@@ -75,11 +88,11 @@ function fetchW(si) {
   var u = 'https://' + ['api', 'open-meteo', 'com'].join('.') + '/v1/forecast?latitude=' + c.lat + '&longitude=' + c.lon + '&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max&forecast_days=2&timezone=Asia%2FVladivostok';
   fetch(u).then(function(r) { return r.json(); }).then(function(r) {
     if (!r || !r.current) return;
-    var ico = function(k) { return k === 0 ? '☀' : k <= 3 ? '🌤' : (k >= 71 && k <= 77) ? '❄' : k >= 51 ? '🌧' : '☁'; };
+    var desc = function(k) { return k === 0 ? 'Ясно' : k <= 3 ? 'Переменная облачность' : (k >= 71 && k <= 77) ? 'Снег' : k >= 51 ? 'Осадки' : 'Облачно'; };
     var h = (r.hourly && r.hourly.temperature_2m) || [], d = (r.daily && r.daily.temperature_2m_max) || [], ct = r.current.temperature_2m;
     applyW({
       name: c.name,
-      now: fmtT(ct) + ' ' + ico(r.current.weather_code),
+      now: fmtT(ct) + ' • ' + desc(r.current.weather_code),
       morning: fmtT(h.length > 8 ? getByIdx(h, 8) : ct),
       day: fmtT(h.length > 14 ? getByIdx(h, 14) : ct),
       evening: fmtT(h.length > 20 ? getByIdx(h, 20) : ct),
@@ -144,7 +157,7 @@ function renderListItems(boxId, arr, q) {
   lb.innerHTML = arr.filter(function(it) {
     return !qr || (it.city + ' ' + it.title + ' ' + it.addr).toLowerCase().indexOf(qr) !== -1;
   }).map(function(g) {
-    return '<div class="w-row"><div style="flex:1;padding-right:8px"><div style="font-size:11px;color:var(--accent);font-weight:700">' + g.city + ' • 24/7</div><div style="font-weight:700;font-size:13px">' + g.title + '</div><div style="font-size:11.5px;color:var(--muted)">📍 ' + g.addr + '</div></div><a href="tel:' + g.phone + '" class="tel-pill">📞 Позвонить</a></div>';
+    return '<div class="w-row"><div style="flex:1;padding-right:8px"><div style="font-size:11px;color:var(--accent);font-weight:700">' + g.city + ' • 24/7</div><div style="font-weight:700;font-size:13px">' + g.title + '</div><div style="font-size:11.5px;color:var(--muted)">Адрес: ' + g.addr + '</div></div><a href="tel:' + g.phone + '" class="tel-pill">Позвонить</a></div>';
   }).join('');
 }
 
@@ -154,14 +167,14 @@ function renderTr(q) { renderListItems('travma-items', PRIM_TRAVMA, q); }
 function shareCard(id, btn) {
   var n = (window.NEWS || []).find(function(x) { return String(x.id) === String(id); });
   if (!n) return;
-  if (btn) btn.textContent = '⏳ Создаём...';
+  if (btn) btn.textContent = 'Формируем карточку...';
   var c = document.createElement('canvas');
   c.width = 1080; c.height = 620;
   var x = c.getContext('2d');
   if (!x) return;
   x.fillStyle = '#0f172a'; x.fillRect(0, 0, 1080, 620);
-  x.fillStyle = '#c81e1e'; x.fillRect(0, 0, 1080, 14); x.fillRect(56, 48, 260, 48);
-  x.fillStyle = '#fff'; x.font = '900 24px sans-serif'; x.fillText('ПРИМ_ДОЗОР • 24/7', 74, 80);
+  x.fillStyle = '#b91c1c'; x.fillRect(0, 0, 1080, 14); x.fillRect(56, 48, 280, 48);
+  x.fillStyle = '#fff'; x.font = '900 23px sans-serif'; x.fillText('ИА «ПРИМ_ДОЗОР» • 24/7', 72, 80);
   x.font = '800 40px sans-serif';
   var w = String(n.title || '').split(' '), l = '', y = 170;
   for (var i = 0; i < w.length; i++) {
@@ -170,12 +183,12 @@ function shareCard(id, btn) {
     else l = t;
   }
   x.fillText(l, 56, y);
-  x.fillStyle = '#94a3b8'; x.font = '700 22px sans-serif'; x.fillText('PRIMDOZOR.RU  •  ' + (n.city || 'Приморье'), 56, 574);
+  x.fillStyle = '#94a3b8'; x.font = '700 22px sans-serif'; x.fillText('PRIMDOZOR.RU  •  ' + (n.city || 'Приморский край'), 56, 574);
   var a = document.createElement('a');
   a.href = c.toDataURL('image/png');
   a.download = 'primdozor-' + n.id + '.png';
   a.click();
-  if (btn) btn.textContent = '✓ Карточка скачана';
+  if (btn) btn.textContent = 'Карточка сохранена';
 }
 
 function openArt(id) {
@@ -191,8 +204,8 @@ function openArt(id) {
     '<div style="white-space:pre-line;line-height:1.75;margin-bottom:16px">' + n.text + '</div>' +
     makeReactHtml(n.id) +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;margin-top:12px;border-top:1px solid var(--border)">' +
-    '<button type="button" class="btn-cta" onclick="shareCard(\'' + n.id + '\',this)">🖼 Карточка для чата</button> ' +
-    '<a href="https://t.me" target="_blank" rel="noopener" class="soc-pill">✈ Наш Telegram</a></div>';
+    '<button type="button" class="btn-cta" onclick="shareCard(\'' + n.id + '\',this)">Карточка для мессенджера</button> ' +
+    '<a href="https://t.me" target="_blank" rel="noopener" class="soc-pill">Telegram редакции</a></div>';
   md.style.display = 'flex';
 }
 function openAfisha(idx) {
@@ -203,7 +216,7 @@ function openAfisha(idx) {
   mb.innerHTML =
     '<div class="news-meta"><span class="badge-cat">' + (a.tag || 'Афиша') + '</span> <span>' + (a.city || 'Приморье') + '</span></div>' +
     '<h1 style="font-size:21px;margin:8px 0 14px">' + a.title + '</h1>' +
-    '<div class="tldr"><div>📅 ' + (a.date || '') + '</div><div>📍 ' + (a.place || a.city || '') + '</div><div>🎟 Вход свободный</div></div>' +
+    '<div class="tldr"><div>Дата: ' + (a.date || '') + '</div><div>Место: ' + (a.place || a.city || '') + '</div><div>Вход свободный</div></div>' +
     '<div style="line-height:1.7">' + (a.desc || '') + '</div>';
   md.style.display = 'flex';
 }
@@ -217,13 +230,13 @@ function switchDirTab(id, b) {
   });
 }
 
-function renderCityPhones(c) {
-  var p = (window.DIRECTORIES || {}).phones || {};
-  var l = p[c] || p['Все города'] || [];
+function renderCityPhones() {
+  var p = ((window.DIRECTORIES || {}).phones || {})['Все города'] || [];
+  var all = PRIM_PHONES.concat(p);
   var b = document.getElementById('phones-list');
   if (b) {
-    b.innerHTML = l.map(function(x) {
-      return '<div class="w-row"><span style="flex:1;padding-right:8px">' + x.name + '</span><a href="tel:' + cleanDigits(x.num) + '" class="tel-pill">📞 ' + x.num + '</a></div>';
+    b.innerHTML = all.map(function(x) {
+      return '<div class="w-row"><span style="flex:1;padding-right:8px">' + x.name + '</span><a href="tel:' + cleanDigits(x.num) + '" class="tel-pill">' + x.num + '</a></div>';
     }).join('');
   }
 }
@@ -231,53 +244,58 @@ function renderCityPhones(c) {
 function getHolidayOrSeason(vl) {
   var m = vl.getMonth() + 1, d = vl.getDate();
   var hols = [
-    { m: 1, d1: 1, d2: 6, title: 'С Новым годом, Приморье!', sub: 'Редакция «Прим_Дозор» желает мира, здоровья и добрых вестей', c1: '#091e3a', c2: '#1d4ed8', acc: '#60a5fa' },
-    { m: 1, d1: 7, d2: 8, title: 'Со светлым Рождеством Христовым!', sub: 'Тепла и благополучия каждому дому Приморского края', c1: '#1e1b4b', c2: '#4338ca', acc: '#a5b4fc' },
-    { m: 2, d1: 22, d2: 23, title: 'С Днём защитника Отечества!', sub: 'Гордимся моряками Тихоокеанского флота и воинами Приморья', c1: '#0f291e', c2: '#15803d', acc: '#4ade80' },
-    { m: 3, d1: 7, d2: 8, title: 'С Международным женским днём 8 Марта!', sub: 'Весеннего настроения и счастья прекрасным жительницам Приморья', c1: '#4a044e', c2: '#be185d', acc: '#f472b6' },
-    { m: 5, d1: 1, d2: 2, title: 'С Праздником Весны и Труда — 1 Мая!', sub: 'Мирного неба, солнечных дней и успехов Приморскому краю', c1: '#064e3b', c2: '#059669', acc: '#34d399' },
-    { m: 5, d1: 8, d2: 9, title: 'С Днём Великой Победы — 9 Мая!', sub: 'Вечная слава и низкий поклон поколению победителей!', c1: '#3b0707', c2: '#b91c1c', acc: '#fbbf24' },
-    { m: 6, d1: 11, d2: 12, title: 'С Днём России!', sub: 'От Тихого океана до Балтики — мы гордимся нашей страной!', c1: '#0f172a', c2: '#1d4ed8', acc: '#f87171' },
-    { m: 7, d1: 2, d2: 2, title: 'С Днём рождения, Владивосток!', sub: 'Любимому городу у Тихого океана — процветания и попутного ветра!', c1: '#082f49', c2: '#0284c7', acc: '#38bdf8' },
-    { m: 9, d1: 1, d2: 1, title: 'С Днём знаний — 1 Сентября!', sub: 'Успехов школьникам, студентам ДВФУ и педагогам Приморья', c1: '#1e1b4b', c2: '#4f46e5', acc: '#fbbf24' },
-    { m: 10, d1: 20, d2: 20, title: 'С Днём образования Приморского края!', sub: 'Гордимся нашим уникальным краем у Тихого океана!', c1: '#064e3b', c2: '#047857', acc: '#fbbf24' },
-    { m: 11, d1: 3, d2: 4, title: 'С Днём народного единства!', sub: 'В единстве народов Приморья и России — наша сила!', c1: '#172554', c2: '#1e40af', acc: '#fb923c' }
+    { m: 1, d1: 1, d2: 6, badge: 'ПРАЗДНИК РОССИИ', title: 'С Новым годом, Приморский край!', sub: 'Редакция ИА «Прим_Дозор» желает мира, стабильности и добрых событий', c1: '#071426', c2: '#1e3a8a', acc: '#93c5fd' },
+    { m: 1, d1: 7, d2: 8, badge: 'ПРАЗДНИК РОССИИ', title: 'Со светлым Рождеством Христовым!', sub: 'Тепла, благополучия и согласия каждому дому Приморья', c1: '#161338', c2: '#3730a3', acc: '#c7d2fe' },
+    { m: 2, d1: 22, d2: 23, badge: 'ГОСУДАРСТВЕННЫЙ ПРАЗДНИК', title: 'С Днём защитника Отечества!', sub: 'Честь и слава морякам Тихоокеанского флота и защитникам Родины', c1: '#0a1f16', c2: '#14532d', acc: '#86efac' },
+    { m: 3, d1: 7, d2: 8, badge: 'ГОСУДАРСТВЕННЫЙ ПРАЗДНИК', title: 'С Международным женским днём 8 Марта!', sub: 'Искренние поздравления прекрасным жительницам Приморского края', c1: '#3b0726', c2: '#831843', acc: '#f9a8d4' },
+    { m: 5, d1: 1, d2: 2, badge: 'ГОСУДАРСТВЕННЫЙ ПРАЗДНИК', title: 'С Праздником Весны и Труда — 1 Мая!', sub: 'Созидания, развития и процветания Приморскому краю', c1: '#042f2e', c2: '#0f766e', acc: '#5eead4' },
+    { m: 5, d1: 8, d2: 9, badge: 'ДЕНЬ ВЕЛИКОЙ ПОБЕДЫ', title: 'С Днём Победы — 9 Мая!', sub: 'Вечная память и благодарность героям, отстоявшим свободу Отечества', c1: '#2b0606', c2: '#991b1b', acc: '#fcd34d' },
+    { m: 6, d1: 11, d2: 12, badge: 'ГОСУДАРСТВЕННЫЙ ПРАЗДНИК', title: 'С Днём России!', sub: 'От берегов Тихого океана до Балтики — мы гордимся нашей страной', c1: '#0a1128', c2: '#1d4ed8', acc: '#fca5a5' },
+    { m: 7, d1: 2, d2: 2, badge: 'ПРАЗДНИК ПРИМОРЬЯ', title: 'С Днём рождения, Владивосток!', sub: 'Форпосту России на Тихом океане — развития и попутного ветра', c1: '#062038', c2: '#0369a1', acc: '#7dd3fc' },
+    { m: 9, d1: 1, d2: 1, badge: 'ДЕНЬ ЗНАНИЙ', title: 'С 1 Сентября — Днём знаний!', sub: 'Успехов школьникам, студентам и педагогам Приморского края', c1: '#17153b', c2: '#3730a3', acc: '#fde047' },
+    { m: 10, d1: 20, d2: 20, badge: 'ПРАЗДНИК КРАЯ', title: 'С Днём образования Приморского края!', sub: 'Гордимся историей, природой и людьми нашего уникального региона', c1: '#052e16', c2: '#15803d', acc: '#fde047' },
+    { m: 11, d1: 3, d2: 4, badge: 'ГОСУДАРСТВЕННЫЙ ПРАЗДНИК', title: 'С Днём народного единства!', sub: 'В сплочённости народов России и Приморья — наша главная опора', c1: '#0f172a', c2: '#1e40af', acc: '#fdba74' }
   ];
   for (var i = 0; i < hols.length; i++) {
     if (hols[i].m === m && d >= hols[i].d1 && d <= hols[i].d2) return hols[i];
   }
-  if (m === 12 || m <= 2) return { title: 'Зима в Приморском крае • 24/7', sub: 'Оперативный мониторинг дорог, погоды, ЖКХ и событий региона', c1: '#0b192c', c2: '#1e3a8a', acc: '#7dd3fc' };
-  if (m >= 3 && m <= 5) return { title: 'Весна в Приморском крае • 24/7', sub: 'Главные новости Владивостока и всех городов Приморья', c1: '#064e3b', c2: '#0f766e', acc: '#5eead4' };
-  if (m >= 6 && m <= 8) return { title: 'Лето у Тихого океана • Приморье 24/7', sub: 'Сводки края, обстановка на трассах к морю, погода и афиша', c1: '#0c4a6e', c2: '#0369a1', acc: '#fde047' };
-  return { title: 'Золотая осень в Приморье • 24/7', sub: 'Главные события края, погода, трассы и народный контроль', c1: '#2d0c04', c2: '#9a3412', acc: '#fdba74' };
+  if (m === 12 || m <= 2) return { badge: 'ЗИМА В ПРИМОРЬЕ • 24/7', title: 'Информационное агентство «Прим_Дозор»', sub: 'Оперативная картина дня: дороги, погода, ЖКХ и главные события края', c1: '#081221', c2: '#1e3a8a', acc: '#7dd3fc' };
+  if (m >= 3 && m <= 5) return { badge: 'ВЕСНА В ПРИМОРЬЕ • 24/7', title: 'Информационное агентство «Прим_Дозор»', sub: 'Главные новости Владивостока и всех муниципалитетов Приморского края', c1: '#042f2e', c2: '#0d9488', acc: '#5eead4' };
+  if (m >= 6 && m <= 8) return { badge: 'ЛЕТО У ТИХОГО ОКЕАНА • 24/7', title: 'Информационное агентство «Прим_Дозор»', sub: 'Сводки края, обстановка на трассах, прогноз погоды и события региона', c1: '#082f49', c2: '#0284c7', acc: '#fde047' };
+  return { badge: 'ОСЕНЬ В ПРИМОРЬЕ • 24/7', title: 'Информационное агентство «Прим_Дозор»', sub: 'Оперативный мониторинг событий, погоды, трасс и ЖКХ Приморского края', c1: '#230b05', c2: '#7c2d12', acc: '#fdba74' };
 }
 
 function drawSeason() {
   var b = document.getElementById('season-banner');
   if (!b) return;
-  b.style.padding = '0'; b.style.border = 'none'; b.style.borderRadius = '14px';
-  b.style.overflow = 'hidden'; b.style.height = '112px'; b.style.display = 'block'; b.innerHTML = '';
+  b.style.padding = '0'; b.style.border = 'none'; b.style.borderRadius = '12px';
+  b.style.overflow = 'hidden'; b.style.height = '124px'; b.style.display = 'block'; b.innerHTML = '';
   var c = document.createElement('canvas');
-  c.width = 1200; c.height = 112; c.style.width = '100%'; c.style.height = '100%';
+  c.width = 1200; c.height = 124; c.style.width = '100%'; c.style.height = '100%';
   b.appendChild(c);
   var x = c.getContext('2d');
   if (!x) return;
   var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
   var info = getHolidayOrSeason(vl);
-  var g = x.createLinearGradient(0, 0, 1200, 112);
+  var g = x.createLinearGradient(0, 0, 1200, 124);
   g.addColorStop(0, info.c1); g.addColorStop(1, info.c2);
-  x.fillStyle = g; x.fillRect(0, 0, 1200, 112);
+  x.fillStyle = g; x.fillRect(0, 0, 1200, 124);
   x.fillStyle = 'rgba(0,0,0,0.28)';
-  x.beginPath(); x.moveTo(0, 112); x.lineTo(0, 78);
-  x.quadraticCurveTo(300, 52, 620, 82); x.quadraticCurveTo(920, 100, 1200, 66);
-  x.lineTo(1200, 112); x.fill();
-  x.strokeStyle = info.acc; x.lineWidth = 3;
-  x.beginPath(); x.moveTo(960, 106); x.lineTo(1015, 22); x.lineTo(1070, 106);
-  x.moveTo(910, 82); x.quadraticCurveTo(1015, 58, 1120, 82); x.stroke();
-  x.fillStyle = '#ffffff'; x.font = '800 26px sans-serif';
-  x.fillText(info.title, 28, 48);
-  x.fillStyle = info.acc; x.font = '600 16px sans-serif';
-  x.fillText(info.sub, 28, 82);
+  x.beginPath(); x.moveTo(0, 124); x.lineTo(0, 86);
+  x.quadraticCurveTo(320, 58, 650, 90); x.quadraticCurveTo(940, 108, 1200, 72);
+  x.lineTo(1200, 124); x.fill();
+  x.strokeStyle = info.acc; x.lineWidth = 2.5;
+  x.beginPath();
+  x.moveTo(940, 118); x.lineTo(990, 24); x.lineTo(1040, 118);
+  x.moveTo(1055, 118); x.lineTo(1095, 36); x.lineTo(1135, 118);
+  x.moveTo(890, 88); x.quadraticCurveTo(1015, 62, 1165, 88);
+  x.stroke();
+  x.fillStyle = info.acc; x.font = '700 12px sans-serif';
+  x.fillText(info.badge, 28, 34);
+  x.fillStyle = '#ffffff'; x.font = '800 25px sans-serif';
+  x.fillText(info.title, 28, 68);
+  x.fillStyle = 'rgba(255,255,255,0.85)'; x.font = '500 15px sans-serif';
+  x.fillText(info.sub, 28, 98);
 }
 
 function openReport() {
@@ -322,7 +340,7 @@ window.toggleReact = function(id, emo) {
 function initSite() {
   try { if (localStorage.getItem('ck')) { var ck = document.getElementById('ck'); if (ck) ck.style.display = 'none'; } } catch (e) {}
   drawSeason();
-  renderCityPhones('Все города');
+  renderCityPhones();
   renderAp('');
   renderTr('');
   renderAllReacts();
