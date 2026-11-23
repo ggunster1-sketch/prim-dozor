@@ -42,7 +42,7 @@ function buildHtml(news, weather, rates) {
   if (!fs.existsSync('news')) fs.mkdirSync('news', { recursive: true });
   const list = Array.isArray(news) ? news : [];
   const w0 = (Array.isArray(weather) && weather.length > 0 ? weather.at(0) : null) || {
-    name: 'Владивосток', now: '🌤 0°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C'
+    name: 'Владивосток', now: '0°C', morning: '-2°C', day: '+2°C', evening: '0°C', tomorrow: '+3°C'
   };
 
   let dir = { outages: [], phones: {}, afisha: [] };
@@ -50,13 +50,7 @@ function buildHtml(news, weather, rates) {
     try { dir = JSON.parse(fs.readFileSync('data/directories.json', 'utf8')); } catch (e) {}
   }
 
-  let traffic = [
-    { name: 'Золотой мост', level: 'ok', status: 'Свободно' },
-    { name: 'Русский мост', level: 'ok', status: 'Свободно' },
-    { name: 'Де-Фриз — Седанка', level: 'ok', status: 'Свободно' },
-    { name: 'Трасса А-370 (Уссури)', level: 'ok', status: 'Свободно' },
-    { name: 'Трасса на Находку', level: 'ok', status: 'Свободно' }
-  ];
+  let traffic = [];
   if (fs.existsSync('data/traffic.json')) {
     try {
       const pt = JSON.parse(fs.readFileSync('data/traffic.json', 'utf8'));
@@ -64,39 +58,44 @@ function buildHtml(news, weather, rates) {
     } catch (e) {}
   }
 
-  const trafficHtml = traffic.map(t => {
-    const dc = t.level === 'danger' ? '#ef4444' : t.level === 'warn' ? '#f59e0b' : '#10b981';
-    return tag('span', 'class="soc-pill"', tag('span', 'style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dc + ';margin-right:6px"', '') + esc(t.name) + ': ' + tag('strong', '', esc(t.status)));
-  }).join('');
+  const trafficHtml = traffic.length
+    ? traffic.map(t => {
+        const dc = t.level === 'danger' ? '#ef4444' : t.level === 'warn' ? '#f59e0b' : '#10b981';
+        return tag('span', 'class="soc-pill"', tag('span', 'style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dc + ';margin-right:6px"', '') + esc(t.name) + ': ' + tag('strong', '', esc(t.status)));
+      }).join('')
+    : tag('span', 'class="soc-pill"', 'Дорожный радар Приморья 24/7: оперативный мониторинг мостов и трасс края');
 
   const allOut = dir.outages || [];
-  const cntLight = allOut.filter(o => /(свет|электрич|лэп|подстанц)/i.test(o.status)).length;
-  const cntWater = allOut.filter(o => /(вод|водоснабж|труб)/i.test(o.status)).length;
-  const cntHeat = allOut.filter(o => /(тепл|отоплен|гвс|горяч)/i.test(o.status)).length;
+  const cntLight = allOut.filter(o => /(свет|электрич|лэп|подстанц)/i.test(o.type + ' ' + o.status)).length;
+  const cntWater = allOut.filter(o => /(вод|водоснабж|труб)/i.test(o.type + ' ' + o.status)).length;
+  const cntHeat = allOut.filter(o => /(тепл|отоплен|гвс|горяч)/i.test(o.type + ' ' + o.status)).length;
   const jkhCounters = tag('div', 'style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap"',
-    tag('span', 'class="soc-pill" style="font-size:12px"', '⚡ Свет: ' + tag('strong', '', String(cntLight))) +
-    tag('span', 'class="soc-pill" style="font-size:12px"', '💧 Вода: ' + tag('strong', '', String(cntWater))) +
-    tag('span', 'class="soc-pill" style="font-size:12px"', '🔥 Тепло: ' + tag('strong', '', String(cntHeat)))
+    tag('span', 'class="soc-pill" style="font-size:12px"', 'Свет: ' + tag('strong', '', String(cntLight))) +
+    tag('span', 'class="soc-pill" style="font-size:12px"', 'Вода: ' + tag('strong', '', String(cntWater))) +
+    tag('span', 'class="soc-pill" style="font-size:12px"', 'Тепло: ' + tag('strong', '', String(cntHeat)))
   );
 
-  const jkhHtml = jkhCounters + tag('input', 'type="search" class="input" style="margin-bottom:8px;padding:6px 10px;font-size:13px" placeholder="Поиск отключения по улице..." oninput="filterJkh(this.value)"') +
-    allOut.map(o =>
-      tag('div', 'class="w-row"',
-        tag('div', 'style="flex:1;padding-right:8px"',
-          tag('div', 'style="font-size:11px;color:var(--accent);font-weight:700"', esc(o.city) + ' • ' + esc(o.type || 'Мониторинг 24/7')) +
-          tag('div', 'style="font-size:13px;line-height:1.35;margin-top:2px"', esc(o.status))
-        ) +
-        tag('a', 'href="' + telHref(o.phone) + '" class="tel-pill"', '📞 ' + esc(o.phone))
-      )
-    ).join('');
+  const jkhListHtml = allOut.length
+    ? allOut.map(o =>
+        tag('div', 'class="w-row"',
+          tag('div', 'style="flex:1;padding-right:8px"',
+            tag('div', 'style="font-size:11px;color:var(--accent);font-weight:700"', esc(o.city) + ' • ' + esc(o.type || 'ЖКХ 24/7')) +
+            tag('div', 'style="font-size:13px;line-height:1.35;margin-top:2px"', esc(o.status))
+          ) +
+          tag('a', 'href="' + telHref(o.phone) + '" class="tel-pill"', 'Позвонить ' + esc(o.phone))
+        )
+      ).join('')
+    : tag('div', 'class="w-row" style="color:var(--muted);font-size:13px"', 'По данным диспетчерских служб Приморья 24/7, плановых и аварийных отключений по улицам не зафиксировано.');
+
+  const jkhHtml = jkhCounters + tag('input', 'type="search" class="input" style="margin-bottom:8px;padding:6px 10px;font-size:13px" placeholder="Поиск отключения по улице или городу..." oninput="filterJkh(this.value)"') + jkhListHtml;
   const freeAfisha = (dir.afisha || []).filter(a => !/руб|₽|билет от/i.test(String(a.price || '')));
   const afishaHtml = freeAfisha.map((a, idx) =>
     tag('div', 'class="w-row afisha-item" onclick="openAfisha(' + idx + ')"',
       tag('div', 'style="flex:1"',
-        tag('div', 'style="font-size:11.5px;color:var(--accent);font-weight:700"', '📅 ' + esc(a.date) + ' • ' + esc(a.city)) +
+        tag('div', 'style="font-size:11.5px;color:var(--accent);font-weight:700"', esc(a.date) + ' • ' + esc(a.city)) +
         tag('div', 'style="font-weight:700;font-size:13.5px;margin:3px 0"', esc(a.title)) +
-        tag('div', 'style="font-size:12px;opacity:0.85"', '📍 ' + esc(a.place || a.city)) +
-        tag('div', 'style="font-size:11.5px;color:var(--muted);margin-top:3px"', '🎟 Вход свободный • Подробнее →')
+        tag('div', 'style="font-size:12px;opacity:0.85"', esc(a.place || a.city)) +
+        tag('div', 'style="font-size:11.5px;color:var(--muted);margin-top:3px"', 'Вход свободный • Подробнее →')
       )
     )
   ).join('');
@@ -112,8 +111,8 @@ function buildHtml(news, weather, rates) {
       headline: p.title,
       image: [imgUrl],
       datePublished: p.isoDate || new Date().toISOString(),
-      author: { '@type': 'Organization', name: 'Прим_Дозор', url: 'https://' + HOST },
-      publisher: { '@type': 'Organization', name: 'Прим_Дозор — Приморский край 24/7' }
+      author: { '@type': 'Organization', name: 'ИА «Прим_Дозор»', url: 'https://' + HOST },
+      publisher: { '@type': 'Organization', name: 'ИА «Прим_Дозор» — Приморский край 24/7' }
     }).replace(/</g, '\\u003c');
 
     const crumbJson = JSON.stringify({
@@ -145,10 +144,10 @@ function buildHtml(news, weather, rates) {
       (p.src ? tag('div', 'style="margin-top:14px;font-size:13px;color:var(--muted);font-style:italic"', esc(p.src)) : '') +
       reactBar +
       tag('div', 'style="margin-top:20px;padding:14px;background:var(--bg);border-radius:10px;font-size:13px;color:var(--muted)"',
-        tag('div', 'style="margin-bottom:8px;font-weight:700"', 'При цитировании ссылка на «Прим_Дозор» (primdozor.ru) обязательна.') +
+        tag('div', 'style="margin-bottom:8px;font-weight:700"', 'При цитировании ссылка на ИА «Прим_Дозор» (primdozor.ru) обязательна.') +
         tag('div', 'style="display:flex;gap:8px;flex-wrap:wrap"',
-          tag('button', 'type="button" class="btn-cta" data-cite="' + esc(citeText) + '" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.cite);this.textContent=' + SQ + '✓ Скопировано' + SQ + '"', '📋 Скопировать цитату') +
-          tag('a', 'href="https://t.me/prim_dozor" target="_blank" rel="noopener" class="soc-pill"', '📲 Подписаться в Telegram')
+          tag('button', 'type="button" class="btn-cta" data-cite="' + esc(citeText) + '" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.cite);this.textContent=' + SQ + 'Скопировано' + SQ + '"', 'Скопировать цитату') +
+          tag('a', 'href="https://t.me" target="_blank" rel="noopener" class="soc-pill"', 'Telegram-канал редакции')
         )
       )
     ) +
@@ -167,7 +166,7 @@ function buildHtml(news, weather, rates) {
       tag('head', '',
         tag('meta', 'charset="UTF-8"') +
         tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
-        tag('title', '', esc(p.title) + ' — Прим_Дозор') +
+        tag('title', '', esc(p.title) + ' — ИА «Прим_Дозор»') +
         tag('meta', 'name="description" content="' + descText + '"') +
         tag('meta', 'property="og:type" content="article"') +
         tag('meta', 'property="og:title" content="' + esc(p.title) + '"') +
@@ -198,7 +197,7 @@ function buildHtml(news, weather, rates) {
     return i === 0
       ? tag('article', 'class="hero-card" ' + attr, tag('img', 'class="hero-img" src="./' + esc(n.cover) + '" alt=""') + tag('div', 'class="hero-body"', meta + tag('h2', 'class="hero-title"', esc(n.title)) + tag('p', 'class="hero-lead"', esc(lead) + '...') + reactMini))
       : tag('article', 'class="news-card" ' + attr, tag('img', 'class="news-thumb" src="./' + esc(n.cover) + '" alt=""') + tag('div', 'class="news-body"', meta + tag('h3', 'class="news-title"', esc(n.title)) + reactMini));
-  }).join('') : tag('div', 'class="widget" style="padding:24px;text-align:center;color:var(--muted)"', 'Лента новостей обновляется. Первые сводки появятся в 07:00 по Владивостоку.');
+  }).join('') : tag('div', 'class="widget" style="padding:24px;text-align:center;color:var(--muted)"', 'Лента новостей ИА «Прим_Дозор» готовится к выпуску. Первые сводки по Приморскому краю появятся 24.11.2026 в 07:00 по Владивостоку.');
 
   const r = rates || { usd: '82.2', eur: '90.3', cny: '12.3', jpy: '51.5' };
   const cities = ['Владивосток', 'Уссурийск', 'Находка', 'Артём', 'Большой Камень', 'Арсеньев', 'Спасск-Дальний', 'Партизанск', 'Дальнегорск'];
@@ -207,12 +206,12 @@ function buildHtml(news, weather, rates) {
 
   const catList = [
     { id: 'all', label: 'Все новости' },
-    { id: 'chp', label: 'ЧП и 112' },
+    { id: 'chp', label: 'Происшествия' },
     { id: 'city', label: 'Город и ЖКХ' },
-    { id: 'law', label: 'Власть и Закон' },
-    { id: 'svo', label: 'СВО' },
+    { id: 'law', label: 'Власть и закон' },
+    { id: 'econ', label: 'Экономика и авто' },
     { id: 'family', label: 'Общество' },
-    { id: 'sport', label: 'Спорт и Афиша' }
+    { id: 'sport', label: 'Спорт и культура' }
   ];
   const catTabs = catList.map((c, idx) =>
     tag('button', 'type="button" class="tab' + (idx === 0 ? ' active' : '') + '" onclick="filterCat(' + SQ + c.id + SQ + ',this)"', c.label)
@@ -220,12 +219,12 @@ function buildHtml(news, weather, rates) {
   const locList = [
     { val: 'all', label: 'Весь Приморский край' },
     { val: 'Владивосток', label: 'Владивосток (все районы)' },
-    { val: 'Ленинский', label: '— Ленинский р-н' },
-    { val: 'Первомайский', label: '— Первомайский р-н' },
-    { val: 'Первореченский', label: '— Первореченский р-н' },
-    { val: 'Советский', label: '— Советский р-н' },
-    { val: 'Фрунзенский', label: '— Фрунзенский р-н' },
-    { val: 'Русский', label: '— о. Русский' },
+    { val: 'Ленинский', label: '— Ленинский район' },
+    { val: 'Первомайский', label: '— Первомайский район' },
+    { val: 'Первореченский', label: '— Первореченский район' },
+    { val: 'Советский', label: '— Советский район' },
+    { val: 'Фрунзенский', label: '— Фрунзенский район' },
+    { val: 'Русский', label: '— остров Русский' },
     { val: 'Уссурийск', label: 'Уссурийск' },
     { val: 'Находка', label: 'Находка' },
     { val: 'Артём', label: 'Артём' },
@@ -240,8 +239,8 @@ function buildHtml(news, weather, rates) {
   const headHtml = tag('head', '',
     tag('meta', 'charset="UTF-8"') +
     tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
-    tag('title', '', 'Прим_Дозор — Главные новости Владивостока и Приморского края 24/7 (18+)') +
-    tag('meta', 'name="description" content="Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и всего Приморского края 24/7. Происшествия, ЖКХ, отключения, погода, курсы валют и трассы."') +
+    tag('title', '', 'ИА «Прим_Дозор» — Главные новости Владивостока и Приморского края 24/7 (18+)') +
+    tag('meta', 'name="description" content="Информационное агентство Приморского края Прим_Дозор. Оперативные новости Владивостока, Уссурийска, Находки, Артёма и края 24/7. Мониторинг отключений ЖКХ, погода, трассы, аптеки и травмпункты 24/7."') +
     tag('link', 'rel="canonical" href="https://' + HOST + '/"') +
     tag('link', 'rel="stylesheet" href="./style.css?v=150"') +
     tag('script', '', 'window.NEWS=' + safeJson(list) + ';window.WEATHER=' + safeJson(weather) + ';window.DIRECTORIES=' + safeJson(dir) + ';')
@@ -257,7 +256,7 @@ function buildHtml(news, weather, rates) {
         tag('span', 'id="w-top" class="soc-pill"', esc(w0.now)) +
         tag('span', 'class="soc-pill"', '$' + esc(r.usd) + ' | €' + esc(r.eur) + ' | ¥' + esc(r.cny)) +
         tag('button', 'type="button" class="soc-pill" onclick="document.documentElement.style.fontSize=document.documentElement.style.fontSize?' + SQ + '' + SQ + ':' + SQ + '118%' + SQ + '"', 'А+') +
-        tag('button', 'type="button" class="soc-pill" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ');document.documentElement.classList.toggle(' + SQ + 'dark' + SQ + ')"', '🌙')
+        tag('button', 'type="button" class="soc-pill" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ');document.documentElement.classList.toggle(' + SQ + 'dark' + SQ + ')"', 'Тема')
       )
     )
   );
@@ -275,12 +274,12 @@ function buildHtml(news, weather, rates) {
     )
   );
 
-    const dirTabs = tag('div', 'style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"',
-    tag('button', 'type="button" class="mini-tab active" onclick="switchDirTab(' + SQ + 'dir-jkh' + SQ + ',this)"', '⚡ ЖКХ') +
-    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-phones' + SQ + ',this)"', '📞 Службы') +
-    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-apteki' + SQ + ',this)"', '💊 Аптеки 24/7') +
-    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-travma' + SQ + ',this)"', '🚑 Травмпункты') +
-    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-afisha' + SQ + ',this)"', '🎟 Афиша')
+  const dirTabs = tag('div', 'style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"',
+    tag('button', 'type="button" class="mini-tab active" onclick="switchDirTab(' + SQ + 'dir-jkh' + SQ + ',this)"', 'ЖКХ 24/7') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-phones' + SQ + ',this)"', 'Телефоны') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-apteki' + SQ + ',this)"', 'Аптеки 24/7') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-travma' + SQ + ',this)"', 'Травмпункты') +
+    tag('button', 'type="button" class="mini-tab" onclick="switchDirTab(' + SQ + 'dir-afisha' + SQ + ',this)"', 'Афиша')
   );
 
   const dirWidget = tag('div', 'class="widget" style="padding:16px"',
@@ -301,13 +300,13 @@ function buildHtml(news, weather, rates) {
   const modalsHtml =
     tag('div', 'id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.style.display=' + SQ + 'none' + SQ + '"',
       tag('div', 'class="widget" style="max-width:740px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;position:relative"',
-        tag('button', 'type="button" class="soc-pill" style="float:right;margin-bottom:8px" onclick="document.getElementById(' + SQ + 'modal' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', '✕ Закрыть') +
+        tag('button', 'type="button" class="soc-pill" style="float:right;margin-bottom:8px" onclick="document.getElementById(' + SQ + 'modal' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', 'Закрыть') +
         tag('div', 'id="m-body"', '')
       )
     ) +
     tag('div', 'id="report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.style.display=' + SQ + 'none' + SQ + '"',
       tag('form', 'class="widget" style="max-width:480px;width:100%;padding:22px" onsubmit="sendReport(event)"',
-        tag('h3', 'style="margin:0 0 10px"', '📢 Сообщить новость в редакцию') +
+        tag('h3', 'style="margin:0 0 10px"', 'Сообщить новость в редакцию') +
         tag('select', 'id="rep-city" class="input" style="margin-bottom:10px"', cityOpts) +
         tag('textarea', 'id="rep-text" class="input" rows="4" placeholder="Опишите событие, адрес или приложите детали..." style="margin-bottom:12px"', '') +
         tag('div', 'style="display:flex;gap:8px;justify-content:flex-end"',
@@ -335,7 +334,7 @@ function buildHtml(news, weather, rates) {
         weatherWidget +
         tag('div', 'class="widget" style="padding:16px;margin-bottom:14px"',
           tag('h3', 'style="margin:0 0 8px"', 'Народный контроль Приморья • 24/7') +
-          tag('button', 'type="button" class="btn-cta" onclick="openReport()"', '📢 Сообщить в редакцию')
+          tag('button', 'type="button" class="btn-cta" onclick="openReport()"', 'Сообщить в редакцию')
         ) +
         dirWidget
       )
@@ -348,7 +347,7 @@ function buildHtml(news, weather, rates) {
     tag('div', 'class="wrap" style="line-height:1.6"',
       '© 2026 ИА «Прим_Дозор» (18+). Оперативные новости Владивостока и Приморского края 24/7.' + tag('br') +
       'Администратор и редакция: Козин А.И. • Почта для читателей и рекламы (38-ФЗ): prim_dozor@internet.ru • ' +
-      tag('a', 'href="https://t.me/prim_dozor" target="_blank" rel="noopener" style="color:var(--accent)"', 'Telegram @prim_dozor')
+      tag('a', 'href="https://t.me" target="_blank" rel="noopener" style="color:var(--accent)"', 'Telegram @prim_dozor')
     )
   );
 
