@@ -31,12 +31,33 @@ function cleanAfishaTxt(s) {
     .replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ').trim();
 }
+
+function isFutureEvent(dateStr) {
+  const vl = new Date(Date.now() + 10 * 3600000);
+  const curMonth = vl.getUTCMonth() + 1;
+  const curDay = vl.getUTCDate();
+  const months = {
+    'января': 1, 'февраля': 2, 'марта': 3, 'апреля': 4, 'мая': 5, 'июня': 6,
+    'июля': 7, 'августа': 8, 'сентября': 9, 'октября': 10, 'ноября': 11, 'декабря': 12
+  };
+  const m = String(dateStr || '').toLowerCase().match(/(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/);
+  if (!m) return true;
+  const evDay = Number(m.at(1));
+  const evMonth = months[m.at(2)] || curMonth;
+  if (curMonth === 12 && evMonth === 1) return true;
+  if (evMonth < curMonth) return false;
+  if (evMonth === curMonth && evDay < curDay) return false;
+  return true;
+}
 async function updateAfisha(aiKey) {
   if (!fs.existsSync('data')) fs.mkdirSync('data', { recursive: true });
   let dir = { outages: [], phones: {}, afisha: [] };
   if (fs.existsSync('data/directories.json')) {
     try { dir = JSON.parse(fs.readFileSync('data/directories.json', 'utf8')); } catch (e) {}
   }
+
+  // Сразу очищаем прошедшие события из сохранённой афиши
+  dir.afisha = (dir.afisha || []).filter(ev => ev && ev.title && isFutureEvent(ev.date));
 
   const rawEvents = [];
   const eventRe = /(фестивал|выставк|концерт|ярмарк|мастер-класс|лекци|спектакл|форум|забег|турнир|праздник|экскурси|показ|день открытых дверей)/i;
@@ -61,7 +82,7 @@ async function updateAfisha(aiKey) {
   if (aiKey && rawEvents.length > 0) {
     try {
       const prompt = [
-        'Ты редактор афиши ИА «Прим_Дозор» (Приморский край). Извлеки из текстов до 8 актуальных БЕСПЛАТНЫХ мероприятий (вход свободный) в городах Приморья (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев и др.).',
+        'Ты редактор афиши ИА «Прим_Дозор» (Приморский край). Извлеки из текстов до 8 предстоящих БЕСПЛАТНЫХ мероприятий (вход свободный) в городах Приморья (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев и др.).',
         'Для каждого события обязательно укажи точную дату и время, город, точный адрес/площадку и подробное описание программы (3-4 предложения).',
         'Верни строго JSON-массив без markdown:',
         '[{"date":"28 ноября, 12:00","city":"Владивосток","place":"Светланская, 20 (Приморская краевая филармония)","tag":"Культура","title":"Название события","price":"Вход свободный","desc":"Подробное описание мероприятия, программа и условия посещения."}]',
@@ -75,15 +96,17 @@ async function updateAfisha(aiKey) {
       });
       if (res.ok) {
         const data = await res.json();
-        const rawJson = data.choices[0].message.content.replace(/^```json|```$/g, '').trim();
+        const rawJson = data.choices.message.content.replace(/^```json|```$/g, '').trim();
         const parsed = JSON.parse(rawJson);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          dir.afisha = parsed.filter(x => x && x.title && x.date);
-          fs.writeFileSync('data/directories.json', JSON.stringify(dir, null, 2), 'utf8');
+          const valid = parsed.filter(x => x && x.title && x.date && isFutureEvent(x.date));
+          if (valid.length > 0) dir.afisha = valid;
         }
       }
     } catch (e) {}
   }
+
+  fs.writeFileSync('data/directories.json', JSON.stringify(dir, null, 2), 'utf8');
 }
 
 module.exports = { updateAfisha };
