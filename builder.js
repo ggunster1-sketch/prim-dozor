@@ -10,7 +10,7 @@ const SQ = String.fromCharCode(39);
 const SOC_URLS = {
   tg: 'https://t.me',
   direct: 'https://t.me',
-  vk: 'https://vk.com',
+    vk: 'https://vk.com',
   max: 'https://max.ru',
   dzen: 'https://dzen.ru'
 };
