@@ -35,7 +35,7 @@ var PRIM_TRAVMA = [
 var PRIM_SERVICES = [
   { city: 'Все города', name: 'Единая служба спасения и вызова экстренных служб', num: '112' },
   { city: 'Все города', name: 'Дежурная часть УМВД по Приморскому краю', num: '+7 (423) 249-04-91' },
-  { city: 'Все города', name: 'Дежурная часть ГИБДД Приморского края (ДТП)', num: '+7 (423) 231-09-08' },
+  { city: 'Все города', name: 'Дежурная часть ГИБДД Приморского края (ДТП)', num: '+7 (423) 249-09-21' },
   { city: 'Владивосток', name: 'ЕДДС Владивостока (ЖКХ, свет, вода, тепло 24/7)', num: '+7 (423) 222-23-33' },
   { city: 'Владивосток', name: 'Примводоканал (аварийная диспетчерская 24/7)', num: '+7 (423) 200-57-77' },
   { city: 'Владивосток', name: 'ВПЭС (аварийная электросетей Владивостока)', num: '+7 (423) 209-90-00' },
@@ -49,6 +49,7 @@ var PRIM_SERVICES = [
   { city: 'Партизанск', name: 'ЕДДС Партизанского городского округа 24/7', num: '+7 (42363) 6-24-34' },
   { city: 'Дальнегорск', name: 'ЕДДС Дальнегорского городского округа 24/7', num: '+7 (42373) 3-21-51' }
 ];
+
 function toggleFontSize() {
   var isBig = document.documentElement.classList.toggle('large-font');
   document.documentElement.style.fontSize = isBig ? '118%' : '';
@@ -219,6 +220,7 @@ function filterJkhType(t, btn) {
   });
   applyJkhFilters();
 }
+
 function mapUrl(city, addr, lat, lon) {
   if (lat && lon) {
     return 'https://yandex.ru' + lon + '%2C' + lat + '&pt=' + lon + '%2C' + lat + '%2Cpm2rdm&z=15';
@@ -251,7 +253,7 @@ function openTraffic(idx) {
     '<div class="tldr">' + linkifyPhones(t.details || 'По данным оперативного мониторинга дорожных служб и сообщений водителей, движение на данном участке осуществляется в штатном режиме.') + '</div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
     '<a href="' + mapUrl('Владивосток', t.name) + '" target="_blank" rel="noopener noreferrer" class="btn-cta">Открыть участок на Яндекс.Картах</a>' +
-    '<a href="tel:+74232310908" class="soc-pill">Дежурная часть ГИБДД: +7 (423) 231-09-08</a></div>';
+    '<a href="tel:+74232490921" class="soc-pill">Дежурная часть ГИБДД: +7 (423) 249-09-21</a></div>';
   md.style.display = 'flex';
 }
 
@@ -295,13 +297,13 @@ function openServiceModal(type) {
   } else if (type === 'transport') {
     mb.innerHTML =
       '<div class="news-meta"><span class="badge-cat">Транспорт Приморского края • 24/7</span></div>' +
-      '<h1 style="font-size:21px;margin:8px 0 14px">Официальные расписания транспорта Приморья</h1>' +
-      '<div class="w-row"><div style="flex:1;padding-right:8px"><a href="https://expressprim.ru" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--accent);text-decoration:none">АО «Экспресс Приморья» — Пригородные электропоезда и Аэроэкспресс</a><div style="font-size:12px;color:var(--muted)">Актуальное расписание электричек: Владивосток, Аэропорт, Уссурийск, Находка, Спасск</div></div></div>' +
-      '<div class="w-row"><div style="flex:1;padding-right:8px"><a href="https://primavtovokzal.ru" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--accent);text-decoration:none">Автовокзалы Приморского края — Междугородние автобусы</a><div style="font-size:12px;color:var(--muted)">Официальное расписание краевых и междугородних автобусных рейсов</div></div></div>' +
-      '<div class="w-row"><div style="flex:1;padding-right:8px"><a href="https://vvo.aero" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--accent);text-decoration:none">Международный аэропорт Владивосток (VVO) — Онлайн-табло</a><div style="font-size:12px;color:var(--muted)">Статус вылетов и прилётов в реальном времени</div></div></div>' +
-      '<div class="w-row"><div style="flex:1;padding-right:8px"><a href="tel:+74232497301" style="font-weight:700;color:var(--accent);text-decoration:none">Морской вокзал Владивостока — Справочная паромных переправ</a><div style="font-size:12px;color:var(--muted)">Рейсы на о. Русский, о. Попова, о. Рейнеке и Славянку: +7 (423) 249-73-01</div></div></div>';
-  }
-  md.style.display = 'flex';
+'Официальные расписания транспорта Приморья' +
+'АО «Экспресс Приморья» — Пригородные электропоезда и АэроэкспрессАктуальное расписание электричек: Владивосток, Аэропорт, Уссурийск, Находка, Спасск' +
+'Автовокзалы Приморского края — Междугородние автобусыОфициальное расписание краевых и междугородних автобусных рейсов' +
+'Международный аэропорт Владивосток (VVO) — Онлайн-таблоСтатус вылетов и прилётов в реальном времени' +
+'Морской вокзал Владивостока — Справочная паромных переправРейсы на о. Русский, о. Попова, о. Рейнеке и Славянку: +7 (423) 249-73-01';
+}
+md.style.display = 'flex';
 }
 function renderListItems(boxId, arr, q) {
   var lb = document.getElementById(boxId);
@@ -396,6 +398,7 @@ function openAfisha(idx) {
     srcBtn + '</div>';
   md.style.display = 'flex';
 }
+
 function closeMainModal() {
   var md = document.getElementById('modal');
   if (md) md.style.display = 'none';
@@ -466,123 +469,113 @@ function renderPoll() {
 window.votePoll = function(idx) {
   var dirPoll = (window.DIRECTORIES || {}).poll;
   var qText = (dirPoll && dirPoll.question) ? dirPoll.question : 'Какая тема в Приморском крае сейчас требует первоочередного внимания властей и служб?';
-  try { localStorage.setItem('pd_poll_' + qText.slice(0, 24), String(idx)); } catch (e) {}
-  renderPoll();
+try { localStorage.setItem('pd_poll_' + qText.slice(0, 24), String(idx)); } catch (e) {}
+renderPoll();
 };
-
 function getHolidayTitle(vl) {
-  var m = vl.getMonth() + 1, d = vl.getDate();
-  var hols = [
-    { m: 1, d1: 1, d2: 6, title: 'С НОВЫМ ГОДОМ, ПРИМОРСКИЙ КРАЙ!' },
-    { m: 1, d1: 7, d2: 8, title: 'СО СВЕТЛЫМ РОЖДЕСТВОМ ХРИСТОВЫМ!' },
-    { m: 2, d1: 22, d2: 23, title: 'С ДНЁМ ЗАЩИТНИКА ОТЕЧЕСТВА!' },
-    { m: 3, d1: 7, d2: 8, title: 'С МЕЖДУНАРОДНЫМ ЖЕНСКИМ ДНЁМ!' },
-    { m: 5, d1: 1, d2: 2, title: 'С ПРАЗДНИКОМ ВЕСНЫ И ТРУДА — 1 МАЯ!' },
-    { m: 5, d1: 8, d2: 9, title: 'С ДНЁМ ВЕЛИКОЙ ПОБЕДЫ — 9 МАЯ!' },
-    { m: 6, d1: 11, d2: 12, title: 'С ДНЁМ РОССИИ!' },
-    { m: 7, d1: 2, d2: 2, title: 'С ДНЁМ РОЖДЕНИЯ, ВЛАДИВОСТОК!' },
-    { m: 9, d1: 1, d2: 1, title: 'С ДНЁМ ЗНАНИЙ — 1 СЕНТЯБРЯ!' },
-    { m: 10, d1: 20, d2: 20, title: 'С ДНЁМ ОБРАЗОВАНИЯ ПРИМОРСКОГО КРАЯ!' },
-    { m: 11, d1: 3, d2: 4, title: 'С ДНЁМ НАРОДНОГО ЕДИНСТВА!' }
-  ];
-  for (var i = 0; i < hols.length; i++) {
-    if (hols[i].m === m && d >= hols[i].d1 && d <= hols[i].d2) return hols[i].title;
-  }
-  return 'ИА «ПРИМ_ДОЗОР»';
+var m = vl.getMonth() + 1, d = vl.getDate();
+var hols = [
+{ m: 1, d1: 1, d2: 6, title: 'С НОВЫМ ГОДОМ, ПРИМОРСКИЙ КРАЙ!' },
+{ m: 1, d1: 7, d2: 8, title: 'СО СВЕТЛЫМ РОЖДЕСТВОМ ХРИСТОВЫМ!' },
+{ m: 2, d1: 22, d2: 23, title: 'С ДНЁМ ЗАЩИТНИКА ОТЕЧЕСТВА!' },
+{ m: 3, d1: 7, d2: 8, title: 'С МЕЖДУНАРОДНЫМ ЖЕНСКИМ ДНЁМ!' },
+{ m: 5, d1: 1, d2: 2, title: 'С ПРАЗДНИКОМ ВЕСНЫ И ТРУДА — 1 МАЯ!' },
+{ m: 5, d1: 8, d2: 9, title: 'С ДНЁМ ВЕЛИКОЙ ПОБЕДЫ — 9 МАЯ!' },
+{ m: 6, d1: 11, d2: 12, title: 'С ДНЁМ РОССИИ!' },
+{ m: 7, d1: 2, d2: 2, title: 'С ДНЁМ РОЖДЕНИЯ, ВЛАДИВОСТОК!' },
+{ m: 9, d1: 1, d2: 1, title: 'С ДНЁМ ЗНАНИЙ — 1 СЕНТЯБРЯ!' },
+{ m: 10, d1: 20, d2: 20, title: 'С ДНЁМ ОБРАЗОВАНИЯ ПРИМОРСКОГО КРАЯ!' },
+{ m: 11, d1: 3, d2: 4, title: 'С ДНЁМ НАРОДНОГО ЕДИНСТВА!' }
+];
+for (var i = 0; i < hols.length; i++) {
+if (hols[i].m === m && d >= hols[i].d1 && d <= hols[i].d2) return hols[i].title;
 }
-
+return 'ИА «ПРИМ_ДОЗОР»';
+}
 function drawSeason() {
-  var b = document.getElementById('season-banner');
-  if (!b) return;
-  var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
-  var mainTitle = getHolidayTitle(vl);
-  var subTitle = mainTitle === 'ИА «ПРИМ_ДОЗОР»'
-    ? 'Информационно-аналитический портал Приморского края • 24/7'
-    : 'ИА «ПРИМ_ДОЗОР» • Новости Владивостока и Приморского края 24/7';
-  b.style.cssText = 'position:relative;width:100%;min-height:112px;border-radius:14px;overflow:hidden;background:linear-gradient(125deg,#071120 0%,#0f294a 55%,#1e3a8a 100%);display:flex;align-items:center;padding:18px 24px;box-sizing:border-box';
-  b.innerHTML =
-    '<img src="./covers/hero_banner.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:right center;opacity:0.92" onerror="this.style.display=\'none\'">' +
-    '<div style="position:relative;z-index:2;max-width:680px">' +
-    '<div style="display:inline-block;background:#b91c1c;color:#fff;font-size:11px;font-weight:800;letter-spacing:0.6px;padding:3px 9px;border-radius:5px;margin-bottom:6px">ПРИМОРСКИЙ КРАЙ • 24/7</div>' +
-    '<div style="color:#ffffff;font-weight:900;font-size:clamp(19px,3.2vw,28px);line-height:1.15;letter-spacing:0.3px;text-shadow:0 2px 10px rgba(0,0,0,0.65)">' + mainTitle + '</div>' +
-    '<div style="color:#e2e8f0;font-size:clamp(12px,1.8vw,14.5px);margin-top:4px;font-weight:500;text-shadow:0 1px 6px rgba(0,0,0,0.75)">' + subTitle + '</div>' +
-    '</div>';
+var b = document.getElementById('season-banner');
+if (!b) return;
+var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
+var mainTitle = getHolidayTitle(vl);
+var subTitle = mainTitle === 'ИА «ПРИМ_ДОЗОР»'
+? 'Информационно-аналитический портал Приморского края • 24/7'
+: 'ИА «ПРИМ_ДОЗОР» • Новости Владивостока и Приморского края 24/7';
+b.style.cssText = 'position:relative;width:100%;min-height:112px;border-radius:14px;overflow:hidden;background:linear-gradient(125deg,#071120 0%,#0f294a 55%,#1e3a8a 100%);display:flex;align-items:center;padding:18px 24px;box-sizing:border-box';
+b.innerHTML =
+'' +
+'' +
+'ПРИМОРСКИЙ КРАЙ • 24/7' +
+'' + mainTitle + '' +
+'' + subTitle + '' +
+'';
 }
-
 function openReport() {
-  var m = document.getElementById('report-modal');
-  if (m) m.style.display = 'flex';
+var m = document.getElementById('report-modal');
+if (m) m.style.display = 'flex';
 }
-
 function sendReport(e) {
-  e.preventDefault();
-  var tp = (document.getElementById('rep-type') || {}).value || 'Обращение';
-  var c = (document.getElementById('rep-city') || {}).value || 'Приморье';
-  var t = ((document.getElementById('rep-text') || {}).value || '').trim();
-  if (!t) return;
-  var msg = 'Обращение в ИА «Прим_Дозор» [' + tp + ' • ' + c + ']:\n' + t;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(msg).catch(function() {});
-  }
-  alert('Текст обращения скопирован. Сейчас откроется связь с дежурным редактором @prim_dozor — вставьте сообщение.');
-  window.open('https://t.me', '_blank');
-  var m = document.getElementById('report-modal');
-  if (m) m.style.display = 'none';
+e.preventDefault();
+var tp = (document.getElementById('rep-type') || {}).value || 'Обращение';
+var c = (document.getElementById('rep-city') || {}).value || 'Приморье';
+var t = ((document.getElementById('rep-text') || {}).value || '').trim();
+if (!t) return;
+var msg = 'Обращение в ИА «Прим_Дозор» [' + tp + ' • ' + c + ']:\n' + t;
+if (navigator.clipboard && navigator.clipboard.writeText) {
+navigator.clipboard.writeText(msg).catch(function() {});
 }
-
+alert('Текст обращения скопирован. Сейчас откроется связь с дежурным редактором @prim_dozor — вставьте сообщение.');
+window.open('t.me', '_blank');
+var m = document.getElementById('report-modal');
+if (m) m.style.display = 'none';
+}
 function getReactStore() {
-  try { return JSON.parse(localStorage.getItem('pd_reacts') || '{}'); } catch (e) { return {}; }
+try { return JSON.parse(localStorage.getItem('pd_reacts') || '{}'); } catch (e) { return {}; }
 }
-
 function renderAllReacts() {
-  var st = getReactStore();
-  document.querySelectorAll('.react-bar').forEach(function(bar) {
-    var id = bar.getAttribute('data-react-id'), picked = st[id] || '';
-    bar.querySelectorAll('.react-btn').forEach(function(btn) {
-      var emo = btn.getAttribute('data-emo'), cnt = btn.querySelector('.r-cnt'), act = (picked === emo);
-      btn.style.borderColor = act ? 'var(--accent)' : '';
-      btn.style.fontWeight = act ? '700' : '';
-      if (cnt) cnt.textContent = act ? '1' : '0';
-    });
-  });
+var st = getReactStore();
+document.querySelectorAll('.react-bar').forEach(function(bar) {
+var id = bar.getAttribute('data-react-id'), picked = st[id] || '';
+bar.querySelectorAll('.react-btn').forEach(function(btn) {
+var emo = btn.getAttribute('data-emo'), cnt = btn.querySelector('.r-cnt'), act = (picked === emo);
+btn.style.borderColor = act ? 'var(--accent)' : '';
+btn.style.fontWeight = act ? '700' : '';
+if (cnt) cnt.textContent = act ? '1' : '0';
+});
+});
 }
-
 window.toggleReact = function(id, emo) {
-  var st = getReactStore();
-  if (st[id] === emo) { delete st[id]; } else { st[id] = emo; }
-  try { localStorage.setItem('pd_reacts', JSON.stringify(st)); } catch (e) {}
-  renderAllReacts();
+var st = getReactStore();
+if (st[id] === emo) { delete st[id]; } else { st[id] = emo; }
+try { localStorage.setItem('pd_reacts', JSON.stringify(st)); } catch (e) {}
+renderAllReacts();
 };
-
 function updateLiveClock() {
-  var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
-  var cl = document.getElementById('clock');
-  if (cl) {
-    cl.textContent = 'Владивосток ' +
-      String(vl.getHours()).padStart(2, '0') + ':' +
-      String(vl.getMinutes()).padStart(2, '0') + ':' +
-      String(vl.getSeconds()).padStart(2, '0');
-  }
+var vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
+var cl = document.getElementById('clock');
+if (cl) {
+cl.textContent = 'Владивосток ' +
+String(vl.getHours()).padStart(2, '0') + ':' +
+String(vl.getMinutes()).padStart(2, '0') + ':' +
+String(vl.getSeconds()).padStart(2, '0');
 }
-
+}
 function initSite() {
-  try {
-    if (localStorage.getItem('ck')) { var ck = document.getElementById('ck'); if (ck) ck.style.display = 'none'; }
-    if (localStorage.getItem('pd_font') === '1') { document.documentElement.classList.add('large-font'); document.documentElement.style.fontSize = '118%'; }
-  } catch (e) {}
-  drawSeason();
-  renderCityPhones('Все города');
-  renderAp('');
-  renderTr('');
-  renderPoll();
-  renderAllReacts();
-  fetchLiveRates();
-  var fw = getByIdx(window.WEATHER, 0);
-  if (fw) applyW(fw);
-  fetchW(0);
-  updateLiveClock();
-  setInterval(updateLiveClock, 1000);
-  setInterval(function() { fetchLiveRates(); fetchW(); }, 60000);
+try {
+if (localStorage.getItem('ck')) { var ck = document.getElementById('ck'); if (ck) ck.style.display = 'none'; }
+if (localStorage.getItem('pd_font') === '1') { document.documentElement.classList.add('large-font'); document.documentElement.style.fontSize = '118%'; }
+} catch (e) {}
+drawSeason();
+renderCityPhones('Все города');
+renderAp('');
+renderTr('');
+renderPoll();
+renderAllReacts();
+fetchLiveRates();
+var fw = getByIdx(window.WEATHER, 0);
+if (fw) applyW(fw);
+fetchW(0);
+updateLiveClock();
+setInterval(updateLiveClock, 1000);
+setInterval(function() { fetchLiveRates(); fetchW(); }, 60000);
 }
-
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initSite); } else { initSite(); }
