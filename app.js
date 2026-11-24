@@ -49,7 +49,7 @@ function makeSlug(title, idHash) {
     .replace(/^-+|-+$/g, '')
     .slice(0, 64);
 
-  return `${base || 'novost'}-${idHash.slice(0, 6)}`;
+  return (base || 'novost') + '-' + idHash.slice(0, 6);
 }
 
 function decodeHtmlEntities(str = '') {
@@ -98,7 +98,18 @@ function detectCity(text = '') {
   if (lower.includes('спасск')) return 'Спасск-Дальний';
   if (lower.includes('партизанск')) return 'Партизанск';
   if (lower.includes('дальнегорск')) return 'Дальнегорск';
-  if (lower.includes('владивосток') || lower.includes('первомайск') || lower.includes('первореченск') || lower.includes('фрунзенск') || lower.includes('ленинск') || lower.includes('советск') || lower.includes('остров русск') || lower.includes('седанка') || lower.includes('тихая') || lower.includes('вторая речка')) {
+  if (
+    lower.includes('владивосток') ||
+    lower.includes('первомайск') ||
+    lower.includes('первореченск') ||
+    lower.includes('фрунзенск') ||
+    lower.includes('ленинск') ||
+    lower.includes('советск') ||
+    lower.includes('остров русск') ||
+    lower.includes('седанка') ||
+    lower.includes('тихая') ||
+    lower.includes('вторая речка')
+  ) {
     return 'Владивосток';
   }
   return 'Весь Приморский край';
@@ -125,19 +136,14 @@ function detectRubric(text = '') {
  * Нормализует телефон ГИБДД Приморского края на актуальный: +7 (423) 249-09-21
  */
 function enforceActualContactsAndLanguage(text = '') {
-  let clean = String(text)
-    // Заменяем устаревшие/любые форматы дежурной части ГИБДД Приморья на актуальный
+  return String(text)
     .replace(/(\+7|8)\s*\(?423\)?\s*249[\s-]*09[\s-]*21/g, '+7 (423) 249-09-21')
-    // Удаляем упоминания прошлых лет (2018-2025)
     .replace(FORBIDDEN_YEARS_RE, '2026')
-    // Базовая русификация популярных англицизмов
     .replace(/\bTelegram\b/gi, 'Телеграм')
     .replace(/\bVK\b/gi, 'ВКонтакте')
     .replace(/\bMAX\b/gi, 'МАКС')
     .replace(/\bDzen\b/gi, 'Дзен')
     .trim();
-
-  return clean;
 }
 
 /**
@@ -159,8 +165,8 @@ async function fetchVladivostokWeather() {
     else if (code >= 45 && code <= 48) desc = 'Туман';
     else if (code >= 1 && code <= 3) desc = 'Облачно';
 
-    const sign = temp > 0 ? `+${temp}` : `${temp}`;
-    return `Владивосток: ${sign}°C • ${desc}, ветер ${wind} м/с`;
+    const sign = temp > 0 ? '+' + temp : String(temp);
+    return 'Владивосток: ' + sign + '°C • ' + desc + ', ветер ' + wind + ' м/с';
   } catch {
     return 'Владивосток • Погода онлайн 24/7';
   }
@@ -192,11 +198,13 @@ async function fetchRssFeed(source) {
       const enclosureMatch = rawItem.match(/<enclosure[^>]+url=["']([^"']+)["']/i);
       const mediaMatch = rawItem.match(/<media:content[^>]+url=["']([^"']+)["']/i);
 
-      const title = decodeHtmlEntities(titleMatch?.[1] || '');
-      const link = decodeHtmlEntities(linkMatch?.[1] || '');
-      const rawBody = decodeHtmlEntities(contentMatch?.[1] || descMatch?.[1] || '');
-      const pubDateStr = decodeHtmlEntities(pubDateMatch?.[1] || '');
-      const imageUrl = enclosureMatch?.[1] || mediaMatch?.[1] || null;
+      const title = decodeHtmlEntities(titleMatch ? titleMatch : '');
+      const link = decodeHtmlEntities(linkMatch ? linkMatch : '');
+      const rawBody = decodeHtmlEntities(
+        contentMatch ? contentMatch : (descMatch ? descMatch : '')
+      );
+      const pubDateStr = decodeHtmlEntities(pubDateMatch ? pubDateMatch : '');
+      const imageUrl = enclosureMatch ? enclosureMatch : (mediaMatch ? mediaMatch : null);
 
       if (!title || title.length < 15) continue;
 
@@ -227,8 +235,9 @@ async function fetchRssFeed(source) {
  * строго на русском языке, с проверкой рубрики и города.
  */
 async function rewriteNewsWithAi(rawItem) {
-  const fallbackCity = detectCity(`${rawItem.title} ${rawItem.rawBody}`);
-  const fallbackRubric = detectRubric(`${rawItem.title} ${rawItem.rawBody}`);
+  const combinedRaw = rawItem.title + ' ' + rawItem.rawBody;
+  const fallbackCity = detectCity(combinedRaw);
+  const fallbackRubric = detectRubric(combinedRaw);
 
   const fallbackResult = () => {
     const cleanTitle = enforceActualContactsAndLanguage(sanitizeCoverText(rawItem.title));
@@ -237,7 +246,7 @@ async function rewriteNewsWithAi(rawItem) {
 const summary = sentences.slice(0, 2).join(' ').slice(0, 240) || cleanTitle;
 let body = sentences.slice(0, 6).join('\n\n') || summary;
 if (fallbackRubric === 'Дороги и мосты' && /гибдд|дтп|авар/i.test(body)) {
-body += \n\nТелефон дежурной части ГИБДД Приморского края: ${LINKS.gibddPhone}.;
+body = body + '\n\nТелефон дежурной части ГИБДД Приморского края: ' + LINKS.gibddPhone + '.';
 }
 return {
 title: cleanTitle,
@@ -250,23 +259,25 @@ city: fallbackCity
 if (!AI_API_KEY) {
 return fallbackResult();
 }
-const systemPrompt = `Ты — выпускающий редактор информационного агентства «Прим_Дозор» (primdozor.ru, Владивосток и Приморский край).
-Перепиши исходную новость в строгом, живом, информативном стиле регионального СМИ (18+).
-ОБЯЗАТЕЛЬНЫЕ ПРАВИЛА:
-1. Весь текст СТРОГО на русском языке. Запрещены любые английские/латинские слова, хештеги и ссылки.
-2. Запрещено упоминать прошлые годы (2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025). Актуальный год — 2026.
-3. Выбери строго одну рубрику из списка: ${RUBRICS.join(', ')}.
-4. Выбери строго один город/локацию из списка: ${CITIES.join(', ')}.
-5. Если речь о ДТП или работе дорожной полиции Приморья, укажи актуальный телефон дежурной части ГИБДД Приморского края: +7 (423) 249-09-21.
-6. Верни ответ СТРОГО в формате JSON без markdown-обёрток:
-{"title":"Заголовок до 95 символов","summary":"Краткий лид 1-2 предложения до 220 символов","body":"Полный текст статьи 2-4 абзаца, разделённых двойным переносом строки","rubric":"Название рубрики","city":"Название города"}`;
+const systemPrompt = [
+'Ты — выпускающий редактор информационного агентства «Прим_Дозор» (primdozor.ru, Владивосток и Приморский край).',
+'Перепиши исходную новость в строгом, живом, информативном стиле регионального СМИ (18+).',
+'ОБЯЗАТЕЛЬНЫЕ ПРАВИЛА:',
+'1. Весь текст СТРОГО на русском языке. Запрещены любые английские/латинские слова, хештеги и ссылки.',
+'2. Запрещено упоминать прошлые годы (2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025). Актуальный год — 2026.',
+'3. Выбери строго одну рубрику из списка: ' + RUBRICS.join(', ') + '.',
+'4. Выбери строго один город/локацию из списка: ' + CITIES.join(', ') + '.',
+'5. Если речь о ДТП или работе дорожной полиции Приморья, укажи актуальный телефон дежурной части ГИБДД Приморского края: +7 (423) 249-09-21.',
+'6. Верни ответ СТРОГО в формате JSON без markdown-обёрток:',
+'{"title":"Заголовок до 95 символов","summary":"Краткий лид 1-2 предложения до 220 символов","body":"Полный текст статьи 2-4 абзаца, разделённых двойным переносом строки","rubric":"Название рубрики","city":"Название города"}'
+].join('\n');
 try {
 const res = await fetch(AI_API_URL, {
 method: 'POST',
 signal: AbortSignal.timeout(18000),
 headers: {
 'Content-Type': 'application/json',
-'Authorization': Bearer ${AI_API_KEY}
+'Authorization': 'Bearer ' + AI_API_KEY
 },
 body: JSON.stringify({
 model: AI_MODEL,
@@ -275,17 +286,17 @@ messages: [
 { role: 'system', content: systemPrompt },
 {
 role: 'user',
-content: Заголовок: ${rawItem.title}\nТекст: ${rawItem.rawBody.slice(0, 1800)}
+content: 'Заголовок: ' + rawItem.title + '\nТекст: ' + rawItem.rawBody.slice(0, 1800)
 }
 ]
 })
 });
 if (!res.ok) return fallbackResult();
 const data = await res.json();
-const content = data?.choices?.[0]?.message?.content || '';
+const content = data?.choices?.?.message?.content || '';
 const jsonMatch = content.match(/{[\s\S]*}/);
 if (!jsonMatch) return fallbackResult();
-const parsed = JSON.parse(jsonMatch[0]);
+const parsed = JSON.parse(jsonMatch);
 const validRubric = RUBRICS.includes(parsed.rubric) ? parsed.rubric : fallbackRubric;
 const validCity = CITIES.includes(parsed.city) ? parsed.city : fallbackCity;
 const title = enforceActualContactsAndLanguage(parsed.title || rawItem.title);
@@ -313,13 +324,12 @@ await fs.mkdir(DATA_DIR, { recursive: true });
 const rawPosts = await readJson(POSTS_DB_PATH, []);
 const seenHashes = new Set(await readJson(SEEN_DB_PATH, []));
 let posts = Array.isArray(rawPosts) ? rawPosts.filter(isPostEligible) : [];
-console.log([Прим_Дозор] Валидных постов после фильтра чистого старта (с 07:00 25.11.2026 ВЛД): ${posts.length});
+console.log('[Прим_Дозор] Валидных постов после фильтра чистого старта (с 07:00 25.11.2026 ВЛД): ' + posts.length);
 // 2. Собираем свежие новости из региональных лент
 const feedBatches = await Promise.all(RSS_SOURCES.map((src) => fetchRssFeed(src)));
 const incomingItems = feedBatches.flat();
-console.log([Прим_Дозор] Получено кандидатов из лент после 07:00 25.11.2026: ${incomingItems.length});
+console.log('[Прим_Дозор] Получено кандидатов из лент после 07:00 25.11.2026: ' + incomingItems.length);
 const newlyPublished = [];
-// Ограничиваем до 4 новых публикаций за один 15-минутный прогон, чтобы не спамить соцсети
 const MAX_NEW_PER_RUN = 4;
 for (const item of incomingItems) {
 if (newlyPublished.length >= MAX_NEW_PER_RUN) break;
@@ -374,14 +384,14 @@ await cleanupOldMedia(validCoverFiles);
 // 5. Получаем погоду и пересобираем статический портал (index.html, news/*.html, dzen.xml, sitemap.xml)
 const weatherText = await fetchVladivostokWeather();
 const buildResult = await buildPortal(posts, { weatherText });
-console.log([Прим_Дозор] Сайт пересобран. Опубликовано на портале: ${buildResult.totalPublished});
+console.log('[Прим_Дозор] Сайт пересобран. Опубликовано на портале: ' + buildResult.totalPublished);
 // 6. Публикуем новые материалы в Telegram, ВК, MAX и уведомляем Дзен / IndexNow
 for (const newPost of newlyPublished.reverse()) {
 try {
 await publishEverywhere(newPost);
-console.log([Прим_Дозор] Опубликовано во все каналы: ${newPost.title});
+console.log('[Прим_Дозор] Опубликовано во все каналы: ' + newPost.title);
 } catch (err) {
-console.error([Прим_Дозор] Ошибка кросспостинга "${newPost.title}":, err?.message || err);
+console.error('[Прим_Дозор] Ошибка кросспостинга "' + newPost.title + '":', err?.message || err);
 }
 }
 // 7. Отправляем обновлённые URL в IndexNow (Яндекс / Bing)
@@ -389,7 +399,7 @@ if (newlyPublished.length > 0 || buildResult.totalPublished === 0) {
 const urlsToPing = [
 'primdozor.ru',
 'primdozor.ru',
-...newlyPublished.map((p) => https://primdozor.ru{p.slug}.html)
+...newlyPublished.map((p) => 'primdozor.ru' + p.slug + '.html')
 ];
 await pingIndexNow(urlsToPing).catch((err) => {
 console.error('[Прим_Дозор] Ошибка IndexNow:', err?.message || err);
@@ -398,7 +408,7 @@ console.error('[Прим_Дозор] Ошибка IndexNow:', err?.message || er
 // 8. Сохраняем обновлённую базу постов и кэш просмотренных заголовков
 await writeJson(POSTS_DB_PATH, posts);
 await writeJson(SEEN_DB_PATH, Array.from(seenHashes).slice(-2000));
-console.log([Прим_Дозор] Цикл завершён. Новых публикаций: ${newlyPublished.length});
+console.log('[Прим_Дозор] Цикл завершён. Новых публикаций: ' + newlyPublished.length);
 }
 runAutopilot().catch((err) => {
 console.error('[Прим_Дозор] Критическая ошибка автопилота:', err);
