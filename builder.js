@@ -467,20 +467,24 @@ function buildHtml(news, weather, rates) {
   fs.writeFileSync('sitemap.xml', sm, 'utf8');
   fs.writeFileSync('robots.txt', 'User-agent: *\nAllow: /\nSitemap: https://' + HOST + '/sitemap.xml\n', 'utf8');
 
-  const cdataStart = LT + '![CDATA[';
+    const cdataStart = LT + '![CDATA[';
   const cdataEnd = ']]' + GT;
   const dzenItems = list.slice(0, 30).map(n => {
     const link = 'https://' + HOST + '/news/' + n.id + '.html';
     const pubDate = new Date(Number(n.id) || Date.now()).toUTCString();
-    const imgTag = n.cover ? tag('p', '', tag('img', 'src="https://' + HOST + '/' + esc(n.cover) + '" alt=""')) : '';
+    const shortDesc = esc(String(n.text || '').replace(/\s+/g, ' ').slice(0, 220)) + '...';
+    const imgTag = n.cover ? tag('figure', '', tag('img', 'src="https://' + HOST + '/' + esc(n.cover) + '" alt=""')) : '';
     const bodyP = String(n.text || '').split('\n\n').map(par => tag('p', '', esc(par))).join('');
-    const signP = tag('p', '', 'Читайте нас в ' + tag('a', 'href="' + SOC_URLS.tg + '"', 'Telegram') + ', ' + tag('a', 'href="' + SOC_URLS.max + '"', 'MAX') + ' и ' + tag('a', 'href="' + SOC_URLS.vk + '"', 'ВКонтакте') + '. Источник: ' + tag('a', 'href="' + link + '"', 'ИА «Прим_Дозор»') + '.');
+    const signP = tag('p', '', 'Читайте оперативные сводки Приморского края в ' + tag('a', 'href="' + SOC_URLS.tg + '"', 'Telegram') + ', ' + tag('a', 'href="' + SOC_URLS.max + '"', 'MAX') + ' и ' + tag('a', 'href="' + SOC_URLS.vk + '"', 'ВКонтакте') + '. Источник: ' + tag('a', 'href="' + link + '"', 'ИА «Прим_Дозор»') + '.');
     return tag('item', '',
       tag('title', '', esc(n.title)) +
       tag('link', '', link) +
       tag('guid', '', link) +
       tag('pubDate', '', pubDate) +
-      tag('category', '', esc(n.catLabel || 'Новости')) +
+      tag('description', '', shortDesc) +
+      tag('category', '', 'format-article') +
+      tag('category', '', 'index') +
+      tag('category', '', 'comment-all') +
       tag('enclosure', 'url="https://' + HOST + '/' + esc(n.cover) + '" type="image/jpeg"') +
       tag('content:encoded', '', cdataStart + imgTag + bodyP + signP + cdataEnd)
     );
@@ -495,6 +499,7 @@ function buildHtml(news, weather, rates) {
     )
   );
   fs.writeFileSync('dzen.xml', dzenRss, 'utf8');
+  fs.writeFileSync('robots.txt', 'User-agent: *\nAllow: /\nAllow: /dzen.xml\nSitemap: https://' + HOST + '/sitemap.xml\n', 'utf8');
 }
 
 module.exports = { buildHtml };
