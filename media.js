@@ -117,30 +117,30 @@ function detectTheme(post) {
   const isSvo = /(^|[^а-яё])сво([^а-яё]|$)|специальн(ой|ая)\s+военн(ой|ая)\s+операц|тихоокеанск(ий|ого)\s+флот|военнослужащ|участник(ам|ов|и)\s+сво|гуманитарн(ую|ой)\s+помощ/i.test(s);
 
   if (cat === 'auto') {
-    return { c1: '#0f172a', c2: '#1e3a8a', glow: '#60a5fa', tag: 'ДОРОГИ И МОСТЫ', scene: 'Реалистичная документальная фотография автомобильного моста и магистрали через бухту во Владивостоке с городским движением, Приморский край, фотожурналистика, без надписей и вывесок' };
+    return { c1: '#0f172a', c2: '#1e3a8a', glow: '#60a5fa', tag: 'ДОРОГИ И МОСТЫ', scene: 'Реалистичная документальная фотография автомобильного моста и магистрали через бухту во Владивостоке с городским движением, Приморский край, без надписей' };
   }
   if (cat === 'city') {
-    return { c1: '#042f2e', c2: '#0f766e', glow: '#2dd4bf', tag: 'КОММУНАЛЬНЫЙ ФРОНТ', scene: 'Реалистичная репортажная фотография работы городских коммунальных служб, ремонт теплотрассы и водопровода на улице Владивостока, Приморский край, без надписей и логотипов' };
+    return { c1: '#042f2e', c2: '#0f766e', glow: '#2dd4bf', tag: 'КОММУНАЛЬНЫЙ ФРОНТ', scene: 'Реалистичная репортажная фотография работы городских коммунальных служб, ремонт теплотрассы и водопровода на улице Владивостока, без надписей' };
   }
   if (cat === 'chp') {
     return { c1: '#270909', c2: '#991b1b', glow: '#f87171', tag: 'ХРОНИКА 112 И ЧП', scene: 'Реалистичный новостной репортаж, работа спасателей МЧС и экстренных служб с проблесковыми маячками на городской улице Владивостока в сумерках, без надписей' };
   }
   if (cat === 'law') {
     if (isSvo) {
-      return { c1: '#0b192c', c2: '#1e3a5f', glow: '#38bdf8', tag: 'ВЛАСТЬ, ЗАКОН И СВО', scene: 'Реалистичная документальная фотография кораблей Тихоокеанского флота в бухте Владивостока на рассвете, торжественная атмосфера, без надписей и логотипов' };
+      return { c1: '#0b192c', c2: '#1e3a5f', glow: '#38bdf8', tag: 'ВЛАСТЬ, ЗАКОН И СВО', scene: 'Реалистичная документальная фотография кораблей Тихоокеанского флота в бухте Владивостока на рассвете, без надписей' };
     }
-    return { c1: '#090d16', c2: '#1d4ed8', glow: '#93c5fd', tag: 'ВЛАСТЬ, ЗАКОН И СВО', scene: 'Реалистичная фотография здания администрации Приморского края и центральной площади во Владивостоке днём, официальная пресс-съёмка, без надписей' };
+    return { c1: '#090d16', c2: '#1d4ed8', glow: '#93c5fd', tag: 'ВЛАСТЬ, ЗАКОН И СВО', scene: 'Реалистичная фотография здания администрации Приморского края и центральной площади во Владивостоке днём, без надписей' };
   }
   if (cat === 'econ') {
     return { c1: '#1c1917', c2: '#92400e', glow: '#fbbf24', tag: 'ЭКОНОМИКА И ПОРТ', scene: 'Реалистичная документальная фотография морского торгового порта Владивостока, портальные краны и контейнеровозы у причала бухты Золотой Рог, без надписей' };
   }
   if (cat === 'med') {
-    return { c1: '#062038', c2: '#0369a1', glow: '#7dd3fc', tag: 'ЗДРАВООХРАНЕНИЕ', scene: 'Реалистичная фотография современного медицинского центра и автомобиля скорой помощи во Владивостоке, чистая новостная фотосъёмка, без надписей' };
+    return { c1: '#062038', c2: '#0369a1', glow: '#7dd3fc', tag: 'ЗДРАВООХРАНЕНИЕ', scene: 'Реалистичная фотография современного медицинского центра и автомобиля скорой помощи во Владивостоке, без надписей' };
   }
   if (cat === 'sport') {
     return { c1: '#1e1b4b', c2: '#5b21b6', glow: '#c084fc', tag: 'СПОРТ И СОБЫТИЯ', scene: 'Реалистичная фотография спортивного комплекса и городской набережной во Владивостоке во время массового праздника, без надписей' };
   }
-  return { c1: '#0f172a', c2: '#1e293b', glow: '#cbd5e1', tag: String(post.catLabel || 'ЛЮДИ ПРИМОРЬЯ').toUpperCase(), scene: 'Реалистичная панорамная фотография Владивостока, сопок и бухты Золотой Рог в Приморском крае, новостной репортаж, без надписей' };
+  return { c1: '#0f172a', c2: '#1e293b', glow: '#cbd5e1', tag: String(post.catLabel || 'ЛЮДИ ПРИМОРЬЯ').toUpperCase(), scene: 'Реалистичная панорамная фотография Владивостока, сопок и бухты Золотой Рог в Приморском крае, без надписей' };
 }
 
 async function fetchTopicPhoto(scenePrompt, size) {
@@ -169,40 +169,97 @@ async function fetchTopicPhoto(scenePrompt, size) {
   return null;
 }
 
+function drawGoldenBridgeArt(ctx, w, h) {
+  const sky = ctx.createLinearGradient(0, 0, w, h);
+  sky.addColorStop(0, '#070f1d');
+  sky.addColorStop(0.55, '#0f2744');
+  sky.addColorStop(1, '#1e3a8a');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  const glow = ctx.createRadialGradient(w * 0.78, h * 0.55, 10, w * 0.78, h * 0.55, 340);
+  glow.addColorStop(0, 'rgba(245, 158, 11, 0.34)');
+  glow.addColorStop(1, 'rgba(245, 158, 11, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = '#091526';
+  ctx.beginPath();
+  ctx.moveTo(w * 0.45, h);
+  ctx.quadraticCurveTo(w * 0.62, h * 0.58, w * 0.82, h * 0.68);
+  ctx.quadraticCurveTo(w * 0.92, h * 0.52, w, h * 0.6);
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fill();
+
+  const sea = ctx.createLinearGradient(0, h * 0.78, 0, h);
+  sea.addColorStop(0, '#081b33');
+  sea.addColorStop(1, '#040d1a');
+  ctx.fillStyle = sea;
+  ctx.fillRect(0, h * 0.78, w, h * 0.22);
+
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(w * 0.48, h * 0.72);
+  ctx.quadraticCurveTo(w * 0.74, h * 0.63, w, h * 0.7);
+  ctx.stroke();
+
+  const drawPylon = (px, topY) => {
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(px - 16, h * 0.82);
+    ctx.lineTo(px - 4, topY);
+    ctx.lineTo(px + 4, topY);
+    ctx.lineTo(px + 16, h * 0.82);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(251, 191, 36, 0.32)';
+    ctx.lineWidth = 1;
+    for (let k = 1; k <= 7; k++) {
+      ctx.beginPath();
+      ctx.moveTo(px, topY + k * 8);
+      ctx.lineTo(px - k * 19, h * 0.69);
+      ctx.moveTo(px, topY + k * 8);
+      ctx.lineTo(px + k * 19, h * 0.69);
+      ctx.stroke();
+    }
+  };
+  drawPylon(w * 0.66, h * 0.14);
+  drawPylon(w * 0.88, h * 0.18);
+}
+
 async function ensureHeroBanner() {
   if (!fs.existsSync('covers')) fs.mkdirSync('covers', { recursive: true });
   const vl = new Date(Date.now() + 10 * 3600000);
   const m = vl.getUTCMonth() + 1;
-  const seasonTag = (m === 12 || m <= 2) ? 'winter' : (m >= 3 && m <= 5) ? 'spring' : (m >= 6 && m <= 8) ? 'summer' : 'autumn';
+  const seasonTag = (m === 12 || m <= 2) ? 'winter_v2' : (m >= 3 && m <= 5) ? 'spring_v2' : (m >= 6 && m <= 8) ? 'summer_v2' : 'autumn_v2';
   const bannerFile = 'covers/hero_banner.jpg';
   const metaFile = 'covers/hero_banner.txt';
   if (fs.existsSync(bannerFile) && fs.existsSync(metaFile) && fs.readFileSync(metaFile, 'utf8').trim() === seasonTag) {
     return bannerFile;
   }
-  const seasonPrompt = {
-    winter: 'Широкоформатная реалистичная панорамная фотография Золотого моста через бухту Золотой Рог во Владивостоке в зимних вечерних сумерках, золотистая подсветка пилонов моста справа, чистое тёмно-синее пространство слева, без текста и логотипов',
-    spring: 'Широкоформатная реалистичная панорамная фотография Золотого моста через бухту Золотой Рог во Владивостоке на весеннем закате, мост справа, чистое тёмное небо слева, без текста и логотипов',
-    summer: 'Широкоформатная реалистичная панорамная фотография Золотого моста во Владивостоке летним вечером, подсветка вантового моста справа, тёмно-синий градиент слева, без текста и логотипов',
-    autumn: 'Широкоформатная реалистичная панорамная фотография Золотого моста через бухту Золотой Рог во Владивостоке золотым осенним вечером, мост справа, чистое тёмно-синее пространство слева, без текста и логотипов'
-  };
-  const photo = await fetchTopicPhoto(seasonPrompt[seasonTag], '1536x1024');
+  const w = 1400, h = 210;
+  const canvas = createCanvas(w, h);
+  const ctx = canvas.getContext('2d');
+  drawGoldenBridgeArt(ctx, w, h);
+
+  const photo = await fetchTopicPhoto('Широкоформатная реалистичная панорамная фотография Золотого моста через бухту Золотой Рог во Владивостоке в вечерних сумерках, подсветка пилонов моста справа, без надписей', '1536x1024');
   if (photo) {
-    const w = 1400, h = 220;
-    const canvas = createCanvas(w, h);
-    const ctx = canvas.getContext('2d');
     const scale = w / photo.width;
     const dh = photo.height * scale;
     ctx.drawImage(photo, 0, -(dh - h) * 0.45, w, dh);
-    const fade = ctx.createLinearGradient(0, 0, w, 0);
-    fade.addColorStop(0, 'rgba(9, 13, 22, 0.94)');
-    fade.addColorStop(0.55, 'rgba(9, 13, 22, 0.64)');
-    fade.addColorStop(1, 'rgba(9, 13, 22, 0.16)');
-    ctx.fillStyle = fade;
-    ctx.fillRect(0, 0, w, h);
-    fs.writeFileSync(bannerFile, canvas.toBuffer('image/jpeg', { quality: 0.92 }));
-    fs.writeFileSync(metaFile, seasonTag, 'utf8');
   }
-  return fs.existsSync(bannerFile) ? bannerFile : '';
+  const fade = ctx.createLinearGradient(0, 0, w, 0);
+  fade.addColorStop(0, 'rgba(7, 15, 29, 0.94)');
+  fade.addColorStop(0.55, 'rgba(7, 15, 29, 0.62)');
+  fade.addColorStop(1, 'rgba(7, 15, 29, 0.14)');
+  ctx.fillStyle = fade;
+  ctx.fillRect(0, 0, w, h);
+
+  fs.writeFileSync(bannerFile, canvas.toBuffer('image/jpeg', { quality: 0.92 }));
+  fs.writeFileSync(metaFile, seasonTag, 'utf8');
+  return bannerFile;
 }
 
 async function drawThemedCover(post) {
