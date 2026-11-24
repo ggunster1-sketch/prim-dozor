@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Кабинет редактора — Прим_Дозор</title>
+<link rel="stylesheet" href="/style.css?v=12">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="/" class="brand"><span class="brand-mark">ПРИМ_ДОЗОР</span><span class="brand-sub">Кабинет главного редактора</span></a>
+    <a href="/" class="soc-pill">← На главную</a>
+  </div>
+</header>
+
+<div class="wrap" style="max-width:740px;margin-top:24px">
+  <div class="widget" style="padding:24px">
+    <h1 style="font-size:20px;margin-bottom:6px">Публикация статьи или рекламы</h1>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Заполните форму с телефона или ПК, скопируйте готовый блок и вставьте его в начало файла <code>news.json</code> на GitHub сразу после первой скобки <code>[</code>.</p>
+
+    <label style="display:flex;align-items:center;gap:8px;background:var(--bg);padding:10px 12px;border-radius:8px;margin-bottom:14px;cursor:pointer;font-weight:700;font-size:13.5px">
+      <input type="checkbox" id="is-ad" onchange="document.getElementById('ad-fields').style.display=this.checked?'block':'none'">
+      Это рекламный или партнёрский материал (автомаркировка 38-ФЗ)
+    </label>
+
+    <div id="ad-fields" style="display:none;background:var(--accent-bg);padding:12px;border-radius:8px;margin-bottom:14px">
+      <label style="font-size:12px;font-weight:700">Рекламодатель (ООО / ИП и ИНН)</label>
+      <input id="ad-org" class="input" placeholder="Например: ИП Иванов И.И., ИНН 254000000000">
+      <label style="font-size:12px;font-weight:700">Токен erid (из ОРД Яндекса, VK или Озон)</label>
+      <input id="ad-erid" class="input" placeholder="Например: 2VtzquW1234" style="margin-bottom:0">
+    </div>
+
+    <label style="font-size:12px;font-weight:700">Рубрика</label>
+    <select id="cat" class="input">
+      <option value="chp|ЧП и 112">ЧП и 112</option>
+      <option value="city|Город и ЖКХ">Город и ЖКХ</option>
+      <option value="law|Законы и Власть">Законы и Власть</option>
+      <option value="svo|СВО и Защита">СВО и Защита</option>
+      <option value="family|Общество">Общество</option>
+      <option value="sport|Спорт и Афиша">Спорт и Афиша</option>
+    </select>
+
+    <label style="font-size:12px;font-weight:700">Город Приморского края</label>
+    <input id="city" class="input" value="Владивосток">
+
+    <label style="font-size:12px;font-weight:700">Возрастная маркировка (436-ФЗ)</label>
+    <select id="age" class="input">
+      <option value="16+">16+</option>
+      <option value="0+">0+</option>
+      <option value="6+">6+</option>
+      <option value="12+">12+</option>
+      <option value="18+">18+</option>
+    </select>
+
+    <label style="font-size:12px;font-weight:700">Заголовок (до 85 символов)</label>
+    <input id="title" class="input" placeholder="Заголовок статьи или спецпроекта">
+
+    <label style="font-size:12px;font-weight:700">Короткие тезисы (Главное)</label>
+    <input id="tldr" class="input" placeholder="• Тезис 1 • Тезис 2">
+
+    <label style="font-size:12px;font-weight:700">Полный развёрнутый текст</label>
+    <textarea id="text" class="input" rows="7" placeholder="Введите полный текст (абзацы разделяйте Enter)..."></textarea>
+
+    <label style="font-size:12px;font-weight:700">Ссылка на иллюстрацию (необязательно — если пусто, подберётся по теме)</label>
+    <input id="img" class="input" placeholder="https://...">
+
+    <button class="btn-cta" style="width:100%;padding:12px;font-size:15px" onclick="makeJson()">Сформировать код статьи</button>
+
+    <div id="out-wrap" style="display:none;margin-top:18px">
+      <p style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--accent)">Скопируйте код и вставьте в начало news.json сразу после [</p>
+      <textarea id="out" class="input" rows="8" readonly></textarea>
+      <button class="soc-pill" onclick="navigator.clipboard.writeText(document.getElementById('out').value);alert('Скопировано!')">📋 Копировать код</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function makeJson() {
+  const isAd = document.getElementById('is-ad').checked;
+  let [cat, catLabel] = document.getElementById('cat').value.split('|');
+  const org = document.getElementById('ad-org').value.trim();
+  const erid = document.getElementById('ad-erid').value.trim();
+  if (isAd && (!org || !erid)) return alert('Для рекламы по 38-ФЗ обязательно укажите рекламодателя (ИНН) и токен erid!');
+
+  const vl = new Date(Date.now() + new Date().getTimezoneOffset() * 60000 + 36000000);
+  let bodyText = document.getElementById('text').value.trim();
+  let srcLine = 'Редакция «Прим_Дозор»';
+
+  if (isAd) {
+    catLabel = 'Партнёрский материал';
+    srcLine = 'Реклама. ' + org + ' • erid: ' + erid;
+    bodyText = 'Реклама. ' + org + ' (erid: ' + erid + ')\n\n' + bodyText + '\n\nРекламодатель: ' + org + ' • Токен ЕРИР (erid): ' + erid;
+  }
+
+  if (/\b(Meta|Instagram|Facebook|Инстаграм|Фейсбук)\b/i.test(bodyText)) {
+    bodyText += '\n\n*Деятельность Meta (Facebook и Instagram) запрещена в России как экстремистская.';
+  }
+
+  const obj = {
+    id: Date.now(),
+    manual: true,
+    isPartner: isAd,
+    date: 'Сегодня, ' + String(vl.getHours()).padStart(2, '0') + ':' + String(vl.getMinutes()).padStart(2, '0'),
+    cat,
+    catLabel,
+    city: document.getElementById('city').value.trim() || 'Владивосток',
+    age: document.getElementById('age').value,
+    title: document.getElementById('title').value.trim(),
+    tldr: document.getElementById('tldr').value.trim(),
+    tgText: bodyText.slice(0, 520),
+    text: bodyText,
+    src: srcLine,
+    cover: document.getElementById('img').value.trim()
+  };
+  if (!obj.title || !obj.text) return alert('Заполните заголовок и текст!');
+  document.getElementById('out').value = JSON.stringify(obj, null, 2) + ',';
+  document.getElementById('out-wrap').style.display = 'block';
+}
+</script>
