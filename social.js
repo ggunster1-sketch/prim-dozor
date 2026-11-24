@@ -5,9 +5,8 @@ const SOCIAL_LINKS = {
   tgDirect: 'https://t.me',
   vkWeb: 'https://vk.com',
   maxWeb: 'https://max.ru',
-  dzenWeb: 'https://dzen.ru/prim_dozor'
+  dzenWeb: 'https://dzen.ru'
 };
-
 
 function escTg(s) {
   return String(s || '')
@@ -19,7 +18,7 @@ function escTg(s) {
 function hasForeignGlitch(text) {
   const s = String(text || '');
   const latWords = s.match(/\b[A-Za-z]{4,}\b/g) || [];
-  const allowed = new Set(['primdozor', 'telegram', 'https', 'http', 'vvo', 'toyota', 'nissan', 'honda', 'subaru', 'suzuki', 'mazda', 'mitsubishi', 'lexus', 'hyundai', 'kia', 'isuzu', 'sitrak', 'howo', 'kamaz', 'fesco', 'dns', 'cagmo', 'meta', 'facebook', 'instagram', 'covid', 'max']);
+  const allowed = new Set(['primdozor', 'telegram', 'https', 'http', 'vvo', 'toyota', 'nissan', 'honda', 'subaru', 'suzuki', 'mazda', 'mitsubishi', 'lexus', 'hyundai', 'kia', 'isuzu', 'sitrak', 'howo', 'kamaz', 'fesco', 'dns', 'cagmo', 'meta', 'facebook', 'instagram', 'covid', 'max', 'dzen']);
   const badLat = latWords.filter(w => !allowed.has(w.toLowerCase()));
   return badLat.length > 3;
 }
@@ -60,6 +59,7 @@ function buildPlainFooter(host, artUrl, city) {
     '👉 Читайте нас в Telegram: ' + SOCIAL_LINKS.tgWeb + '\n' +
     '👉 Читайте нас в ВК: ' + SOCIAL_LINKS.vkWeb + '\n' +
     '👉 Читайте нас в MAX: ' + SOCIAL_LINKS.maxWeb + '\n' +
+    '👉 Читайте нас в Дзен: ' + SOCIAL_LINKS.dzenWeb + '\n' +
     '📲 Вопросы и новости: ' + SOCIAL_LINKS.tgDirect + '\n' +
     '🤝 Сотрудничество: prim_dozor@internet.ru\n\n' +
     cityTag + ' #ПриморскийКрай #ПримДозор';
@@ -134,9 +134,10 @@ async function postToVk(post, vkToken, host) {
     }
 
     const artUrl = 'https://' + host + '/news/' + post.id + '.html';
+    const unifiedLead = smartLead(post.tgText || post.text, 620);
     const bodyText = post.skipTg
       ? String(post.text || '') + '\n\n👉 Наш портал: https://' + host + '/'
-      : post.title + ' (' + (post.age || '18+') + ')\n\n' + smartLead(post.tgText || post.text, 900) + buildPlainFooter(host, artUrl, post.city);
+      : post.title + ' (' + (post.age || '18+') + ')\n\n' + unifiedLead + buildPlainFooter(host, artUrl, post.city);
 
     const params = new URLSearchParams();
     params.set('owner_id', '-' + groupId);
@@ -158,9 +159,10 @@ async function postToMax(post, maxToken, maxChatId, host) {
   if (!maxToken || !maxChatId || !post) return false;
   try {
     const artUrl = 'https://' + host + '/news/' + post.id + '.html';
+    const unifiedLead = smartLead(post.tgText || post.text, 620);
     const text = post.skipTg
       ? String(post.text || '') + '\n\n👉 Наш портал: https://' + host + '/'
-      : post.title + ' (' + (post.age || '18+') + ')\n\n' + smartLead(post.tgText || post.text, 850) + buildPlainFooter(host, artUrl, post.city);
+      : post.title + ' (' + (post.age || '18+') + ')\n\n' + unifiedLead + buildPlainFooter(host, artUrl, post.city);
     const res = await fetch('https://max.ru' + encodeURIComponent(maxChatId), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': maxToken },
@@ -179,10 +181,11 @@ async function broadcastPosts(posts, tokens, host) {
     const rawLead = p.tgText || p.text;
     if (!p.skipTg && hasForeignGlitch(p.title + ' ' + rawLead)) continue;
     const artUrl = 'https://' + host + '/news/' + p.id + '.html';
+    const unifiedLead = smartLead(rawLead, 620);
 
     if (!p.skipTg && tgToken) {
       const caption = '<b>' + escTg(p.title) + '</b> (' + escTg(p.age || '18+') + ')\n\n' +
-        escTg(smartLead(rawLead, 620)) + buildTgFooter(host, artUrl, p.city);
+        escTg(unifiedLead) + buildTgFooter(host, artUrl, p.city);
       if (p.video && fs.existsSync(p.video)) {
         await sendTgMedia(tgToken, caption, p.video, true);
       } else if (p.cover && fs.existsSync(p.cover)) {
