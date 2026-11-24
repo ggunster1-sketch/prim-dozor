@@ -1,7 +1,7 @@
 /**
  * ИА «Прим_Дозор» (primdozor.ru)
- * Модуль app.js (Блок 3) — Главный оркестратор автопилота (запуск каждые 15 мин):
- * сбор новостей Приморья, строгая фильтрация чистого старта с 07:00 25.11.2026 ВЛД,
+ * Модуль app.js (Блок 1 из 3 исправленных) — Главный оркестратор автопилота:
+ * сбор новостей Приморья, чистый старт с 07:00 25.11.2026 ВЛД,
  * ИИ-редактура (AI_API_KEY), генерация обложек, сборка сайта и кросспостинг.
  */
 
@@ -20,7 +20,6 @@ const AI_API_KEY = process.env.AI_API_KEY || '';
 const AI_API_URL = process.env.AI_API_URL || 'https://openai.com';
 const AI_MODEL = process.env.AI_MODEL || 'gpt-4o-mini';
 
-// Региональные RSS-ленты и источники новостей Приморского края
 const RSS_SOURCES = [
   { name: 'Primpress', url: 'https://primpress.ru' },
   { name: 'VL.ru Новости', url: 'https://newsvl.ru' },
@@ -31,7 +30,6 @@ const RSS_SOURCES = [
 
 const FORBIDDEN_YEARS_RE = /\b(2018|2019|2020|2021|2022|2023|2024|2025)\b/g;
 
-// Таблица транслитерации для генерации чистых ЧПУ-ссылок (/news/slug.html)
 const CYR_TO_LAT = {
   а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh',
   з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o',
@@ -68,9 +66,6 @@ function decodeHtmlEntities(str = '') {
     .trim();
 }
 
-/**
- * Загрузка JSON-файла с безопасным откатом к значению по умолчанию
- */
 async function readJson(filePath, fallback) {
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
@@ -85,9 +80,6 @@ async function writeJson(filePath, data) {
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-/**
- * Определяет город Приморского края по тексту новости
- */
 function detectCity(text = '') {
   const lower = text.toLowerCase();
   if (lower.includes('уссурийск')) return 'Уссурийск';
@@ -115,9 +107,6 @@ function detectCity(text = '') {
   return 'Весь Приморский край';
 }
 
-/**
- * Автоматически подбирает одну из 10 фирменных рубрик по смыслу текста
- */
 function detectRubric(text = '') {
   const t = text.toLowerCase();
   if (/(срочно|молния|экстренн|штормов|чс|внимание)/i.test(t)) return 'Молния • Главное';
@@ -132,9 +121,6 @@ function detectRubric(text = '') {
   return 'Вся лента 24/7';
 }
 
-/**
- * Нормализует телефон ГИБДД Приморского края на актуальный: +7 (423) 249-09-21
- */
 function enforceActualContactsAndLanguage(text = '') {
   return String(text)
     .replace(/(\+7|8)\s*\(?423\)?\s*249[\s-]*09[\s-]*21/g, '+7 (423) 249-09-21')
@@ -146,18 +132,16 @@ function enforceActualContactsAndLanguage(text = '') {
     .trim();
 }
 
-/**
- * Получает актуальную сводку погоды во Владивостоке (Open-Meteo, без ключей)
- */
 async function fetchVladivostokWeather() {
   try {
     const url = 'https://open-meteo.com';
     const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (!res.ok) throw new Error('Weather HTTP error');
     const data = await res.json();
-    const temp = Math.round(data?.current?.temperature_2m ?? 0);
-    const wind = Math.round(data?.current?.wind_speed_10m ?? 4);
-    const code = Number(data?.current?.weather_code ?? 0);
+    const current = data && data.current ? data.current : {};
+    const temp = Math.round(current.temperature_2m !== undefined ? current.temperature_2m : 0);
+    const wind = Math.round(current.wind_speed_10m !== undefined ? current.wind_speed_10m : 4);
+    const code = Number(current.weather_code !== undefined ? current.weather_code : 0);
 
     let desc = 'Ясно';
     if (code >= 71 && code <= 77) desc = 'Снег';
@@ -172,9 +156,6 @@ async function fetchVladivostokWeather() {
   }
 }
 
-/**
- * Парсит один RSS-поток без внешних тяжёлых библиотек
- */
 async function fetchRssFeed(source) {
   try {
     const res = await fetch(source.url, {
@@ -198,20 +179,23 @@ async function fetchRssFeed(source) {
       const enclosureMatch = rawItem.match(/<enclosure[^>]+url=["']([^"']+)["']/i);
       const mediaMatch = rawItem.match(/<media:content[^>]+url=["']([^"']+)["']/i);
 
-      const title = decodeHtmlEntities(titleMatch ? titleMatch : '');
-      const link = decodeHtmlEntities(linkMatch ? linkMatch : '');
+      const title = decodeHtmlEntities(titleMatch && titleMatch.at(1) ? titleMatch.at(1) : '');
+      const link = decodeHtmlEntities(linkMatch && linkMatch.at(1) ? linkMatch.at(1) : '');
       const rawBody = decodeHtmlEntities(
-        contentMatch ? contentMatch : (descMatch ? descMatch : '')
+        contentMatch && contentMatch.at(1)
+          ? contentMatch.at(1)
+          : (descMatch && descMatch.at(1) ? descMatch.at(1) : '')
       );
-      const pubDateStr = decodeHtmlEntities(pubDateMatch ? pubDateMatch : '');
-      const imageUrl = enclosureMatch ? enclosureMatch : (mediaMatch ? mediaMatch : null);
+      const pubDateStr = decodeHtmlEntities(pubDateMatch && pubDateMatch.at(1) ? pubDateMatch.at(1) : '');
+      const imageUrl = enclosureMatch && enclosureMatch.at(1)
+        ? enclosureMatch.at(1)
+        : (mediaMatch && mediaMatch.at(1) ? mediaMatch.at(1) : null);
 
       if (!title || title.length < 15) continue;
 
       const parsedDate = pubDateStr ? new Date(pubDateStr) : new Date();
       const publishedAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
 
-      // Отсекаем всё, что опубликовано до чистого старта 07:00 25.11.2026 ВЛД
       if (publishedAt.getTime() < CLEAN_START_UTC) continue;
 
       items.push({
@@ -230,10 +214,6 @@ async function fetchRssFeed(source) {
   }
 }
 
-/**
- * Переписывает новость через AI_API_KEY в фирменном стиле ИА «Прим_Дозор»
- * строго на русском языке, с проверкой рубрики и города.
- */
 async function rewriteNewsWithAi(rawItem) {
   const combinedRaw = rawItem.title + ' ' + rawItem.rawBody;
   const fallbackCity = detectCity(combinedRaw);
@@ -243,23 +223,27 @@ async function rewriteNewsWithAi(rawItem) {
     const cleanTitle = enforceActualContactsAndLanguage(sanitizeCoverText(rawItem.title));
     const cleanText = enforceActualContactsAndLanguage(rawItem.rawBody || rawItem.title);
     const sentences = cleanText.split(/(?<=[.!?])\s+/).filter(Boolean);
-const summary = sentences.slice(0, 2).join(' ').slice(0, 240) || cleanTitle;
-let body = sentences.slice(0, 6).join('\n\n') || summary;
-if (fallbackRubric === 'Дороги и мосты' && /гибдд|дтп|авар/i.test(body)) {
-body = body + '\n\nТелефон дежурной части ГИБДД Приморского края: ' + LINKS.gibddPhone + '.';
-}
-return {
-title: cleanTitle,
-summary,
-body,
-rubric: fallbackRubric,
-city: fallbackCity
-};
-};
-if (!AI_API_KEY) {
-return fallbackResult();
-}
-const systemPrompt = [
+    const summary = sentences.slice(0, 2).join(' ').slice(0, 240) || cleanTitle;
+    let body = sentences.slice(0, 6).join('\n\n') || summary;
+
+    if (fallbackRubric === 'Дороги и мосты' && /гибдд|дтп|авар/i.test(body)) {
+      body = body + '\n\nТелефон дежурной части ГИБДД Приморского края: ' + LINKS.gibddPhone + '.';
+    }
+
+    return {
+      title: cleanTitle,
+      summary,
+      body,
+      rubric: fallbackRubric,
+      city: fallbackCity
+    };
+  };
+
+  if (!AI_API_KEY) {
+    return fallbackResult();
+  }
+
+  const systemPrompt = [
 'Ты — выпускающий редактор информационного агентства «Прим_Дозор» (primdozor.ru, Владивосток и Приморский край).',
 'Перепиши исходную новость в строгом, живом, информативном стиле регионального СМИ (18+).',
 'ОБЯЗАТЕЛЬНЫЕ ПРАВИЛА:',
@@ -293,10 +277,11 @@ content: 'Заголовок: ' + rawItem.title + '\nТекст: ' + rawItem.raw
 });
 if (!res.ok) return fallbackResult();
 const data = await res.json();
-const content = data?.choices?.?.message?.content || '';
+const firstChoice = Array.isArray(data && data.choices) ? data.choices.at(0) : null;
+const content = firstChoice && firstChoice.message && firstChoice.message.content ? firstChoice.message.content : '';
 const jsonMatch = content.match(/{[\s\S]*}/);
 if (!jsonMatch) return fallbackResult();
-const parsed = JSON.parse(jsonMatch);
+const parsed = JSON.parse(jsonMatch.at(0));
 const validRubric = RUBRICS.includes(parsed.rubric) ? parsed.rubric : fallbackRubric;
 const validCity = CITIES.includes(parsed.city) ? parsed.city : fallbackCity;
 const title = enforceActualContactsAndLanguage(parsed.title || rawItem.title);
@@ -314,18 +299,13 @@ city: validCity
 return fallbackResult();
 }
 }
-/**
-• Основной цикл автопилота (запускается по крону каждые 15 минут)
-*/
 export async function runAutopilot() {
 console.log('[Прим_Дозор] Запуск цикла автопилота...');
 await fs.mkdir(DATA_DIR, { recursive: true });
-// 1. Загружаем базу и сразу проводим жёсткую зачистку всего, что до 07:00 25.11.2026 ВЛД
 const rawPosts = await readJson(POSTS_DB_PATH, []);
 const seenHashes = new Set(await readJson(SEEN_DB_PATH, []));
 let posts = Array.isArray(rawPosts) ? rawPosts.filter(isPostEligible) : [];
 console.log('[Прим_Дозор] Валидных постов после фильтра чистого старта (с 07:00 25.11.2026 ВЛД): ' + posts.length);
-// 2. Собираем свежие новости из региональных лент
 const feedBatches = await Promise.all(RSS_SOURCES.map((src) => fetchRssFeed(src)));
 const incomingItems = feedBatches.flat();
 console.log('[Прим_Дозор] Получено кандидатов из лент после 07:00 25.11.2026: ' + incomingItems.length);
@@ -354,7 +334,6 @@ publishedAt: item.publishedAt,
 sourceImageUrl: item.imageUrl || null
 };
 if (!isPostEligible(candidatePost)) continue;
-// Генерируем фирменную обложку 1200x630 на русском языке
 const cover = await generateNewsCover({
 id: candidatePost.id,
 title: candidatePost.title,
@@ -369,32 +348,27 @@ candidatePost.coverFilePath = cover.filePath;
 posts.unshift(candidatePost);
 newlyPublished.push(candidatePost);
 }
-// 3. Сортируем от свежих к ранним и оставляем последние 120 материалов
 posts = posts
 .filter(isPostEligible)
 .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
 .slice(0, 120);
-// 4. Очищаем старые обложки, которых нет в актуальной ленте
 const validCoverFiles = new Set(
 posts
 .map((p) => (p.coverRelative ? path.basename(p.coverRelative) : null))
 .filter(Boolean)
 );
 await cleanupOldMedia(validCoverFiles);
-// 5. Получаем погоду и пересобираем статический портал (index.html, news/*.html, dzen.xml, sitemap.xml)
 const weatherText = await fetchVladivostokWeather();
 const buildResult = await buildPortal(posts, { weatherText });
 console.log('[Прим_Дозор] Сайт пересобран. Опубликовано на портале: ' + buildResult.totalPublished);
-// 6. Публикуем новые материалы в Telegram, ВК, MAX и уведомляем Дзен / IndexNow
 for (const newPost of newlyPublished.reverse()) {
 try {
 await publishEverywhere(newPost);
 console.log('[Прим_Дозор] Опубликовано во все каналы: ' + newPost.title);
 } catch (err) {
-console.error('[Прим_Дозор] Ошибка кросспостинга "' + newPost.title + '":', err?.message || err);
+console.error('[Прим_Дозор] Ошибка кросспостинга "' + newPost.title + '":', err && err.message ? err.message : err);
 }
 }
-// 7. Отправляем обновлённые URL в IndexNow (Яндекс / Bing)
 if (newlyPublished.length > 0 || buildResult.totalPublished === 0) {
 const urlsToPing = [
 'primdozor.ru',
@@ -402,10 +376,9 @@ const urlsToPing = [
 ...newlyPublished.map((p) => 'primdozor.ru' + p.slug + '.html')
 ];
 await pingIndexNow(urlsToPing).catch((err) => {
-console.error('[Прим_Дозор] Ошибка IndexNow:', err?.message || err);
+console.error('[Прим_Дозор] Ошибка IndexNow:', err && err.message ? err.message : err);
 });
 }
-// 8. Сохраняем обновлённую базу постов и кэш просмотренных заголовков
 await writeJson(POSTS_DB_PATH, posts);
 await writeJson(SEEN_DB_PATH, Array.from(seenHashes).slice(-2000));
 console.log('[Прим_Дозор] Цикл завершён. Новых публикаций: ' + newlyPublished.length);
