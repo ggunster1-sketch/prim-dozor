@@ -17,6 +17,17 @@ jobs:
         with:
           node-version: '20'
       - run: npm install
+      - name: Автоисправление контактов и языка перед сборкой
+        run: |
+          for f in template.html sitegen.js config.js bot.js index.html; do
+            if [ -f "$f" ]; then
+              sed -i 's/231-09-08/249-09-21/g' "$f"
+              sed -i 's/Читайте нас in Telegram/Читайте нас в Телеграм/g' "$f"
+              sed -i 's/Читайте нас в Telegram/Читайте нас в Телеграм/g' "$f"
+              sed -i 's/Читайте нас в MAX/Читайте нас в МАКС/g' "$f"
+              sed -i 's/<html lang="ru">/<html lang="ru" translate="no" class="notranslate">/g' "$f"
+            fi
+          done
       - env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
