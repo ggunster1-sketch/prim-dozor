@@ -138,6 +138,10 @@ function fixTypography(text) {
     .replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+function hasOldYear(text) {
+  return /\b20(1[0-9]|2[0-5])\b/.test(String(text || ''));
+}
+
 function isDuplicate(title, existingList) {
   const words = s => new Set(String(s || '').toLowerCase().replace(/[^а-яёa-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3));
   const w1 = words(title);
@@ -196,17 +200,28 @@ async function fetchWeatherAndRates() {
 }
 async function rewriteNews(raw) {
   if (!AI_KEY) return null;
+  const vl = new Date(Date.now() + 10 * 3600000);
+  const todayRu = vl.getUTCDate() + '.' + String(vl.getUTCMonth() + 1).padStart(2, '0') + '.' + vl.getUTCFullYear();
   const prompt = [
-    'Ты главный редактор информационного агентства Приморского края «Прим_Дозор».',
-    'Напиши глубокую, структурированную, SEO-оптимизированную журналистскую статью (5-6 содержательных абзацев, 1600-2200 символов) безупречным русским языком. Строго запрещены любые английские слова и вставки (кроме общепринятых марок автомобилей или аббревиатур). Сохрани все факты, улицы, номера домов, суммы и официальные комментарии ведомств без потери смысла.',
-    'Также напиши отдельный информативный пост для Telegram-канала (tgText: 2-3 плотных абзаца, 550-720 символов, строго на чистом русском языке, без смайлов и воды).',
-    'РЕДАКЦИОННАЯ ПОЛИТИКА И ЗАКОН РФ: Материал публикуется от лица редакции ИА «Прим_Дозор». Перерабатывай факты своими словами (ст. 1274 ГК РФ). Указывай официальное ведомство при цитировании (МВД, МЧС, Прокуратура, СК, Правительство Приморского края). Строго соблюдай законы РФ (152-ФЗ, 38-ФЗ, 436-ФЗ).',
-    'ГОСУДАРСТВЕННАЯ ПОЗИЦИЯ: Уважительно и патриотично освещай поддержку Вооружённых Сил РФ, участников СВО, ветеранов и их семей.',
-    'СТРОГИЙ ЗАПРЕТ РЕКЛАМЫ: Любые коммерческие предложения, продвижение застройщиков, услуги клиник, массаж, скидки, акции, розыгрыши и рекламу чужих каналов отклоняй словом SKIP.',
-    'СТРОГИЙ ФИЛЬТР ГЕОГРАФИИ: Публикуй ТОЛЬКО события Приморского края (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Спасск-Дальний, Партизанск, Дальнегорск, Лесозаводск, Хасан и др.), важные федеральные решения РФ, а также события СВО. Другие регионы РФ отклоняй словом SKIP.',
-    'Выбери точную рубрику: chp (Происшествия), city (Город и ЖКХ), law (Власть и закон), econ (Экономика и бизнес), auto (Авто и дороги), family (Общество), med (Медицина), sport (Спорт и культура). Если новость срочная (ЧП, криминал, штормовое МЧС, крупная авария ЖКХ, перекрытие трасс) — ставь "urgent": true.',
+    'Ты главный редактор информационного агентства Приморского края «Прим_Дозор». Сегодня ' + todayRu + '.',
+    'Напиши сильную, содержательную, SEO-оптимизированную журналистскую статью (5-6 плотных абзацев, 1600-2200 символов) безупречным русским языком. Строго запрещены любые английские слова и вставки (кроме общепринятых марок автомобилей или аббревиатур). Сохрани все факты, улицы, номера домов, суммы и официальные комментарии ведомств без потери смысла.',
+    'Также напиши единый информативный пост для всех соцсетей (tgText: 2-3 плотных абзаца, 550-650 символов, строго на чистом русском языке, без смайлов и воды).',
+    'СТИЛЬ И ЗАКОН РФ: Называй вещи своими именами — жёстко и честно фиксируй коммунальные провалы, разбитые дороги, очереди и бездействие служб, но строго соблюдай законы РФ: разделяй факт и оценку (ст. 29 Конституции РФ), соблюдай презумпцию невиновности («подозреваемый», «по версии следствия»), не раскрывай персональные данные частных лиц и несовершеннолетних (152-ФЗ, 436-ФЗ).',
+    'ГОСУДАРСТВЕННАЯ ПОЗИЦИЯ: Уважительно и патриотично освещай поддержку Вооружённых Сил РФ, Тихоокеанского флота, участников СВО, ветеранов и их семей.',
+    'СТРОГИЙ ЗАПРЕТ РЕКЛАМЫ И АРХИВОВ: Любые коммерческие предложения, застройщиков, клиники, скидки, розыгрыши, чужие каналы, а также любые события прошлых лет (2018-2025) отклоняй словом SKIP.',
+    'СТРОГИЙ ФИЛЬТР ГЕОГРАФИИ: Публикуй ТОЛЬКО события Приморского края (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Спасск-Дальний, Партизанск, Дальнегорск и др.), важные федеральные решения РФ и события СВО. Другие регионы РФ отклоняй словом SKIP.',
+    'Выбери строго одну рубрику по теме статьи:',
+    '- chp / "Хроника 112 и ЧП" (пожары, МЧС, криминал, полиция, мошенники, несчастные случаи)',
+    '- city / "Коммунальный фронт" (ЖКХ, отключения воды/света/тепла, благоустройство, дворы)',
+    '- auto / "Дороги и мосты" (мосты Владивостока, перекрытия дорог, трассы края, ДТП, автобусы, ГИБДД)',
+    '- law / "Власть, закон и СВО" (решения властей края, прокуратура, суды, законы РФ, поддержка СВО и флота)',
+    '- econ / "Экономика и порт" (порты, бизнес, стройки, цены, тарифы, торговля)',
+    '- family / "Люди Приморья" (социальная сфера, школы, семьи, резонансные истории жителей)',
+    '- med / "Здравоохранение" (больницы, поликлиники, скорая помощь, медицина края)',
+    '- sport / "Спорт и события" (соревнования, праздники, бесплатные городские мероприятия)',
+    'Если новость срочная (ЧП, криминал, штормовое МЧС, крупная авария ЖКХ, перекрытие мостов/трасс) — ставь "urgent": true.',
     'Верни строго валидный JSON без markdown:',
-    '{"title":"Цепляющий SEO-заголовок до 85 символов","cat":"chp|city|law|econ|auto|family|med|sport","catLabel":"Происшествия|Город и ЖКХ|Власть и закон|Экономика и бизнес|Авто и дороги|Общество|Медицина|Спорт и культура","city":"Город Приморья","district":"Район Владивостока если применимо или пусто","age":"0+|6+|12+|16+|18+","urgent":false,"tldr":"• Факт 1 • Факт 2 • Факт 3","tgText":"Информативный пост для Telegram (550-720 символов, строго русский язык).","coverPrompt":"Short English visual description of documentary news photo matching the story scene in Vladivostok or Russian Far East, realistic photojournalism, no text","text":"Полная редакторская SEO-статья в 5-6 абзацах (1600-2200 символов, строго русский язык)."}',
+    '{"title":"Сильный SEO-заголовок до 85 символов","cat":"chp|city|auto|law|econ|family|med|sport","catLabel":"Хроника 112 и ЧП|Коммунальный фронт|Дороги и мосты|Власть, закон и СВО|Экономика и порт|Люди Приморья|Здравоохранение|Спорт и события","city":"Город Приморья","district":"Район Владивостока если применимо или пусто","age":"0+|6+|12+|16+|18+","urgent":false,"tldr":"• Факт 1 • Факт 2 • Факт 3","tgText":"Единый пост для Telegram, ВК и MAX (550-650 символов, строго русский язык).","coverPrompt":"Реалистичное описание документального новостного кадра по сюжету статьи во Владивостоке или Приморском крае на русском языке, без текста и логотипов","text":"Полная редакторская SEO-статья в 5-6 абзацах (1600-2200 символов, строго русский язык)."}',
     'Исходный материал: ' + raw.slice(0, 3200)
   ].join(NL);
   try {
@@ -225,6 +240,7 @@ async function rewriteNews(raw) {
     p.tldr = fixTypography(p.tldr);
     p.tgText = fixTypography(p.tgText);
     p.text = fixTypography(p.text);
+    if (hasOldYear(p.title + ' ' + p.text + ' ' + p.tgText)) return null;
     if (hasForeignGlitch(p.title + ' ' + p.text + ' ' + p.tgText)) return null;
     const autoDist = detectDistrict(p.title + ' ' + p.text + ' ' + (p.district || ''));
     if (autoDist) p.district = autoDist;
@@ -275,7 +291,8 @@ async function refreshDailyPoll(newsList) {
 async function run() {
   const { weather, rates } = await fetchWeatherAndRates();
   await ensureHeroBanner();
-  const startUtc = Date.UTC(2026, 10, 23, 21, 0, 0);
+  // Точный порог синхронного старта: 07:00:00 25.11.2026 по Владивостоку (21:00 UTC 24.11.2026)
+  const startUtc = Date.UTC(2026, 10, 24, 21, 0, 0);
 
   let rawNews = [];
   if (fs.existsSync('news.json')) {
@@ -287,14 +304,10 @@ async function run() {
     if (!item.id || Number(item.id) < startUtc) {
       try { if (fs.existsSync('news/' + item.id + '.html')) fs.unlinkSync('news/' + item.id + '.html'); } catch (e) {}
       try { if (item.cover && fs.existsSync(item.cover)) fs.unlinkSync(item.cover); } catch (e) {}
+      try { if (item.video && fs.existsSync(item.video)) fs.unlinkSync(item.video); } catch (e) {}
       continue;
     }
-    if (/^ПРОГНОЗ ПОГОДЫ В ПРИМОРЬЕ/i.test(String(item.title || '').trim())) {
-      try { if (fs.existsSync('news/' + item.id + '.html')) fs.unlinkSync('news/' + item.id + '.html'); } catch (e) {}
-      try { if (item.cover && fs.existsSync(item.cover)) fs.unlinkSync(item.cover); } catch (e) {}
-      continue;
-    }
-    if (hasForeignGlitch(item.title + ' ' + item.text)) continue;
+    if (hasOldYear(item.title + ' ' + item.text) || hasForeignGlitch(item.title + ' ' + item.text)) continue;
     if (!item.isPartner && !item.manual && isAdOrSpam(item.title + ' ' + item.text)) continue;
     if (!isDuplicate(item.title, news)) news.push(item);
   }
@@ -334,7 +347,7 @@ async function run() {
         const im = b.match(/background-image:url\('([^']+)'\)/i);
         const ownPhotoUrl = (ch.own && im) ? im.at(1) : '';
 
-        if (txt.length >= 60 && (!msgTs || (Date.now() - msgTs) <= 6 * 3600000)) {
+        if (txt.length >= 60 && (!msgTs || (Date.now() - msgTs) <= 4 * 3600000) && !hasOldYear(txt)) {
           candidates.push({
             raw: txt,
             src: ch.off && !ch.own ? 'По данным: ' + ch.name : '',
@@ -357,12 +370,13 @@ async function run() {
         const title = cleanText(tM ? tM.at(1) : '');
         const desc = cleanText(dM ? dM.at(1) : '');
         const full = (title + '. ' + desc).trim();
-        if (full.length >= 90 && !isAdOrSpam(full) && !isDuplicate(title, news)) {
+        if (full.length >= 90 && !isAdOrSpam(full) && !hasOldYear(full) && !isDuplicate(title, news)) {
           candidates.push({ raw: full, src: '', own: false, videoUrl: '', ownPhotoUrl: '' });
         }
       }
     } catch (e) {}
   }
+
   updateLiveOutages(liveFeedRaw.concat(news));
   buildTrafficRadar(liveFeedRaw.concat(news));
 
@@ -370,9 +384,12 @@ async function run() {
     await updateAfisha(AI_KEY);
   }
 
+  // До 07:00 25.11.2026 сохраняем чистый подготовленный сайт без публикации новостей
   if (Date.now() < startUtc) {
+    fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
     fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
     buildHtml(news, weather, rates);
+    console.log('Подготовка к синхронному старту в 07:00 25.11.2026 выполнена. Сайт очищен.');
     return;
   }
 
@@ -394,7 +411,7 @@ async function run() {
       ai = {
         title: head,
         cat: 'city',
-        catLabel: 'Эксклюзив редакции',
+        catLabel: 'Молния • Главное',
         city: 'Приморский край',
         district: detectDistrict(c.raw),
         age: '18+',
@@ -409,7 +426,6 @@ async function run() {
 
     if (!ai || isDuplicate(ai.title, news)) continue;
 
-    // График: с 07:00 до 23:00 — 1 пост раз в 30 мин; срочные (ЧП, криминал, МЧС, погода, отключения) — круглосуточно 24/7
     if (!ai.urgent) {
       if (!isDayHours) continue;
       if (elapsedMin < 28 && added === 0) continue;
@@ -425,7 +441,7 @@ async function run() {
       isoDate: new Date().toISOString(),
       date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
       cat: ai.cat || 'city',
-      catLabel: ai.catLabel || 'Город и ЖКХ',
+      catLabel: ai.catLabel || 'Коммунальный фронт',
       city: ai.city || 'Приморский край',
       district: ai.district || '',
       age: ai.age || '18+',
@@ -453,10 +469,11 @@ async function run() {
   if (added > 0 && INDEXNOW_KEY) {
     try {
       const idxUrl = ['https:', '', ['yandex', 'com'].join('.'), 'indexnow'].join(SLASH);
+      const urlsToPing = ['https://' + HOST + '/'].concat(finalNews.slice(0, added).map(n => 'https://' + HOST + '/news/' + n.id + '.html'));
       await fetch(idxUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: ['https://' + HOST + '/'] })
+        body: JSON.stringify({ host: HOST, key: INDEXNOW_KEY, keyLocation: 'https://' + HOST + '/' + INDEXNOW_KEY + '.txt', urlList: urlsToPing })
       });
     } catch (e) {}
   }
