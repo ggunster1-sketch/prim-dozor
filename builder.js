@@ -7,6 +7,14 @@ const GT = String.fromCharCode(62);
 const NL = String.fromCharCode(10);
 const SQ = String.fromCharCode(39);
 
+const SOC_URLS = {
+  tg: 'https://t.me',
+  direct: 'https://t.me',
+  vk: 'https://vk.com',
+  max: 'https://max.ru',
+  dzen: 'https://dzen.ru'
+};
+
 function tag(name, attrs, inner) {
   return LT + name + (attrs ? ' ' + attrs : '') + GT + (inner !== undefined ? inner + LT + SLASH + name + GT : '');
 }
@@ -72,9 +80,12 @@ function buildHtml(news, weather, rates) {
 
   const trafficHtml = (trafficTime ? tag('span', 'class="soc-pill" style="font-weight:700"', 'Трассы края (' + esc(trafficTime) + '):') : '') +
     (traffic.length
-      ? traffic.map(t => {
+      ? traffic.map((t, idx) => {
           const dc = t.level === 'danger' ? '#ef4444' : t.level === 'warn' ? '#f59e0b' : '#10b981';
-          return tag('span', 'class="soc-pill"', tag('span', 'style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dc + ';margin-right:6px"', '') + esc(t.name) + ': ' + tag('strong', '', esc(t.status)));
+          return tag('button', 'type="button" class="soc-pill" style="cursor:pointer" onclick="openTraffic(' + idx + ')"',
+            tag('span', 'style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dc + ';margin-right:6px"', '') +
+            esc(t.name) + ': ' + tag('strong', '', esc(t.status))
+          );
         }).join('')
       : tag('span', 'class="soc-pill"', 'Дорожный радар Приморья 24/7: оперативный мониторинг мостов и трасс края'));
 
@@ -83,12 +94,12 @@ function buildHtml(news, weather, rates) {
   const cntWater = allOut.filter(o => /(вод|водоснабж|труб)/i.test(o.type + ' ' + o.status)).length;
   const cntHeat = allOut.filter(o => /(тепл|отоплен|гвс|горяч)/i.test(o.type + ' ' + o.status)).length;
   const jkhCounters = tag('div', 'style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;text-align:center"',
-    tag('div', 'class="soc-pill" style="justify-content:center;font-size:12px;padding:6px 4px"', 'Свет: ' + tag('strong', 'style="margin-left:4px"', String(cntLight))) +
-    tag('div', 'class="soc-pill" style="justify-content:center;font-size:12px;padding:6px 4px"', 'Вода: ' + tag('strong', 'style="margin-left:4px"', String(cntWater))) +
-    tag('div', 'class="soc-pill" style="justify-content:center;font-size:12px;padding:6px 4px"', 'Тепло: ' + tag('strong', 'style="margin-left:4px"', String(cntHeat)))
+    tag('button', 'type="button" class="soc-pill jkh-type-btn" data-jtype="Свет" style="justify-content:center;font-size:12px;padding:6px 4px;cursor:pointer" onclick="filterJkhType(' + SQ + 'Свет' + SQ + ',this)"', 'Свет: ' + tag('strong', 'style="margin-left:4px"', String(cntLight))) +
+    tag('button', 'type="button" class="soc-pill jkh-type-btn" data-jtype="Вода" style="justify-content:center;font-size:12px;padding:6px 4px;cursor:pointer" onclick="filterJkhType(' + SQ + 'Вода' + SQ + ',this)"', 'Вода: ' + tag('strong', 'style="margin-left:4px"', String(cntWater))) +
+    tag('button', 'type="button" class="soc-pill jkh-type-btn" data-jtype="Тепло" style="justify-content:center;font-size:12px;padding:6px 4px;cursor:pointer" onclick="filterJkhType(' + SQ + 'Тепло' + SQ + ',this)"', 'Тепло: ' + tag('strong', 'style="margin-left:4px"', String(cntHeat)))
   );
 
-  const jkhMapBtn = tag('button', 'type="button" class="soc-pill" style="width:100%;justify-content:center;margin-bottom:8px;font-weight:700;color:var(--accent)" onclick="openJkhMap()"', 'Карта отключений и аварийных служб Приморья');
+  const jkhMapBtn = tag('button', 'type="button" class="soc-pill" style="width:100%;justify-content:center;margin-bottom:8px;font-weight:700;color:var(--accent);cursor:pointer" onclick="openJkhMap()"', 'Карта отключений и аварийных служб Приморья');
 
   const jkhListHtml = allOut.length
     ? allOut.map((o, idx) =>
@@ -112,11 +123,11 @@ function buildHtml(news, weather, rates) {
             tag('div', 'style="font-size:11.5px;color:var(--accent);font-weight:700"', esc(a.date) + ' • ' + esc(a.city)) +
             tag('div', 'style="font-weight:700;font-size:13.5px;margin:3px 0"', esc(a.title)) +
             tag('div', 'style="font-size:12px;opacity:0.85"', 'Адрес: ' + esc(a.place || a.city)) +
-            tag('div', 'style="font-size:11.5px;color:var(--accent);font-weight:600;margin-top:4px"', 'Вход свободный • Программа и карта →')
+            tag('div', 'style="font-size:11.5px;color:var(--accent);font-weight:600;margin-top:4px"', 'Вход свободный • Программа, контакты и карта →')
           )
         )
       ).join('')
-    : tag('div', 'class="w-row" style="color:var(--muted);font-size:13px"', 'Подборка предстоящих бесплатных мероприятий Приморского края обновляется.');
+    : tag('div', 'class="w-row" style="color:var(--muted);font-size:13px"', 'Подборка бесплатных городских и спортивных событий края на ближайшие 7 дней обновляется.');
 
   for (const p of list) {
     const artUrl = 'https://' + HOST + '/news/' + p.id + '.html';
@@ -153,19 +164,28 @@ function buildHtml(news, weather, rates) {
         tag('button', 'type="button" class="soc-pill react-btn" data-emo="' + emo + '" onclick="event.stopPropagation();if(window.toggleReact)toggleReact(' + SQ + esc(p.id) + SQ + ',' + SQ + emo + SQ + ',this)"', emo + ' ' + tag('span', 'class="r-cnt"', '0'))
       ).join('')
     );
+
+    const mediaBlock = (p.video && fs.existsSync(p.video))
+      ? tag('video', 'controls playsinline preload="metadata" poster="/' + esc(p.cover) + '" style="width:100%;border-radius:10px;margin-bottom:14px;background:#000"',
+          tag('source', 'src="/' + esc(p.video) + '" type="video/mp4"')
+        )
+      : tag('img', 'class="hero-img" src="/' + esc(p.cover) + '" alt="" style="border-radius:10px;margin-bottom:14px"');
     const body = crumbs + tag('article', 'class="widget" style="padding:24px"',
       tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(p.catLabel)) + tag('span', '', esc(p.city)) + tag('span', '', '• ' + esc(p.date))) +
       tag('h1', 'style="font-size:24px;line-height:1.3;margin:10px 0 14px"', esc(p.title)) +
-      tag('img', 'class="hero-img" src="/' + esc(p.cover) + '" alt="" style="border-radius:10px;margin-bottom:14px"') +
+      mediaBlock +
       tag('div', 'class="tldr"', linkifyPhonesHtml(esc(p.tldr)).split(NL).join(tag('br'))) +
       tag('div', 'style="font-size:16px;white-space:pre-line;line-height:1.75"', linkifyPhonesHtml(esc(p.text))) +
       (p.src ? tag('div', 'style="margin-top:14px;font-size:13px;color:var(--muted);font-style:italic"', esc(p.src)) : '') +
       reactBar +
       tag('div', 'style="margin-top:20px;padding:14px;background:var(--bg);border-radius:10px;font-size:13px;color:var(--muted)"',
-        tag('div', 'style="margin-bottom:8px;font-weight:700"', 'Официальный материал редакции ИА «Прим_Дозор» (primdozor.ru). При цитировании активная гиперссылка обязательна.') +
+        tag('div', 'style="margin-bottom:10px;font-weight:700"', 'Официальный материал редакции ИА «Прим_Дозор» (primdozor.ru). При цитировании активная гиперссылка обязательна.') +
         tag('div', 'style="display:flex;gap:8px;flex-wrap:wrap"',
           tag('button', 'type="button" class="btn-cta" data-cite="' + esc(citeText) + '" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.cite);this.textContent=' + SQ + 'Скопировано' + SQ + '"', 'Скопировать цитату') +
-          tag('a', 'href="https://t.me" target="_blank" rel="noopener" class="soc-pill"', 'Подписаться на Telegram @prim_dozor')
+          tag('a', 'href="' + SOC_URLS.tg + '" target="_blank" rel="noopener noreferrer" class="soc-pill"', 'Читайте нас в Telegram') +
+          tag('a', 'href="' + SOC_URLS.max + '" target="_blank" rel="noopener noreferrer" class="soc-pill"', 'Читайте нас в MAX') +
+          tag('a', 'href="' + SOC_URLS.vk + '" target="_blank" rel="noopener noreferrer" class="soc-pill"', 'Читайте нас в ВК') +
+          tag('a', 'href="' + SOC_URLS.dzen + '" target="_blank" rel="noopener noreferrer" class="soc-pill"', 'Читайте нас в Дзен')
         )
       )
     ) +
@@ -191,13 +211,13 @@ function buildHtml(news, weather, rates) {
         tag('meta', 'property="og:description" content="' + descText + '"') +
         tag('meta', 'property="og:image" content="' + imgUrl + '"') +
         tag('link', 'rel="canonical" href="' + artUrl + '"') +
-        tag('link', 'rel="stylesheet" href="/style.css?v=160"') +
+        tag('link', 'rel="stylesheet" href="/style.css?v=190"') +
         tag('script', 'type="application/ld+json"', ldJson)
       ) +
       tag('body', '',
         tag('header', 'class="site-header"', tag('div', 'class="wrap header-inner"', tag('a', 'href="/" class="brand"', tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР')) + tag('a', 'href="/" class="soc-pill"', '← Все новости'))) +
         tag('main', 'class="wrap" style="max-width:800px;margin-top:20px"', body) +
-        tag('footer', 'class="site-footer"', tag('div', 'class="wrap"', '© 2026 ИА «Прим_Дозор» (18+). Приморский край. Редакция: primdozor.ru • Telegram: @prim_dozor'))
+        tag('footer', 'class="site-footer"', tag('div', 'class="wrap"', '© 2026 ИА «Прим_Дозор» (18+). Приморский край. Портал: primdozor.ru'))
       )
     );
     fs.writeFileSync('news/' + p.id + '.html', artHtml, 'utf8');
@@ -218,7 +238,7 @@ function buildHtml(news, weather, rates) {
   const cards = list.length ? topBlock + list.map((n, i) => {
     const lead = String(n.text || '').replace(/\s+/g, ' ').slice(0, 155);
     const loc = esc(n.city) + (n.district ? ' • ' + esc(n.district) : '');
-    const meta = tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(n.catLabel)) + tag('span', '', loc) + tag('span', '', '• ' + esc(n.date)) + tag('span', 'class="badge-age"', esc(n.age || '18+')));
+    const meta = tag('div', 'class="news-meta"', tag('span', 'class="badge-cat"', esc(n.catLabel)) + tag('span', '', loc) + tag('span', '', '• ' + esc(n.date)) + tag('span', 'class="badge-age"', esc(n.age || '18+')) + (n.video ? tag('span', 'class="badge-cat" style="background:#0369a1"', 'ВИДЕО') : ''));
     const reactMini = tag('div', 'class="react-bar" data-react-id="' + esc(n.id) + '" style="display:flex;gap:6px;margin-top:8px"',
       ['🔥', '😡', '👍'].map(emo =>
         tag('button', 'type="button" class="soc-pill react-btn" style="padding:3px 8px;font-size:12px" data-emo="' + emo + '" onclick="event.stopPropagation();if(window.toggleReact)toggleReact(' + SQ + esc(n.id) + SQ + ',' + SQ + emo + SQ + ',this)"', emo + ' ' + tag('span', 'class="r-cnt"', '0'))
@@ -226,8 +246,8 @@ function buildHtml(news, weather, rates) {
     );
     const attr = 'data-id="' + esc(n.id) + '" onclick="openArt(this.dataset.id)"';
     return i === 0
-      ? tag('article', 'class="hero-card" ' + attr, tag('img', 'class="hero-img" src="./' + esc(n.cover) + '" alt=""') + tag('div', 'class="hero-body"', meta + tag('h2', 'class="hero-title"', esc(n.title)) + tag('p', 'class="hero-lead"', esc(lead) + '...') + reactMini))
-      : tag('article', 'class="news-card" ' + attr, tag('img', 'class="news-thumb" src="./' + esc(n.cover) + '" alt=""') + tag('div', 'class="news-body"', meta + tag('h3', 'class="news-title"', esc(n.title)) + reactMini));
+      ? tag('article', 'class="hero-card" ' + attr, tag('img', 'class="hero-img" decoding="async" src="./' + esc(n.cover) + '" alt=""') + tag('div', 'class="hero-body"', meta + tag('h2', 'class="hero-title"', esc(n.title)) + tag('p', 'class="hero-lead"', esc(lead) + '...') + reactMini))
+      : tag('article', 'class="news-card" ' + attr, tag('img', 'class="news-thumb" loading="lazy" decoding="async" src="./' + esc(n.cover) + '" alt=""') + tag('div', 'class="news-body"', meta + tag('h3', 'class="news-title"', esc(n.title)) + reactMini));
   }).join('') : tag('div', 'class="widget" style="padding:24px;text-align:center;color:var(--muted)"', 'Лента новостей ИА «Прим_Дозор» обновляется в реальном времени.');
 
   const r = rates || { usd: '82,1911', eur: '90,3445', cny: '12,3150' };
@@ -275,39 +295,48 @@ function buildHtml(news, weather, rates) {
     '@type': 'NewsMediaOrganization',
     name: 'ИА «Прим_Дозор»',
     url: 'https://' + HOST + '/',
-    sameAs: ['https://t.me'],
+    sameAs: [SOC_URLS.tg, SOC_URLS.vk, SOC_URLS.max, SOC_URLS.dzen],
     areaServed: 'Приморский край',
     email: 'prim_dozor@internet.ru'
   }).replace(/</g, '\\u003c');
-
   const headHtml = tag('head', '',
     tag('meta', 'charset="UTF-8"') +
     tag('meta', 'name="viewport" content="width=device-width,initial-scale=1"') +
     tag('title', '', 'ИА «Прим_Дозор» — Главные новости Владивостока и Приморского края 24/7 (18+)') +
     tag('meta', 'name="description" content="Информационное агентство Приморского края Прим_Дозор. Оперативные новости Владивостока, Уссурийска, Находки, Артёма, Большого Камня и края 24/7. Отключения ЖКХ, погода, транспорт, экстренные службы, аптеки и травмпункты 24/7."') +
     tag('link', 'rel="canonical" href="https://' + HOST + '/"') +
-    tag('link', 'rel="stylesheet" href="./style.css?v=160"') +
+    tag('link', 'rel="stylesheet" href="./style.css?v=190"') +
     tag('script', 'type="application/ld+json"', orgJson) +
     tag('script', '', 'window.NEWS=' + safeJson(list) + ';window.WEATHER=' + safeJson(weather) + ';window.DIRECTORIES=' + safeJson(dir) + ';')
   );
 
-  const headerHtml = tag('header', 'class="site-header"',
-    tag('div', 'class="wrap header-inner" style="flex-wrap:wrap;gap:8px"',
-      tag('div', 'style="display:flex;align-items:center;gap:8px"',
+  const topBannerHtml = tag('div', 'class="wrap" style="padding-top:10px"',
+    tag('div', 'id="season-banner" style="width:100%"', '')
+  );
+
+  const headerHtml = tag('header', 'class="site-header" style="margin-top:8px"',
+    tag('div', 'class="wrap header-inner" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"',
+      tag('div', 'style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"',
         tag('a', 'href="./" class="brand"', tag('span', 'class="brand-mark"', 'ПРИМ_ДОЗОР')) +
-        tag('span', 'id="clock" class="soc-pill" style="font-size:12px"', 'Приморье 24/7')
+        tag('span', 'id="clock" class="soc-pill" style="font-size:12px"', 'Приморье 24/7') +
+        tag('span', 'id="w-top" class="soc-pill"', esc(w0.now))
       ) +
       tag('div', 'style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"',
-        tag('span', 'id="w-top" class="soc-pill"', esc(w0.now)) +
         tag('span', 'id="cbr-rates" class="soc-pill" title="Официальный курс ЦБ РФ"', 'ЦБ РФ: $' + esc(r.usd) + ' | €' + esc(r.eur) + ' | ¥' + esc(r.cny)) +
-        tag('a', 'href="https://t.me" target="_blank" rel="noopener" class="soc-pill" style="font-weight:700;color:var(--accent)"', 'Telegram @prim_dozor') +
         tag('button', 'type="button" class="soc-pill" onclick="toggleFontSize()"', 'А+') +
         tag('button', 'type="button" class="soc-pill" onclick="document.body.classList.toggle(' + SQ + 'dark' + SQ + ');document.documentElement.classList.toggle(' + SQ + 'dark' + SQ + ')"', 'Тема')
       )
     )
   );
 
-  const servicesBar = tag('div', 'class="cat-scroll" style="margin:8px 0 4px"',
+  const socialBar = tag('div', 'class="cat-scroll" style="margin:10px 0 6px"',
+    tag('a', 'href="' + SOC_URLS.tg + '" target="_blank" rel="noopener noreferrer" class="soc-pill" style="font-weight:700;color:var(--accent)"', 'Читайте нас в Telegram') +
+    tag('a', 'href="' + SOC_URLS.max + '" target="_blank" rel="noopener noreferrer" class="soc-pill" style="font-weight:700"', 'Читайте нас в MAX') +
+    tag('a', 'href="' + SOC_URLS.vk + '" target="_blank" rel="noopener noreferrer" class="soc-pill" style="font-weight:700"', 'Читайте нас в ВК') +
+    tag('a', 'href="' + SOC_URLS.dzen + '" target="_blank" rel="noopener noreferrer" class="soc-pill" style="font-weight:700"', 'Читайте нас в Дзен')
+  );
+
+  const servicesBar = tag('div', 'class="cat-scroll" style="margin:6px 0"',
     tag('button', 'type="button" class="soc-pill" onclick="openServiceModal(' + SQ + 'meters' + SQ + ')"', 'Показания счётчиков ЖКХ') +
     tag('button', 'type="button" class="soc-pill" onclick="openServiceModal(' + SQ + 'transport' + SQ + ')"', 'Транспорт: электрички, автобусы, авиа') +
     tag('button', 'type="button" class="soc-pill" onclick="focusDirTab(' + SQ + 'dir-jkh' + SQ + ')"', 'Отключения воды, света и тепла') +
@@ -322,10 +351,10 @@ function buildHtml(news, weather, rates) {
     tag('div', 'style="font-size:21px;font-weight:800;margin-bottom:4px" id="w-now"', esc(w0.now)) +
     tag('div', 'style="font-size:12px;color:var(--muted);margin-bottom:10px" id="w-feel"', 'Погода в реальном времени по данным метеостанций') +
     tag('div', 'style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:12px;text-align:center"',
-      tag('div', '', 'Утро<br><strong id="w-m">' + esc(w0.morning) + '</strong>') +
-      tag('div', '', 'День<br><strong id="w-d">' + esc(w0.day) + '</strong>') +
-      tag('div', '', 'Вечер<br><strong id="w-e">' + esc(w0.evening) + '</strong>') +
-      tag('div', '', 'Завтра<br><strong id="w-t">' + esc(w0.tomorrow) + '</strong>')
+      tag('div', '', 'Утро' + tag('br') + tag('strong', 'id="w-m"', esc(w0.morning))) +
+      tag('div', '', 'День' + tag('br') + tag('strong', 'id="w-d"', esc(w0.day))) +
+      tag('div', '', 'Вечер' + tag('br') + tag('strong', 'id="w-e"', esc(w0.evening))) +
+      tag('div', '', 'Завтра' + tag('br') + tag('strong', 'id="w-t"', esc(w0.tomorrow)))
     )
   );
 
@@ -356,7 +385,6 @@ function buildHtml(news, weather, rates) {
     ) +
     tag('div', 'id="dir-afisha" style="display:none"', afishaHtml)
   );
-
   const modalsHtml =
     tag('div', 'id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.style.display=' + SQ + 'none' + SQ + '"',
       tag('div', 'class="widget" style="max-width:740px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;position:relative"',
@@ -366,10 +394,17 @@ function buildHtml(news, weather, rates) {
     ) +
     tag('div', 'id="report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.style.display=' + SQ + 'none' + SQ + '"',
       tag('form', 'class="widget" style="max-width:480px;width:100%;padding:22px" onsubmit="sendReport(event)"',
-        tag('h3', 'style="margin:0 0 8px"', 'Сообщить новость в редакцию') +
-        tag('p', 'style="font-size:12.5px;color:var(--muted);margin:0 0 10px"', 'Обращение передаётся дежурному редактору ИА «Прим_Дозор» в Telegram (@prim_dozor) или на почту prim_dozor@internet.ru.') +
-        tag('select', 'id="rep-city" class="input" style="margin-bottom:10px"', cityOpts) +
-        tag('textarea', 'id="rep-text" class="input" rows="4" placeholder="Опишите событие, точный адрес или приложите детали..." style="margin-bottom:12px"', '') +
+        tag('h3', 'style="margin:0 0 8px"', 'Народная приёмная ИА «Прим_Дозор»') +
+        tag('p', 'style="font-size:12.5px;color:var(--muted);margin:0 0 10px"', 'Обращение передаётся дежурному редактору (@prim_dozor) или на почту prim_dozor@internet.ru.') +
+        tag('select', 'id="rep-type" class="input" style="margin-bottom:8px"',
+          tag('option', 'value="Проблема ЖКХ (свет, вода, тепло)"', 'Проблема ЖКХ (свет, вода, тепло)') +
+          tag('option', 'value="Дороги, транспорт и благоустройство"', 'Дороги, транспорт и благоустройство') +
+          tag('option', 'value="Происшествие или оперативная новость"', 'Происшествие или оперативная новость') +
+          tag('option', 'value="Поддержка СВО и волонтёрские инициативы"', 'Поддержка СВО и волонтёрские инициативы') +
+          tag('option', 'value="Отзыв или предложение редакции"', 'Отзыв или предложение редакции')
+        ) +
+        tag('select', 'id="rep-city" class="input" style="margin-bottom:8px"', cityOpts) +
+        tag('textarea', 'id="rep-text" class="input" rows="4" placeholder="Опишите ситуацию, точный адрес или детали..." style="margin-bottom:12px"', '') +
         tag('div', 'style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"',
           tag('button', 'type="button" class="soc-pill" onclick="document.getElementById(' + SQ + 'report-modal' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', 'Отмена') +
           tag('button', 'type="submit" class="btn-cta"', 'Передать в редакцию')
@@ -378,17 +413,17 @@ function buildHtml(news, weather, rates) {
     );
 
   const mobileFixCss = tag('style', '',
-    '@media(max-width:860px){.grid-layout{display:flex!important;flex-direction:column!important}.sidebar,.feed-col{width:100%!important;max-width:100%!important}.news-card{flex-direction:column!important}.news-thumb{width:100%!important;height:180px!important;object-fit:cover!important}}.cat-scroll{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}.cat-scroll::-webkit-scrollbar{display:none}.cat-scroll .tab,.cat-scroll .soc-pill{white-space:nowrap;flex-shrink:0}'
+    '@media(max-width:860px){.grid-layout{display:flex!important;flex-direction:column!important}.sidebar,.feed-col{width:100%!important;max-width:100%!important}.news-card{flex-direction:column!important}.news-thumb{width:100%!important;height:185px!important;object-fit:cover!important}}.cat-scroll{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}.cat-scroll::-webkit-scrollbar{display:none}.cat-scroll .tab,.cat-scroll .soc-pill{white-space:nowrap;flex-shrink:0}.hero-img,.news-thumb{aspect-ratio:16/9;object-fit:cover}'
   );
 
   const mainHtml = mobileFixCss + tag('main', 'class="wrap"',
-    tag('div', 'id="season-banner" style="margin:12px 0"', '') +
+    socialBar +
     servicesBar +
     tag('div', 'class="traffic-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"', trafficHtml) +
     tag('div', 'class="cat-scroll" style="margin:8px 0"', catTabs) +
     tag('div', 'style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px"',
-      tag('select', 'class="soc-pill" style="flex:1 1 180px;min-height:38px" onchange="filterCity(this.value)"', distOpts) +
-      tag('input', 'type="search" class="input" style="flex:2 1 200px;min-height:38px;padding:6px 12px;font-size:14px" placeholder="Поиск по новостям края..." oninput="setSearch(this.value)"')
+      tag('select', 'class="soc-pill" style="flex:1 1 190px;min-height:38px" onchange="filterCity(this.value)"', distOpts) +
+      tag('input', 'type="search" class="input" style="flex:2 1 220px;min-height:38px;padding:6px 12px;font-size:14px" placeholder="Поиск по новостям, улицам и городам края..." oninput="setSearch(this.value)"')
     ) +
     tag('div', 'class="grid-layout"',
       tag('section', 'id="feed" class="feed-col"', cards) +
@@ -396,34 +431,69 @@ function buildHtml(news, weather, rates) {
         weatherWidget +
         tag('div', 'class="widget" style="padding:16px;margin-bottom:14px"',
           tag('h3', 'style="margin:0 0 8px"', 'Народный контроль Приморья • 24/7') +
-          tag('button', 'type="button" class="btn-cta" onclick="openReport()"', 'Сообщить в редакцию')
+          tag('button', 'type="button" class="btn-cta" onclick="openReport()"', 'Сообщить о проблеме или новости')
         ) +
         dirWidget +
         pollWidget
       )
     ) +
     modalsHtml +
-    tag('script', 'src="./app.js?v=160"', '')
+    tag('script', 'src="./app.js?v=190"', '')
   );
 
   const footerHtml = tag('footer', 'class="site-footer"',
-    tag('div', 'class="wrap" style="line-height:1.6"',
+    tag('div', 'class="wrap" style="line-height:1.7"',
       '© 2026 ИА «Прим_Дозор» (18+). Оперативные новости Владивостока и Приморского края 24/7.' + tag('br') +
-      'Редакция и администрация портала: Козин А.И. • Почта редакции: prim_dozor@internet.ru • ' +
-      tag('a', 'href="https://t.me" target="_blank" rel="noopener" style="color:var(--accent)"', 'Официальный канал Telegram @prim_dozor')
+      'Редакция и администрация портала: Козин А.И. • Почта: prim_dozor@internet.ru' + tag('br') +
+      tag('a', 'href="' + SOC_URLS.tg + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700"', 'Читайте нас в Telegram') + ' • ' +
+      tag('a', 'href="' + SOC_URLS.max + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700"', 'Читайте нас в MAX') + ' • ' +
+      tag('a', 'href="' + SOC_URLS.vk + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700"', 'Читайте нас в ВК') + ' • ' +
+      tag('a', 'href="' + SOC_URLS.dzen + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700"', 'Читайте нас в Дзен')
     )
   );
 
-  fs.writeFileSync('index.html', '<!DOCTYPE html>' + tag('html', 'lang="ru"', headHtml + tag('body', '', headerHtml + mainHtml + footerHtml)), 'utf8');
+  const docType = LT + '!DOCTYPE html' + GT;
+  fs.writeFileSync('index.html', docType + tag('html', 'lang="ru"', headHtml + tag('body', '', topBannerHtml + headerHtml + mainHtml + footerHtml)), 'utf8');
 
+  const xmlHead = LT + '?xml version="1.0" encoding="UTF-8"?' + GT;
   const todayIso = new Date().toISOString().slice(0, 10);
   const urlItems = [{ loc: 'https://' + HOST + '/', mod: todayIso }].concat(
     list.map(n => ({ loc: 'https://' + HOST + '/news/' + n.id + '.html', mod: n.isoDate ? String(n.isoDate).slice(0, 10) : todayIso }))
   );
-  const sm = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://sitemaps.org">' +
-    urlItems.map(u => '<url><loc>' + u.loc + '</loc><lastmod>' + u.mod + '</lastmod></url>').join('') + '</urlset>';
+  const sm = xmlHead + tag('urlset', 'xmlns="http://sitemaps.org"',
+    urlItems.map(u => tag('url', '', tag('loc', '', u.loc) + tag('lastmod', '', u.mod))).join('')
+  );
   fs.writeFileSync('sitemap.xml', sm, 'utf8');
   fs.writeFileSync('robots.txt', 'User-agent: *\nAllow: /\nSitemap: https://' + HOST + '/sitemap.xml\n', 'utf8');
+
+  const cdataStart = LT + '![CDATA[';
+  const cdataEnd = ']]' + GT;
+  const dzenItems = list.slice(0, 30).map(n => {
+    const link = 'https://' + HOST + '/news/' + n.id + '.html';
+    const pubDate = new Date(Number(n.id) || Date.now()).toUTCString();
+    const imgTag = n.cover ? tag('p', '', tag('img', 'src="https://' + HOST + '/' + esc(n.cover) + '" alt=""')) : '';
+    const bodyP = String(n.text || '').split('\n\n').map(par => tag('p', '', esc(par))).join('');
+    const signP = tag('p', '', 'Читайте нас в ' + tag('a', 'href="' + SOC_URLS.tg + '"', 'Telegram') + ', ' + tag('a', 'href="' + SOC_URLS.max + '"', 'MAX') + ' и ' + tag('a', 'href="' + SOC_URLS.vk + '"', 'ВКонтакте') + '. Источник: ' + tag('a', 'href="' + link + '"', 'ИА «Прим_Дозор»') + '.');
+    return tag('item', '',
+      tag('title', '', esc(n.title)) +
+      tag('link', '', link) +
+      tag('guid', '', link) +
+      tag('pubDate', '', pubDate) +
+      tag('category', '', esc(n.catLabel || 'Новости')) +
+      tag('enclosure', 'url="https://' + HOST + '/' + esc(n.cover) + '" type="image/jpeg"') +
+      tag('content:encoded', '', cdataStart + imgTag + bodyP + signP + cdataEnd)
+    );
+  }).join('');
+  const dzenRss = xmlHead + tag('rss', 'version="2.0" xmlns:content="http://purl.org"',
+    tag('channel', '',
+      tag('title', '', 'ИА «Прим_Дозор» | Новости Владивосток Приморье') +
+      tag('link', '', 'https://' + HOST + '/') +
+      tag('description', '', 'Оперативные новости Владивостока и Приморского края 24/7') +
+      tag('language', '', 'ru') +
+      dzenItems
+    )
+  );
+  fs.writeFileSync('dzen.xml', dzenRss, 'utf8');
 }
 
 module.exports = { buildHtml };
