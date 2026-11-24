@@ -21,7 +21,8 @@ function detectJkhResource(text) {
 }
 
 function detectJkhCity(text) {
-  const s = String(text || '').toLowerCase();
+  const s = String(text || '').slice(0, 180).toLowerCase();
+  if (/владивосток/i.test(s)) return { city: 'Владивосток', phone: '+7 (423) 222-23-33' };
   if (/уссурийск/i.test(s)) return { city: 'Уссурийск', phone: '+7 (4234) 32-11-78' };
   if (/находк/i.test(s)) return { city: 'Находка', phone: '+7 (4236) 65-68-01' };
   if (/арт[её]м/i.test(s)) return { city: 'Артём', phone: '+7 (42337) 4-25-32' };
@@ -33,11 +34,13 @@ function detectJkhCity(text) {
   return { city: 'Владивосток', phone: '+7 (423) 222-23-33' };
 }
 function isOutdatedJkh(text) {
+  const s = String(text || '').toLowerCase();
+  if (/\b20(1[0-9]|2[0-5])\b/.test(s)) return true;
   const vl = new Date(Date.now() + 10 * 3600000);
   const curDay = vl.getUTCDate();
   const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
   const curMonth = months.at(vl.getUTCMonth()) || '';
-  const m = String(text || '').toLowerCase().match(/(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/);
+  const m = s.match(/(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/);
   if (!m) return false;
   const msgDay = Number(m.at(1));
   const msgMonth = m.at(2);
@@ -58,7 +61,7 @@ function updateLiveOutages(rawItems) {
   const fresh = [];
 
   for (const it of items) {
-    if (it.ts && (Date.now() - Number(it.ts)) > 18 * 3600000) continue;
+    if (it.ts && (Date.now() - Number(it.ts)) > 12 * 3600000) continue;
     const rawStr = String((it.title || '') + ' ' + (it.text || it.raw || ''))
       .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
       .replace(/\s+/g, ' ')
@@ -96,7 +99,7 @@ async function processCleanVideo(videoUrl, postId) {
     fs.writeFileSync(rawPath, buf);
     execFileSync('ffmpeg', [
       '-y', '-i', rawPath,
-      '-vf', "drawtext=text='PRIMDOZOR.RU':x=w-tw-18:y=h-th-14:fontsize=20:fontcolor=white@0.68:shadowcolor=black@0.6:shadowx=1:shadowy=1",
+      '-vf', "drawtext=text='ИА «ПРИМ_ДОЗОР»':x=w-tw-18:y=h-th-14:fontsize=20:fontcolor=white@0.72:shadowcolor=black@0.65:shadowx=1:shadowy=1",
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
       '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart',
       outPath
@@ -109,26 +112,46 @@ async function processCleanVideo(videoUrl, postId) {
   }
 }
 function detectTheme(post) {
+  const cat = String(post.cat || '').trim();
   const s = ((post.title || '') + ' ' + (post.text || '')).toLowerCase();
-  if (/(сво|военн|флот|тихоокеанск|арми|защитник|патриот|ветеран)/i.test(s)) return { c1: '#0b192c', c2: '#1e3a5f', glow: '#38bdf8', tag: 'СВО И ЗАЩИТА ОТЕЧЕСТВА', scene: 'Russian Pacific Fleet warship and Vladivostok coastline bay, documentary editorial news photography, dramatic natural lighting, no text' };
-  if (post.cat === 'auto' || /(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#111827', c2: '#7f1d1d', glow: '#ef4444', tag: 'АВТО И ДОРОГИ', scene: 'Highway bridge over Zolotoy Rog bay in Vladivostok Primorsky Krai with city traffic, realistic documentary news photography, no text' };
-  if (/(пожар|возгоран|огонь|мчс|спасател|дым)/i.test(s)) return { c1: '#270909', c2: '#9a3412', glow: '#f97316', tag: 'ОПЕРАТИВНАЯ СВОДКА • МЧС', scene: 'Emergency rescue firefighters and red rescue vehicle at urban street scene in Russian Far East, photojournalism, no text' };
-  if (post.cat === 'law' || /(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#090d16', c2: '#1e3a8a', glow: '#3b82f6', tag: 'ВЛАСТЬ И ЗАКОН', scene: 'Official government administration building and courthouse facade in Vladivostok Russia, press photography, no text' };
-  if (post.cat === 'city' || /(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОД И ЖКХ', scene: 'Municipal utility crew repairing city heating and water pipeline infrastructure in Russia, editorial reportage photo, no text' };
-  if (post.cat === 'med' || /(медицин|больниц|врач|поликлиник|здрав|скорая)/i.test(s)) return { c1: '#062038', c2: '#0369a1', glow: '#38bdf8', tag: 'МЕДИЦИНА И ЗДРАВООХРАНЕНИЕ', scene: 'Modern regional medical center building and ambulance in Russian city, clean editorial news photography, no text' };
-  if (post.cat === 'econ') return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: 'ЭКОНОМИКА И БИЗНЕС', scene: 'Commercial seaport container terminal and cargo vessels in Vladivostok Primorsky Krai, industrial news photography, no text' };
-  if (post.cat === 'sport') return { c1: '#1e1b4b', c2: '#4c1d95', glow: '#a855f7', tag: 'СПОРТ И КУЛЬТУРА', scene: 'Modern sports arena and cultural concert hall in Vladivostok, vibrant editorial photography, no text' };
-  return { c1: '#0f172a', c2: '#1e293b', glow: '#cbd5e1', tag: String(post.catLabel || 'НОВОСТИ ПРИМОРЬЯ').toUpperCase(), scene: 'Panoramic view of Vladivostok Golden Bridge and Zolotoy Rog bay in Primorsky Krai, editorial news photography, no text' };
+  const isSvo = /(^|[^а-яё])сво([^а-яё]|$)|специальн(ой|ая)\s+военн(ой|ая)\s+операц|тихоокеанск(ий|ого)\s+флот|военнослужащ|участник(ам|ов|и)\s+сво|гуманитарн(ую|ой)\s+помощ/i.test(s);
+
+  if (cat === 'auto') {
+    return { c1: '#0f172a', c2: '#1e3a8a', glow: '#60a5fa', tag: 'ДОРОГИ И МОСТЫ', scene: 'Реалистичная документальная фотография автомобильного моста и магистрали через бухту во Владивостоке с городским движением, Приморский край, фотожурналистика, без надписей и вывесок' };
+  }
+  if (cat === 'city') {
+    return { c1: '#042f2e', c2: '#0f766e', glow: '#2dd4bf', tag: 'КОММУНАЛЬНЫЙ ФРОНТ', scene: 'Реалистичная репортажная фотография работы городских коммунальных служб, ремонт теплотрассы и водопровода на улице Владивостока, Приморский край, без надписей и логотипов' };
+  }
+  if (cat === 'chp') {
+    return { c1: '#270909', c2: '#991b1b', glow: '#f87171', tag: 'ХРОНИКА 112 И ЧП', scene: 'Реалистичный новостной репортаж, работа спасателей МЧС и экстренных служб с проблесковыми маячками на городской улице Владивостока в сумерках, без надписей' };
+  }
+  if (cat === 'law') {
+    if (isSvo) {
+      return { c1: '#0b192c', c2: '#1e3a5f', glow: '#38bdf8', tag: 'ВЛАСТЬ, ЗАКОН И СВО', scene: 'Реалистичная документальная фотография кораблей Тихоокеанского флота в бухте Владивостока на рассвете, торжественная атмосфера, без надписей и логотипов' };
+    }
+    return { c1: '#090d16', c2: '#1d4ed8', glow: '#93c5fd', tag: 'ВЛАСТЬ, ЗАКОН И СВО', scene: 'Реалистичная фотография здания администрации Приморского края и центральной площади во Владивостоке днём, официальная пресс-съёмка, без надписей' };
+  }
+  if (cat === 'econ') {
+    return { c1: '#1c1917', c2: '#92400e', glow: '#fbbf24', tag: 'ЭКОНОМИКА И ПОРТ', scene: 'Реалистичная документальная фотография морского торгового порта Владивостока, портальные краны и контейнеровозы у причала бухты Золотой Рог, без надписей' };
+  }
+  if (cat === 'med') {
+    return { c1: '#062038', c2: '#0369a1', glow: '#7dd3fc', tag: 'ЗДРАВООХРАНЕНИЕ', scene: 'Реалистичная фотография современного медицинского центра и автомобиля скорой помощи во Владивостоке, чистая новостная фотосъёмка, без надписей' };
+  }
+  if (cat === 'sport') {
+    return { c1: '#1e1b4b', c2: '#5b21b6', glow: '#c084fc', tag: 'СПОРТ И СОБЫТИЯ', scene: 'Реалистичная фотография спортивного комплекса и городской набережной во Владивостоке во время массового праздника, без надписей' };
+  }
+  return { c1: '#0f172a', c2: '#1e293b', glow: '#cbd5e1', tag: String(post.catLabel || 'ЛЮДИ ПРИМОРЬЯ').toUpperCase(), scene: 'Реалистичная панорамная фотография Владивостока, сопок и бухты Золотой Рог в Приморском крае, новостной репортаж, без надписей' };
 }
 
 async function fetchTopicPhoto(scenePrompt, size) {
   const aiKey = (process.env.AI_API_KEY || '').trim();
   if (!aiKey) return null;
   try {
+    const cleanPrompt = String(scenePrompt || '') + '. Строго без какого-либо текста, букв, цифр, логотипов и вывесок на изображении.';
     const res = await fetch('https://polza.ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiKey },
-      body: JSON.stringify({ model: 'openai/gpt-image-1', prompt: scenePrompt, size: size || '1536x1024', n: 1 })
+      body: JSON.stringify({ model: 'openai/gpt-image-1', prompt: cleanPrompt, size: size || '1536x1024', n: 1 })
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -151,10 +174,10 @@ async function ensureHeroBanner() {
     return bannerFile;
   }
   const seasonPrompt = {
-    winter: 'Wide panoramic documentary photograph of Golden Bridge over Zolotoy Rog bay in Vladivostok Russia at twilight in winter, golden bridge illumination reflected in dark sea water, city lights on hills on the right side, dark clean space on the left side, ultra realistic photography, no text, no logos',
-    spring: 'Wide panoramic documentary photograph of Golden Bridge over Zolotoy Rog bay in Vladivostok Russia at sunset in spring, warm golden and blue sky, bridge on the right side, clean dark blue gradient on the left side, ultra realistic photography, no text, no logos',
-    summer: 'Wide panoramic documentary photograph of Golden Bridge and Russian Bridge in Vladivostok bay at evening twilight in summer, illuminated cable-stayed bridge on the right side, clean deep blue sky on the left side, ultra realistic photography, no text, no logos',
-    autumn: 'Wide panoramic documentary photograph of Golden Bridge over Zolotoy Rog bay in Vladivostok Russia at golden autumn dusk, illuminated bridge towers on the right side, clean dark navy twilight on the left side, ultra realistic photography, no text, no logos'
+    winter: 'Широкоформатная реалистичная панорамная фотография Золотого моста через бухту Золотой Рог во Владивостоке в зимних вечерних сумерках, золотистая подсветка пилонов моста справа, чистое тёмно-синее пространство слева, без текста и логотипов',
+    spring: 'Широкоформатная реалистичная панорамная фотография Золотого моста через бухту Золотой Рог во Владивостоке на весеннем закате, мост справа, чистое тёмное небо слева, без текста и логотипов',
+    summer: 'Широкоформатная реалистичная панорамная фотография Золотого моста во Владивостоке летним вечером, подсветка вантового моста справа, тёмно-синий градиент слева, без текста и логотипов',
+    autumn: 'Широкоформатная реалистичная панорамная фотография Золотого моста через бухту Золотой Рог во Владивостоке золотым осенним вечером, мост справа, чистое тёмно-синее пространство слева, без текста и логотипов'
   };
   const photo = await fetchTopicPhoto(seasonPrompt[seasonTag], '1536x1024');
   if (photo) {
@@ -165,9 +188,9 @@ async function ensureHeroBanner() {
     const dh = photo.height * scale;
     ctx.drawImage(photo, 0, -(dh - h) * 0.45, w, dh);
     const fade = ctx.createLinearGradient(0, 0, w, 0);
-    fade.addColorStop(0, 'rgba(9, 13, 22, 0.92)');
-    fade.addColorStop(0.55, 'rgba(9, 13, 22, 0.62)');
-    fade.addColorStop(1, 'rgba(9, 13, 22, 0.18)');
+    fade.addColorStop(0, 'rgba(9, 13, 22, 0.94)');
+    fade.addColorStop(0.55, 'rgba(9, 13, 22, 0.64)');
+    fade.addColorStop(1, 'rgba(9, 13, 22, 0.16)');
     ctx.fillStyle = fade;
     ctx.fillRect(0, 0, w, h);
     fs.writeFileSync(bannerFile, canvas.toBuffer('image/jpeg', { quality: 0.92 }));
@@ -210,13 +233,13 @@ async function drawThemedCover(post) {
   ctx.translate(w / 2, h / 2);
   ctx.rotate(-0.2);
   ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  ctx.font = 'bold 64px sans-serif';
+  ctx.font = 'bold 62px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('ИА «ПРИМ_ДОЗОР» • PRIMDOZOR.RU', 0, 15);
+  ctx.fillText('ИА «ПРИМ_ДОЗОР» • ПРИМОРСКИЙ КРАЙ', 0, 15);
   ctx.restore();
 
   const topGrad = ctx.createLinearGradient(0, 0, 0, 110);
-  topGrad.addColorStop(0, 'rgba(9,13,22,0.85)');
+  topGrad.addColorStop(0, 'rgba(9,13,22,0.88)');
   topGrad.addColorStop(1, 'rgba(9,13,22,0)');
   ctx.fillStyle = topGrad;
   ctx.fillRect(0, 0, w, 110);
@@ -238,9 +261,9 @@ async function drawThemedCover(post) {
   ctx.font = 'bold 18px sans-serif';
   ctx.fillText(th.tag, 284, 56);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.68)';
-  ctx.font = 'bold 19px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU', w - 215, 56);
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText('ПРИМОРЬЕ 24/7', w - 210, 56);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 34px sans-serif';
