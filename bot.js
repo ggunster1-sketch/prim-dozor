@@ -1,6 +1,6 @@
 /**
  * ИА «Прим_Дозор» (primdozor.ru)
- * Модуль bot.js (Блок 4) — Единый кросспостинг идентичного поста
+ * Модуль bot.js (Блок 2 из 3 исправленных) — Единый кросспостинг идентичного поста
  * в Telegram, ВКонтакте, MAX и Дзен + мгновенная отправка в IndexNow.
  */
 
@@ -10,14 +10,13 @@ import { LINKS, isPostEligible } from './builder.js';
 const SITE_URL = 'https://primdozor.ru';
 const SITE_HOST = 'primdozor.ru';
 
-// Секреты из GitHub Actions
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN || '';
 const TG_CHANNEL_ID = process.env.TG_CHANNEL_ID || '@prim_dozor';
 
 const VK_TOKEN = process.env.VK_TOKEN || '';
-const VK_GROUP_ID = process.env.VK_GROUP_ID || ''; // числовой ID группы без минуса (если не задан — определяется автоматически для prim_dozor)
+const VK_GROUP_ID = process.env.VK_GROUP_ID || '';
 
-const MAX_BOT_TOKEN = process.env.MAX_BOT_TOKEN || '';
+const MAX_BOT_TOKEN = process.env.MAX_BOT_TOKEN || process.env.MAX_TOKEN || '';
 const MAX_CHAT_ID = process.env.MAX_CHAT_ID || '';
 
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '';
@@ -26,23 +25,25 @@ const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '';
  * Формирует единый идентичный текст поста для Telegram, ВКонтакте, MAX и Дзен.
  */
 export function buildUnifiedPostText(post) {
-  const articleUrl = `${SITE_URL}/news/${post.slug}.html`;
-  const cityLine = post.city && post.city !== 'Весь Приморский край' ? `📍 ${post.city}` : '📍 Приморский край';
+  const articleUrl = SITE_URL + '/news/' + post.slug + '.html';
+  const cityLine = post.city && post.city !== 'Весь Приморский край'
+    ? '📍 ' + post.city
+    : '📍 Приморский край';
 
   return [
-    `🚨 ${post.title}`,
+    '🚨 ' + post.title,
     '',
-    `${post.summary}`,
+    String(post.summary || ''),
     '',
-    `${cityLine} • Рубрика: ${post.rubric}`,
-    `👉 Читать полный материал на сайте: ${articleUrl}`,
+    cityLine + ' • Рубрика: ' + post.rubric,
+    '👉 Читать полный материал на сайте: ' + articleUrl,
     '',
     '———',
-    `ИА «Прим_Дозор» (18+) • Оперативно 24/7`,
-    `• Телеграм: ${LINKS.telegram}`,
-    `• МАКС: ${LINKS.max}`,
-    `• ВКонтакте: ${LINKS.vk}`,
-    `• Дзен: ${LINKS.dzen}`
+    'ИА «Прим_Дозор» (18+) • Оперативно 24/7',
+    '• Телеграм: ' + LINKS.telegram,
+    '• МАКС: ' + LINKS.max,
+    '• ВКонтакте: ' + LINKS.vk,
+    '• Дзен: ' + LINKS.dzen
   ].join('\n');
 }
 
@@ -55,17 +56,17 @@ async function postToTelegram(post, unifiedText) {
     return false;
   }
 
-  const articleUrl = `${SITE_URL}/news/${post.slug}.html`;
-  const replyMarkup = JSON.stringify({
+  const articleUrl = SITE_URL + '/news/' + post.slug + '.html';
+  const replyMarkupObj = {
     inline_keyboard: [
       [
         { text: 'Читать на сайте', url: articleUrl },
         { text: 'Прислать новость', url: LINKS.telegramDirect }
       ]
     ]
-  });
+  };
+  const replyMarkup = JSON.stringify(replyMarkupObj);
 
-  // 1. Пытаемся отправить локальный файл обложки напрямую через multipart/form-data
   if (post.coverFilePath) {
     try {
       const fileBuf = await fs.readFile(post.coverFilePath);
@@ -76,22 +77,21 @@ async function postToTelegram(post, unifiedText) {
       form.append('disable_notification', 'false');
       form.append('reply_markup', replyMarkup);
 
-      const res = await fetch(`https://telegram.org{TG_BOT_TOKEN}/sendPhoto`, {
+      const res = await fetch('https://telegram.org' + TG_BOT_TOKEN + '/sendPhoto', {
         method: 'POST',
         body: form,
         signal: AbortSignal.timeout(15000)
       });
       const data = await res.json();
-      if (data.ok) return true;
-      console.warn('[Бот/Telegram] Ошибка sendPhoto (файл):', data.description);
+      if (data && data.ok) return true;
+      console.warn('[Бот/Telegram] Ошибка sendPhoto (файл):', data && data.description ? data.description : 'неизвестная ошибка');
     } catch (err) {
-      console.warn('[Бот/Telegram] Сбой отправки файла обложки:', err?.message || err);
+      console.warn('[Бот/Telegram] Сбой отправки файла обложки:', err && err.message ? err.message : err);
     }
   }
 
-  // 2. Резервная отправка по публичному URL обложки или текстовым сообщением
   try {
-    const res = await fetch(`https://telegram.org{TG_BOT_TOKEN}/sendPhoto`, {
+    const res = await fetch('https://telegram.org' + TG_BOT_TOKEN + '/sendPhoto', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(12000),
@@ -99,14 +99,13 @@ async function postToTelegram(post, unifiedText) {
         chat_id: TG_CHANNEL_ID,
         photo: post.coverUrl,
         caption: unifiedText.slice(0, 1024),
-        reply_markup: JSON.parse(replyMarkup)
+        reply_markup: replyMarkupObj
       })
     });
     const data = await res.json();
-    if (data.ok) return true;
+    if (data && data.ok) return true;
 
-    // Если картинка ещё не закэширована CDN — отправляем чистый текст с превью ссылки
-    const textRes = await fetch(`https://telegram.org{TG_BOT_TOKEN}/sendMessage`, {
+    const textRes = await fetch('https://telegram.org' + TG_BOT_TOKEN + '/sendMessage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(12000),
@@ -114,13 +113,13 @@ async function postToTelegram(post, unifiedText) {
         chat_id: TG_CHANNEL_ID,
         text: unifiedText,
         disable_web_page_preview: false,
-        reply_markup: JSON.parse(replyMarkup)
+        reply_markup: replyMarkupObj
       })
     });
     const textData = await textRes.json();
-    return Boolean(textData.ok);
+    return Boolean(textData && textData.ok);
   } catch (err) {
-    console.error('[Бот/Telegram] Критическая ошибка отправки:', err?.message || err);
+    console.error('[Бот/Telegram] Критическая ошибка отправки:', err && err.message ? err.message : err);
     return false;
   }
 }
@@ -141,15 +140,19 @@ async function resolveVkGroupId() {
 
     const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
     const data = await res.json();
-    const id = data?.response?.groups?.?.id || data?.response?.?.id;
-    return id ? String(id) : null;
+
+    const groupsArr = data && data.response && Array.isArray(data.response.groups)
+      ? data.response.groups
+      : (Array.isArray(data && data.response) ? data.response : []);
+    const firstGroup = groupsArr.at(0);
+    return firstGroup && firstGroup.id ? String(firstGroup.id) : null;
   } catch {
     return null;
   }
 }
 
 /**
- * Загружает обложку 1200x630 на стену сообщества ВКонтакте и возвращает attachment вида photo-123_456
+ * Загружает обложку 1200x630 на стену сообщества ВКонтакте
  */
 async function uploadVkWallPhoto(groupId, coverFilePath) {
   if (!coverFilePath) return null;
@@ -162,7 +165,7 @@ async function uploadVkWallPhoto(groupId, coverFilePath) {
 
     const srvRes = await fetch(serverUrl, { signal: AbortSignal.timeout(10000) });
     const srvData = await srvRes.json();
-    const uploadUrl = srvData?.response?.upload_url;
+    const uploadUrl = srvData && srvData.response ? srvData.response.upload_url : null;
     if (!uploadUrl) return null;
 
     const fileBuf = await fs.readFile(coverFilePath);
@@ -175,7 +178,7 @@ async function uploadVkWallPhoto(groupId, coverFilePath) {
       signal: AbortSignal.timeout(15000)
     });
     const upData = await upRes.json();
-    if (!upData.photo || upData.photo === '[]') return null;
+    if (!upData || !upData.photo || upData.photo === '[]') return null;
 
     const saveUrl = new URL('https://vk.com');
     saveUrl.searchParams.set('group_id', groupId);
@@ -187,10 +190,10 @@ async function uploadVkWallPhoto(groupId, coverFilePath) {
 
     const saveRes = await fetch(saveUrl, { signal: AbortSignal.timeout(10000) });
     const saveData = await saveRes.json();
-    const saved = saveData?.response?.?.[0];
+    const saved = Array.isArray(saveData && saveData.response) ? saveData.response.at(0) : null;
     if (!saved) return null;
 
-    return `photo${saved.owner_id}_${saved.id}`;
+    return 'photo' + saved.owner_id + '_' + saved.id;
   } catch {
     return null;
   }
@@ -211,13 +214,13 @@ async function postToVk(post, unifiedText) {
     return false;
   }
 
-  const articleUrl = `${SITE_URL}/news/${post.slug}.html`;
+  const articleUrl = SITE_URL + '/news/' + post.slug + '.html';
   const photoAttachment = await uploadVkWallPhoto(groupId, post.coverFilePath);
-  const attachments = photoAttachment ? `${photoAttachment},${articleUrl}` : articleUrl;
+  const attachments = photoAttachment ? photoAttachment + ',' + articleUrl : articleUrl;
 
   try {
     const params = new URLSearchParams();
-    params.set('owner_id', `-${groupId}`);
+    params.set('owner_id', '-' + groupId);
     params.set('from_group', '1');
     params.set('message', unifiedText);
     params.set('attachments', attachments);
@@ -230,23 +233,22 @@ async function postToVk(post, unifiedText) {
       signal: AbortSignal.timeout(12000)
     });
     const data = await res.json();
-    if (data?.response?.post_id) return true;
+    if (data && data.response && data.response.post_id) return true;
 
-    console.warn('[Бот/ВК] Ошибка wall.post:', data?.error?.error_msg || JSON.stringify(data));
+    console.warn('[Бот/ВК] Ошибка wall.post:', data && data.error ? data.error.error_msg : JSON.stringify(data));
     return false;
   } catch (err) {
-    console.error('[Бот/ВК] Критическая ошибка публикации:', err?.message || err);
+    console.error('[Бот/ВК] Критическая ошибка публикации:', err && err.message ? err.message : err);
     return false;
   }
 }
 
 /**
  * Публикация идентичного поста в мессенджер MAX (platform-api.max.ru)
- * Работает автоматически при добавлении MAX_BOT_TOKEN и MAX_CHAT_ID в секреты GitHub.
  */
 async function postToMax(post, unifiedText) {
   if (!MAX_BOT_TOKEN || !MAX_CHAT_ID) {
-    console.log('[Бот/MAX] Ожидание токена: добавьте MAX_BOT_TOKEN и MAX_CHAT_ID для автопостинга в канал MAX');
+    console.log('[Бот/MAX] Ожидание токена: добавьте MAX_TOKEN и MAX_CHAT_ID для автопостинга в канал MAX');
     return false;
   }
 
@@ -278,7 +280,7 @@ async function postToMax(post, unifiedText) {
     console.warn('[Бот/MAX] Ошибка API MAX:', errText);
     return false;
   } catch (err) {
-    console.error('[Бот/MAX] Критическая ошибка отправки:', err?.message || err);
+    console.error('[Бот/MAX] Критическая ошибка отправки:', err && err.message ? err.message : err);
     return false;
   }
 }
@@ -304,11 +306,10 @@ async function notifyDzenFeedUpdated() {
 }
 
 /**
- * Единая точка публикации одного материала во все каналы:
- * Telegram, ВКонтакте, MAX и Дзен (через RSS dzen.xml + WebSub)
+ * Единая точка публикации одного материала во все каналы
  */
 export async function publishEverywhere(post) {
-  if (!isPostEligible(post)) {
+if (!isPostEligible(post)) {
 console.warn('[Бот] Пост отклонён фильтром чистого старта (до 07:00 25.11.2026 ВЛД или содержит 2018-2025 гг.)');
 return;
 }
@@ -320,8 +321,11 @@ postToMax(post, unifiedText),
 notifyDzenFeedUpdated()
 ]);
 console.log(
-[Бот/Итог] "${post.title.slice(0, 48)}..." ->  +
-Telegram: ${tgOk ? 'OK' : 'НЕТ'}, ВК: ${vkOk ? 'OK' : 'НЕТ'}, MAX: ${maxOk ? 'OK' : 'ОЖИДАЕТ ТОКЕН'}, Дзен RSS: ${dzenOk ? 'OK' : 'ОБНОВЛЁН'}
+'[Бот/Итог] "' + post.title.slice(0, 48) + '..." -> ' +
+'Telegram: ' + (tgOk ? 'OK' : 'НЕТ') +
+', ВК: ' + (vkOk ? 'OK' : 'НЕТ') +
+', MAX: ' + (maxOk ? 'OK' : 'ОЖИДАЕТ ТОКЕН') +
+', Дзен RSS: ' + (dzenOk ? 'OK' : 'ОБНОВЛЁН')
 );
 }
 /**
@@ -337,7 +341,7 @@ if (cleanUrls.length === 0) return false;
 const payload = {
 host: SITE_HOST,
 key: INDEXNOW_KEY,
-keyLocation: ${SITE_URL}/${INDEXNOW_KEY}.txt,
+keyLocation: SITE_URL + '/' + INDEXNOW_KEY + '.txt',
 urlList: cleanUrls
 };
 const endpoints = [
@@ -360,7 +364,7 @@ anySuccess = true;
 // Продолжаем отправку на следующий эндпоинт
 }
 }
-console.log([IndexNow] Отправлено ссылок (${cleanUrls.length}): ${anySuccess ? 'УСПЕШНО' : 'ПОВТОРИМ В СЛЕДУЮЩЕМ ЦИКЛЕ'});
+console.log('[IndexNow] Отправлено ссылок (' + cleanUrls.length + '): ' + (anySuccess ? 'УСПЕШНО' : 'ПОВТОРИМ В СЛЕДУЮЩЕМ ЦИКЛЕ'));
 return anySuccess;
 }
 export default {
