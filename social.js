@@ -5,8 +5,9 @@ const SOCIAL_LINKS = {
   tgDirect: 'https://t.me',
   vkWeb: 'https://vk.com',
   maxWeb: 'https://max.ru',
-  dzenWeb: 'https://dzen.ru'
+  dzenWeb: 'https://dzen.ru/prim_dozor'
 };
+
 
 function escTg(s) {
   return String(s || '')
