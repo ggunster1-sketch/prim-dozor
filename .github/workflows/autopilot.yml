@@ -10,10 +10,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Автоматический откат до чистки
+      - name: Восстановление всех файлов из b6e274d
         run: |
           git config user.name "ggunster1-sketch"
           git config user.email "ggunster1@gmail.com"
-          TARGET=$(git rev-list -n 1 --before="2026-11-24 14:00:00 UTC" main)
-          git reset --hard "$TARGET"
-          git push --force origin main
+          git rm -rf --ignore-unmatch .
+          git checkout b6e274d -- .
+          git checkout HEAD -- .github/workflows/autopilot.yml
+          git add -A
+          git commit -m "Полное восстановление проекта из b6e274d"
+          git push origin main
