@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { RUBRIC_STYLES, formatVladivostokStamp } from './media.js';
 
-const PUBLIC_DIR = path.resolve('public');
+const PUBLIC_DIR = path.resolve('.');
 const NEWS_DIR = path.join(PUBLIC_DIR, 'news');
 const SITE_URL = 'https://primdozor.ru';
 
