@@ -175,8 +175,19 @@ function renderFeed() {
 
 function filterCat(c, b) {
   cCat = c;
-  document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); });
-  if (b) b.classList.add('active');
+  document.querySelectorAll('.tab').forEach(function(x) {
+    x.classList.remove('active');
+    x.style.background = '';
+    x.style.color = '';
+  });
+  if (b) {
+    b.classList.add('active');
+    var col = b.getAttribute('data-catcol');
+    if (col) {
+      b.style.background = col;
+      b.style.color = '#ffffff';
+    }
+  }
   renderFeed();
 }
 
@@ -344,6 +355,11 @@ function openArt(id) {
   if (!n) return;
   var mb = document.getElementById('m-body'), md = document.getElementById('modal');
   if (!mb || !md) return;
+  try {
+    if (window.history && window.history.pushState) {
+      window.history.pushState({ artId: n.id }, n.title, '/news/' + n.id + '.html');
+    }
+  } catch (e) {}
   var mediaHtml = n.video
     ? '<video controls playsinline preload="metadata" poster="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px;background:#000"><source src="./' + n.video + '" type="video/mp4"></video>'
     : '<img src="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px">';
@@ -358,7 +374,8 @@ function openArt(id) {
     '<button type="button" class="btn-cta" onclick="shareNative(\'' + n.id + '\')">Поделиться</button> ' +
     '<a href="https://t.me" target="_blank" rel="noopener noreferrer" class="soc-pill">Читайте нас в Telegram</a> ' +
     '<a href="https://max.ru" target="_blank" rel="noopener noreferrer" class="soc-pill">Читайте нас в MAX</a> ' +
-    '<a href="https://vk.com" target="_blank" rel="noopener noreferrer" class="soc-pill">Читайте нас в ВК</a></div>';
+    '<a href="https://vk.com" target="_blank" rel="noopener noreferrer" class="soc-pill">Читайте нас в ВК</a> ' +
+    '<a href="https://dzen.ru" target="_blank" rel="noopener noreferrer" class="soc-pill">Читайте нас в Дзен</a></div>';
   md.style.display = 'flex';
 }
 
@@ -379,6 +396,21 @@ function openAfisha(idx) {
     srcBtn + '</div>';
   md.style.display = 'flex';
 }
+function closeMainModal() {
+  var md = document.getElementById('modal');
+  if (md) md.style.display = 'none';
+  try {
+    if (window.location.pathname.indexOf('/news/') === 0 && window.history && window.history.pushState) {
+      window.history.pushState({}, '', '/');
+    }
+  } catch (e) {}
+}
+
+window.addEventListener('popstate', function() {
+  var md = document.getElementById('modal');
+  if (md && md.style.display === 'flex') md.style.display = 'none';
+});
+
 function switchDirTab(id, b) {
   document.querySelectorAll('.mini-tab').forEach(function(x) { x.classList.remove('active'); });
   if (b) b.classList.add('active');
