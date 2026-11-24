@@ -146,20 +146,26 @@ function detectTheme(post) {
 async function fetchTopicPhoto(scenePrompt, size) {
   const aiKey = (process.env.AI_API_KEY || '').trim();
   if (!aiKey) return null;
-  try {
-    const cleanPrompt = String(scenePrompt || '') + '. Строго без какого-либо текста, букв, цифр, логотипов и вывесок на изображении.';
-    const res = await fetch('https://polza.ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiKey },
-      body: JSON.stringify({ model: 'openai/gpt-image-1', prompt: cleanPrompt, size: size || '1536x1024', n: 1 })
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const item = data && Array.isArray(data.data) ? data.data.at(0) : null;
-    if (!item) return null;
-    if (item.b64_json) return await loadImage(Buffer.from(item.b64_json, 'base64'));
-    if (item.url) return await loadImage(item.url);
-  } catch (e) {}
+  const cleanPrompt = String(scenePrompt || '') + '. Реалистичная новостная фотожурналистика, высокая детализация. Строго без какого-либо текста, букв, цифр, логотипов и вывесок.';
+  const models = [
+    { model: 'gpt-image-1', size: size || '1536x1024' },
+    { model: 'dall-e-3', size: '1792x1024' }
+  ];
+  for (const cfg of models) {
+    try {
+      const res = await fetch('https://polza.ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiKey },
+        body: JSON.stringify({ model: cfg.model, prompt: cleanPrompt, size: cfg.size, n: 1 })
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const item = data && Array.isArray(data.data) ? data.data.at(0) : null;
+      if (!item) continue;
+      if (item.b64_json) return await loadImage(Buffer.from(item.b64_json, 'base64'));
+      if (item.url) return await loadImage(item.url);
+    } catch (e) {}
+  }
   return null;
 }
 
