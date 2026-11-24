@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { execFileSync } = require('child_process');
 const { createCanvas, loadImage } = require('canvas');
 
 function isAdOrSpam(text) {
@@ -47,12 +48,12 @@ function isOutdatedJkh(text) {
 
 function updateLiveOutages(rawItems) {
   if (!fs.existsSync('data')) fs.mkdirSync('data', { recursive: true });
-  let dir = { outages: [], phones: {}, afisha: [] };
+  let dir = { outages: [], phones: {}, afisha: [], poll: null };
   if (fs.existsSync('data/directories.json')) {
     try { dir = JSON.parse(fs.readFileSync('data/directories.json', 'utf8')); } catch (e) {}
   }
   const outageKeywords = /(отключен|без воды|без света|без электричеств|нет электричеств|отключили отоплен|нет отоплен|порыв на сетях|прорыв труб|ремонт теплотрасс|водоснабжен|электроснабжен|авария на сетях|авария на лэп|авария на подстанц|плановые работы.*ул\.|ограничение.*водоснабж|ограничение.*электроснабж)/i;
-  const excludeDtp = /(дтп|столкновени|перевернул|наезд|автомобил|машин|трасс|дорог|гибдд|парковк|тротуар)/i;
+  const excludeNonJkh = /(дтп|столкновени|перевернул|наезд|автомобил|машин|трасс|дорог|гибдд|парковк|тротуар|прокуратур|суд|уголовн|полиц)/i;
   const items = Array.isArray(rawItems) ? rawItems : [];
   const fresh = [];
 
@@ -62,7 +63,7 @@ function updateLiveOutages(rawItems) {
       .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
       .replace(/\s+/g, ' ')
       .trim();
-    if (rawStr.length < 25 || !outageKeywords.test(rawStr) || excludeDtp.test(rawStr) || isOutdatedJkh(rawStr)) continue;
+    if (rawStr.length < 25 || !outageKeywords.test(rawStr) || excludeNonJkh.test(rawStr) || isOutdatedJkh(rawStr)) continue;
     const resType = detectJkhResource(rawStr);
     const loc = detectJkhCity(rawStr);
     const preview = rawStr.slice(0, 145) + (rawStr.length > 145 ? '...' : '');
@@ -82,26 +83,52 @@ function updateLiveOutages(rawItems) {
   fs.writeFileSync('data/directories.json', JSON.stringify(dir, null, 2), 'utf8');
 }
 
+async function processCleanVideo(videoUrl, postId) {
+  if (!videoUrl) return '';
+  if (!fs.existsSync('videos')) fs.mkdirSync('videos', { recursive: true });
+  const rawPath = 'videos/raw_' + postId + '.mp4';
+  const outPath = 'videos/v_' + postId + '.mp4';
+  try {
+    const res = await fetch(videoUrl);
+    if (!res.ok) return '';
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length < 50000 || buf.length > 25 * 1024 * 1024) return '';
+    fs.writeFileSync(rawPath, buf);
+    execFileSync('ffmpeg', [
+      '-y', '-i', rawPath,
+      '-vf', "drawtext=text='PRIMDOZOR.RU':x=w-tw-18:y=h-th-14:fontsize=20:fontcolor=white@0.68:shadowcolor=black@0.6:shadowx=1:shadowy=1",
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
+      '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart',
+      outPath
+    ], { timeout: 25000, stdio: 'ignore' });
+    try { fs.unlinkSync(rawPath); } catch (e) {}
+    return fs.existsSync(outPath) ? outPath : '';
+  } catch (e) {
+    try { if (fs.existsSync(rawPath)) fs.unlinkSync(rawPath); } catch (er) {}
+    return '';
+  }
+}
 function detectTheme(post) {
   const s = ((post.title || '') + ' ' + (post.text || '')).toLowerCase();
-  if (/(сво|военн|флот|тихоокеанск|арми|защитник|патриот|ветеран)/i.test(s)) return { c1: '#0b192c', c2: '#1e3a5f', glow: '#38bdf8', tag: 'СВО И ЗАЩИТА ОТЕЧЕСТВА', scene: 'Russian Pacific Fleet naval ship and coastal city bay in Vladivostok, documentary editorial photography, dramatic natural lighting, no text' };
-  if (post.cat === 'auto' || /(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#111827', c2: '#7f1d1d', glow: '#ef4444', tag: 'АВТО И ДОРОГИ', scene: 'Modern highway bridge over sea bay in Vladivostok Primorsky Krai with city traffic, documentary news photography, no text' };
-  if (/(пожар|возгоран|огонь|мчс|спасател|дым)/i.test(s)) return { c1: '#270909', c2: '#9a3412', glow: '#f97316', tag: 'ОПЕРАТИВНАЯ СВОДКА • МЧС', scene: 'Emergency rescue firefighters team and red rescue vehicle at urban street scene in Russia, news photojournalism, no text' };
-  if (post.cat === 'law' || /(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#090d16', c2: '#1e3a8a', glow: '#3b82f6', tag: 'ВЛАСТЬ И ЗАКОН', scene: 'Government administration building and courthouse architecture in Russian Far East city, official press photography, no text' };
-  if (post.cat === 'city' || /(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОД И ЖКХ', scene: 'Municipal utility workers repairing city water heating pipeline infrastructure in Russian city, news reportage photo, no text' };
-  if (post.cat === 'med' || /(медицин|больниц|врач|поликлиник|здрав|скорая)/i.test(s)) return { c1: '#062038', c2: '#0369a1', glow: '#38bdf8', tag: 'МЕДИЦИНА И ЗДРАВООХРАНЕНИЕ', scene: 'Modern regional hospital medical center building and ambulance in Russia, clean editorial news photography, no text' };
-  if (post.cat === 'econ') return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: 'ЭКОНОМИКА И БИЗНЕС', scene: 'Commercial seaport container terminal and cargo ships in Vladivostok Primorsky Krai, industrial news photography, no text' };
-  if (post.cat === 'sport') return { c1: '#1e1b4b', c2: '#4c1d95', glow: '#a855f7', tag: 'СПОРТ И КУЛЬТУРА', scene: 'Modern sports arena and concert hall cultural event in Vladivostok, vibrant editorial photography, no text' };
+  if (/(сво|военн|флот|тихоокеанск|арми|защитник|патриот|ветеран)/i.test(s)) return { c1: '#0b192c', c2: '#1e3a5f', glow: '#38bdf8', tag: 'СВО И ЗАЩИТА ОТЕЧЕСТВА', scene: 'Russian Pacific Fleet warship and Vladivostok coastline bay, documentary editorial news photography, dramatic natural lighting, no text' };
+  if (post.cat === 'auto' || /(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#111827', c2: '#7f1d1d', glow: '#ef4444', tag: 'АВТО И ДОРОГИ', scene: 'Highway bridge over Zolotoy Rog bay in Vladivostok Primorsky Krai with city traffic, realistic documentary news photography, no text' };
+  if (/(пожар|возгоран|огонь|мчс|спасател|дым)/i.test(s)) return { c1: '#270909', c2: '#9a3412', glow: '#f97316', tag: 'ОПЕРАТИВНАЯ СВОДКА • МЧС', scene: 'Emergency rescue firefighters and red rescue vehicle at urban street scene in Russian Far East, photojournalism, no text' };
+  if (post.cat === 'law' || /(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#090d16', c2: '#1e3a8a', glow: '#3b82f6', tag: 'ВЛАСТЬ И ЗАКОН', scene: 'Official government administration building and courthouse facade in Vladivostok Russia, press photography, no text' };
+  if (post.cat === 'city' || /(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОД И ЖКХ', scene: 'Municipal utility crew repairing city heating and water pipeline infrastructure in Russia, editorial reportage photo, no text' };
+  if (post.cat === 'med' || /(медицин|больниц|врач|поликлиник|здрав|скорая)/i.test(s)) return { c1: '#062038', c2: '#0369a1', glow: '#38bdf8', tag: 'МЕДИЦИНА И ЗДРАВООХРАНЕНИЕ', scene: 'Modern regional medical center building and ambulance in Russian city, clean editorial news photography, no text' };
+  if (post.cat === 'econ') return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: 'ЭКОНОМИКА И БИЗНЕС', scene: 'Commercial seaport container terminal and cargo vessels in Vladivostok Primorsky Krai, industrial news photography, no text' };
+  if (post.cat === 'sport') return { c1: '#1e1b4b', c2: '#4c1d95', glow: '#a855f7', tag: 'СПОРТ И КУЛЬТУРА', scene: 'Modern sports arena and cultural concert hall in Vladivostok, vibrant editorial photography, no text' };
   return { c1: '#0f172a', c2: '#1e293b', glow: '#cbd5e1', tag: String(post.catLabel || 'НОВОСТИ ПРИМОРЬЯ').toUpperCase(), scene: 'Panoramic view of Vladivostok Golden Bridge and Zolotoy Rog bay in Primorsky Krai, editorial news photography, no text' };
 }
-async function fetchTopicPhoto(scenePrompt) {
+
+async function fetchTopicPhoto(scenePrompt, size) {
   const aiKey = (process.env.AI_API_KEY || '').trim();
   if (!aiKey) return null;
   try {
     const res = await fetch('https://polza.ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiKey },
-      body: JSON.stringify({ model: 'openai/gpt-image-1', prompt: scenePrompt, size: '1536x1024', n: 1 })
+      body: JSON.stringify({ model: 'openai/gpt-image-1', prompt: scenePrompt, size: size || '1536x1024', n: 1 })
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -111,6 +138,42 @@ async function fetchTopicPhoto(scenePrompt) {
     if (item.url) return await loadImage(item.url);
   } catch (e) {}
   return null;
+}
+
+async function ensureHeroBanner() {
+  if (!fs.existsSync('covers')) fs.mkdirSync('covers', { recursive: true });
+  const vl = new Date(Date.now() + 10 * 3600000);
+  const m = vl.getUTCMonth() + 1;
+  const seasonTag = (m === 12 || m <= 2) ? 'winter' : (m >= 3 && m <= 5) ? 'spring' : (m >= 6 && m <= 8) ? 'summer' : 'autumn';
+  const bannerFile = 'covers/hero_banner.jpg';
+  const metaFile = 'covers/hero_banner.txt';
+  if (fs.existsSync(bannerFile) && fs.existsSync(metaFile) && fs.readFileSync(metaFile, 'utf8').trim() === seasonTag) {
+    return bannerFile;
+  }
+  const seasonPrompt = {
+    winter: 'Wide panoramic documentary photograph of Golden Bridge over Zolotoy Rog bay in Vladivostok Russia at twilight in winter, golden bridge illumination reflected in dark sea water, city lights on hills on the right side, dark clean space on the left side, ultra realistic photography, no text, no logos',
+    spring: 'Wide panoramic documentary photograph of Golden Bridge over Zolotoy Rog bay in Vladivostok Russia at sunset in spring, warm golden and blue sky, bridge on the right side, clean dark blue gradient on the left side, ultra realistic photography, no text, no logos',
+    summer: 'Wide panoramic documentary photograph of Golden Bridge and Russian Bridge in Vladivostok bay at evening twilight in summer, illuminated cable-stayed bridge on the right side, clean deep blue sky on the left side, ultra realistic photography, no text, no logos',
+    autumn: 'Wide panoramic documentary photograph of Golden Bridge over Zolotoy Rog bay in Vladivostok Russia at golden autumn dusk, illuminated bridge towers on the right side, clean dark navy twilight on the left side, ultra realistic photography, no text, no logos'
+  };
+  const photo = await fetchTopicPhoto(seasonPrompt[seasonTag], '1536x1024');
+  if (photo) {
+    const w = 1400, h = 220;
+    const canvas = createCanvas(w, h);
+    const ctx = canvas.getContext('2d');
+    const scale = w / photo.width;
+    const dh = photo.height * scale;
+    ctx.drawImage(photo, 0, -(dh - h) * 0.45, w, dh);
+    const fade = ctx.createLinearGradient(0, 0, w, 0);
+    fade.addColorStop(0, 'rgba(9, 13, 22, 0.92)');
+    fade.addColorStop(0.55, 'rgba(9, 13, 22, 0.62)');
+    fade.addColorStop(1, 'rgba(9, 13, 22, 0.18)');
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, w, h);
+    fs.writeFileSync(bannerFile, canvas.toBuffer('image/jpeg', { quality: 0.92 }));
+    fs.writeFileSync(metaFile, seasonTag, 'utf8');
+  }
+  return fs.existsSync(bannerFile) ? bannerFile : '';
 }
 
 async function drawThemedCover(post) {
@@ -126,26 +189,21 @@ async function drawThemedCover(post) {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
 
-  const photo = await fetchTopicPhoto(post.coverPrompt || th.scene);
+  let photo = null;
+  if (post.ownPhotoUrl) {
+    try { photo = await loadImage(post.ownPhotoUrl); } catch (e) {}
+  }
+  if (!photo) {
+    photo = await fetchTopicPhoto(post.coverPrompt || th.scene, '1536x1024');
+  }
+
   if (photo) {
     const scale = Math.max(w / photo.width, h / photo.height);
     const dw = photo.width * scale;
     const dh = photo.height * scale;
     ctx.drawImage(photo, (w - dw) / 2, (h - dh) / 2, dw, dh);
-    ctx.fillStyle = 'rgba(9, 13, 22, 0.25)';
+    ctx.fillStyle = 'rgba(9, 13, 22, 0.22)';
     ctx.fillRect(0, 0, w, h);
-  } else {
-    const rad = ctx.createRadialGradient(w * 0.8, h * 0.25, 20, w * 0.8, h * 0.25, 480);
-    rad.addColorStop(0, th.glow + '55');
-    rad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = rad;
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = th.glow + '77';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(740, 410); ctx.lineTo(880, 130); ctx.lineTo(1020, 410);
-    ctx.moveTo(810, 270); ctx.lineTo(950, 270);
-    ctx.stroke();
   }
 
   ctx.save();
@@ -180,7 +238,7 @@ async function drawThemedCover(post) {
   ctx.font = 'bold 18px sans-serif';
   ctx.fillText(th.tag, 284, 56);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.65)';
+  ctx.fillStyle = 'rgba(255,255,255,0.68)';
   ctx.font = 'bold 19px sans-serif';
   ctx.fillText('PRIMDOZOR.RU', w - 215, 56);
 
@@ -214,4 +272,4 @@ async function drawThemedCover(post) {
   return file;
 }
 
-module.exports = { isAdOrSpam, updateLiveOutages, drawThemedCover };
+module.exports = { isAdOrSpam, updateLiveOutages, processCleanVideo, ensureHeroBanner, drawThemedCover };
