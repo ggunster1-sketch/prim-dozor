@@ -1,22 +1,32 @@
-name: Восстановление проекта
+name: PrimDozor Autopilot 24/7
 on:
+  schedule:
+    - cron: '*/15 * * * *'
   workflow_dispatch:
+concurrency:
+  group: autopilot
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
-  restore:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-      - name: Восстановление всех файлов из b6e274d
-        run: |
+          node-version: '20'
+      - run: npm install
+      - env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          VK_TOKEN: ${{ secrets.VK_TOKEN }}
+          MAX_TOKEN: ${{ secrets.MAX_TOKEN }}
+          MAX_CHAT_ID: ${{ secrets.MAX_CHAT_ID }}
+        run: node bot.js
+      - run: |
           git config user.name "ggunster1-sketch"
           git config user.email "ggunster1@gmail.com"
-          git rm -rf --ignore-unmatch .
-          git checkout b6e274d -- .
-          git checkout HEAD -- .github/workflows/autopilot.yml
           git add -A
-          git commit -m "Полное восстановление проекта из b6e274d"
-          git push origin main
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update" && git pull --rebase origin main && git push)
