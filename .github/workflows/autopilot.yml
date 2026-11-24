@@ -21,6 +21,9 @@ jobs:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          VK_TOKEN: ${{ secrets.VK_TOKEN }}
+          MAX_TOKEN: ${{ secrets.MAX_TOKEN }}
+          MAX_CHAT_ID: ${{ secrets.MAX_CHAT_ID }}
         run: node bot.js
       - run: |
           git config user.name "PrimDozor Bot"
