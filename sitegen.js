@@ -30,7 +30,7 @@ function buildArticlePage(post, related) {
   const relHtml = related.map(r => '<div class="w-row"><a href="/news/' + r.id + '.html" style="font-weight:600;">' + esc(r.title) + '</a><span style="color:var(--muted); font-size:12px;">' + esc(r.city) + '</span></div>').join('');
 
   return `<!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" translate="no" class="notranslate">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -109,7 +109,7 @@ function buildSite() {
   }).join('\n');
 
   const indexHtml = `<!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" translate="no" class="notranslate">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -209,7 +209,7 @@ function buildSite() {
 
 Экстренные службы
 Единый номер112
-ГИБДД Приморья231-09-08
+ГИБДД Приморья249-09-21
 ЕДДС Владивостока222-23-33
 Примводоканал200-5-777
 
