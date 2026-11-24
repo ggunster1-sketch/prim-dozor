@@ -1,13 +1,16 @@
 const fs = require('fs');
 const https = require('https');
 const { buildHtml } = require('./builder');
-const { isAdOrSpam, updateLiveOutages, drawThemedCover } = require('./media');
-const { postToTelegram, runScheduledReports } = require('./tg');
+const { isAdOrSpam, updateLiveOutages, processCleanVideo, ensureHeroBanner, drawThemedCover } = require('./media');
+const { hasForeignGlitch, broadcastPosts, runScheduledReports } = require('./social');
 const { updateAfisha } = require('./afisha');
 
 const AI_KEY = (process.env.AI_API_KEY || '').trim();
 const INDEXNOW_KEY = (process.env.INDEXNOW_KEY || '').trim();
 const TG_TOKEN = (process.env.TG_BOT_TOKEN || '').trim();
+const VK_TOKEN = (process.env.VK_TOKEN || '').trim();
+const MAX_TOKEN = (process.env.MAX_TOKEN || '').trim();
+const MAX_CHAT_ID = (process.env.MAX_CHAT_ID || '').trim();
 const HOST = 'primdozor.ru';
 const SLASH = String.fromCharCode(47);
 const LT = String.fromCharCode(60);
@@ -19,8 +22,10 @@ const CHANNELS = [
   { id: 'vpes_vl', name: 'ВПЭС Владивосток', off: true, jkh: true },
   { id: 'primvodokanal', name: 'Примводоканал', off: true, jkh: true },
   { id: 'dgk_dv', name: 'ДГК Приморье', off: true, jkh: true },
+  { id: 'dvec_ru', name: 'ДЭК Приморье', off: true, jkh: true },
   { id: 'dpskontrol_125rus', name: 'ДПС Контроль Приморье', off: false },
   { id: 'dpsvl', name: 'ДПС Владивосток', off: false },
+  { id: 'svodka25', name: 'Сводка 25', off: false },
   { id: 'gibdd25', name: 'Госавтоинспекция Приморья', off: true },
   { id: 'prim_police', name: 'УМВД Приморского края', off: true },
   { id: 'prosecutor_pk', name: 'Прокуратура Приморского края', off: true },
@@ -28,9 +33,11 @@ const CHANNELS = [
   { id: 'mchs_primorye', name: 'ГУ МЧС по Приморскому краю', off: true },
   { id: 'primorskyadmin', name: 'Правительство Приморского края', off: true },
   { id: 'kozhemyako_official', name: 'Губернатор Олег Кожемяко', off: true },
+  { id: 'vlc_ru', name: 'Администрация Владивостока', off: true },
   { id: 'shestakovblog', name: 'Глава Владивостока', off: true },
   { id: 'minzdrav_pk', name: 'Минздрав Приморья', off: true },
   { id: 'newsvlc', name: 'Новости Владивостока', off: false },
+  { id: 'vlnews25', name: 'VL News 25', off: false },
   { id: 'primamedia', name: 'PrimaMedia', off: false },
   { id: 'vladnews_ru', name: 'VladNews', off: false },
   { id: 'primpress_ru', name: 'PrimPress', off: false },
@@ -38,7 +45,14 @@ const CHANNELS = [
   { id: 'vostokmedia24', name: 'Восток-Медиа', off: false },
   { id: 'ussurmedia', name: 'Уссурийск Новости', off: false },
   { id: 'nakhodka_news', name: 'Находка Новости', off: false },
-  { id: 'artem_news25', name: 'Артём Новости', off: false }
+  { id: 'artem_news25', name: 'Артём Новости', off: false },
+  { id: 'bk_news25', name: 'Большой Камень Новости', off: false }
+];
+
+const RSS_FEEDS = [
+  'https://primamedia.ru',
+  'https://vladnews.ru',
+  'https://primpress.ru'
 ];
 function detectDistrict(text) {
   const s = String(text || '').toLowerCase();
@@ -61,20 +75,30 @@ function buildTrafficRadar(rawFeedItems) {
     { name: 'Русский мост', re: /русск(ий|ом|ого)\s*мост/i },
     { name: 'Де-Фриз — Седанка', re: /(низководн|де-фриз|седанк)/i },
     { name: 'Трасса А-370 (Уссури)', re: /(а-370|м-60|трасс[аеу]\s*(владивосток|уссурийск|хабаровск)|кипарисово|раздольн)/i },
-    { name: 'Трасса на Находку', re: /(трасс[аеу]\s*(на\s*)?находк|артём\s*—\s*находк|шкотово|смоляниново|фокино)/i }
+    { name: 'Трасса на Находку', re: /(трасс[аеу]\s*(на\s*)?находк|артём\s*—\s*находк|шкотово|смоляниново|фокино|больш(ой|ом)\s*камен)/i },
+    { name: 'Паромы и залив Петра Великого', re: /(паром|катер|морвокзал|залив петра великого|попова|рейнеке|славянк|штормов)/i }
   ];
 
   const radar = routes.map(rt => {
     const hit = recent.find(n => rt.re.test((n.title || '') + ' ' + (n.text || n.raw || '')));
-    if (!hit) return { name: rt.name, level: 'ok', status: 'Без инцидентов', updated: updTime };
-    const full = ((hit.title || '') + ' ' + (hit.text || hit.raw || '')).toLowerCase();
-    if (/(перекрыт|закрыт|ограничен|обвал|размыв)/i.test(full)) {
-      return { name: rt.name, level: 'danger', status: 'Перекрытие / Ограничено', updated: updTime };
+    if (!hit) {
+      return {
+        name: rt.name,
+        level: 'ok',
+        status: 'Штатный режим',
+        details: 'По данным оперативного мониторинга дорожных служб и сообщений водителей на ' + updTime + ', ограничений, перекрытий и крупных заторов на участке «' + rt.name + '» не зафиксировано.',
+        updated: updTime
+      };
+    }
+    const rawDetail = String(hit.text || hit.raw || hit.title || '').slice(0, 420);
+    const full = rawDetail.toLowerCase();
+    if (/(перекрыт|закрыт|ограничен|обвал|размыв|шторм)/i.test(full)) {
+      return { name: rt.name, level: 'danger', status: 'Ограничение / Внимание', details: rawDetail, updated: updTime };
     }
     if (/(дтп|авари|столкновен|пробк|затор|гололёд|гололед|снег)/i.test(full)) {
-      return { name: rt.name, level: 'warn', status: 'ДТП / Затруднение', updated: updTime };
+      return { name: rt.name, level: 'warn', status: 'ДТП / Затруднение', details: rawDetail, updated: updTime };
     }
-    return { name: rt.name, level: 'ok', status: 'Без инцидентов', updated: updTime };
+    return { name: rt.name, level: 'ok', status: 'Штатный режим', details: rawDetail, updated: updTime };
   });
 
   if (!fs.existsSync('data')) fs.mkdirSync('data', { recursive: true });
@@ -93,14 +117,6 @@ function getHttp(url) {
     req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
     req.on('error', reject);
   });
-}
-
-function hasForeignGlitch(text) {
-  const s = String(text || '');
-  const latWords = s.match(/\b[A-Za-z]{4,}\b/g) || [];
-  const allowed = new Set(['primdozor', 'telegram', 'https', 'http', 'vvo', 'toyota', 'nissan', 'honda', 'subaru', 'suzuki', 'mazda', 'mitsubishi', 'lexus', 'hyundai', 'kia', 'isuzu', 'sitrak', 'howo', 'kamaz', 'fesco', 'dns', 'cagmo', 'meta', 'facebook', 'instagram', 'covid']);
-  const badLat = latWords.filter(w => !allowed.has(w.toLowerCase()));
-  return badLat.length > 3;
 }
 
 function cleanText(s) {
@@ -126,11 +142,11 @@ function isDuplicate(title, existingList) {
   const words = s => new Set(String(s || '').toLowerCase().replace(/[^а-яёa-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3));
   const w1 = words(title);
   if (w1.size < 2) return false;
-  for (const item of existingList.slice(0, 40)) {
+  for (const item of existingList.slice(0, 45)) {
     const w2 = words(item.title);
     let common = 0;
     for (const w of w1) if (w2.has(w)) common++;
-    if (common / Math.min(w1.size, w2.size) >= 0.52) return true;
+    if (common / Math.min(w1.size, w2.size) >= 0.5) return true;
   }
   return false;
 }
@@ -183,14 +199,14 @@ async function rewriteNews(raw) {
   const prompt = [
     'Ты главный редактор информационного агентства Приморского края «Прим_Дозор».',
     'Напиши глубокую, структурированную, SEO-оптимизированную журналистскую статью (5-6 содержательных абзацев, 1600-2200 символов) безупречным русским языком. Строго запрещены любые английские слова и вставки (кроме общепринятых марок автомобилей или аббревиатур). Сохрани все факты, улицы, номера домов, суммы и официальные комментарии ведомств без потери смысла.',
-    'Также напиши отдельный информативный пост для официального Telegram-канала (tgText: 2-3 плотных абзаца, 650-800 символов, строго на чистом русском языке, без смайлов и воды).',
+    'Также напиши отдельный информативный пост для Telegram-канала (tgText: 2-3 плотных абзаца, 550-720 символов, строго на чистом русском языке, без смайлов и воды).',
     'РЕДАКЦИОННАЯ ПОЛИТИКА И ЗАКОН РФ: Материал публикуется от лица редакции ИА «Прим_Дозор». Перерабатывай факты своими словами (ст. 1274 ГК РФ). Указывай официальное ведомство при цитировании (МВД, МЧС, Прокуратура, СК, Правительство Приморского края). Строго соблюдай законы РФ (152-ФЗ, 38-ФЗ, 436-ФЗ).',
     'ГОСУДАРСТВЕННАЯ ПОЗИЦИЯ: Уважительно и патриотично освещай поддержку Вооружённых Сил РФ, участников СВО, ветеранов и их семей.',
-    'СТРОГИЙ ЗАПРЕТ РЕКЛАМЫ: Любые коммерческие предложения, услуги клиник, массаж, скидки, акции, розыгрыши и продвижение чужих каналов отклоняй словом SKIP.',
+    'СТРОГИЙ ЗАПРЕТ РЕКЛАМЫ: Любые коммерческие предложения, продвижение застройщиков, услуги клиник, массаж, скидки, акции, розыгрыши и рекламу чужих каналов отклоняй словом SKIP.',
     'СТРОГИЙ ФИЛЬТР ГЕОГРАФИИ: Публикуй ТОЛЬКО события Приморского края (Владивосток, Уссурийск, Находка, Артём, Большой Камень, Арсеньев, Спасск-Дальний, Партизанск, Дальнегорск, Лесозаводск, Хасан и др.), важные федеральные решения РФ, а также события СВО. Другие регионы РФ отклоняй словом SKIP.',
     'Выбери точную рубрику: chp (Происшествия), city (Город и ЖКХ), law (Власть и закон), econ (Экономика и бизнес), auto (Авто и дороги), family (Общество), med (Медицина), sport (Спорт и культура). Если новость срочная (ЧП, криминал, штормовое МЧС, крупная авария ЖКХ, перекрытие трасс) — ставь "urgent": true.',
     'Верни строго валидный JSON без markdown:',
-    '{"title":"Цепляющий SEO-заголовок до 85 символов","cat":"chp|city|law|econ|auto|family|med|sport","catLabel":"Происшествия|Город и ЖКХ|Власть и закон|Экономика и бизнес|Авто и дороги|Общество|Медицина|Спорт и культура","city":"Город Приморья","district":"Район Владивостока если применимо или пусто","age":"0+|6+|12+|16+|18+","urgent":false,"tldr":"• Факт 1 • Факт 2 • Факт 3","tgText":"Информативный пост для Telegram (650-800 символов, строго русский язык).","coverPrompt":"Short English visual description of documentary news photo matching the story scene in Vladivostok or Russian Far East, realistic photojournalism, no text","text":"Полная редакторская SEO-статья в 5-6 абзацах (1600-2200 символов, строго русский язык)."}',
+    '{"title":"Цепляющий SEO-заголовок до 85 символов","cat":"chp|city|law|econ|auto|family|med|sport","catLabel":"Происшествия|Город и ЖКХ|Власть и закон|Экономика и бизнес|Авто и дороги|Общество|Медицина|Спорт и культура","city":"Город Приморья","district":"Район Владивостока если применимо или пусто","age":"0+|6+|12+|16+|18+","urgent":false,"tldr":"• Факт 1 • Факт 2 • Факт 3","tgText":"Информативный пост для Telegram (550-720 символов, строго русский язык).","coverPrompt":"Short English visual description of documentary news photo matching the story scene in Vladivostok or Russian Far East, realistic photojournalism, no text","text":"Полная редакторская SEO-статья в 5-6 абзацах (1600-2200 символов, строго русский язык)."}',
     'Исходный материал: ' + raw.slice(0, 3200)
   ].join(NL);
   try {
@@ -256,9 +272,9 @@ async function refreshDailyPoll(newsList) {
     }
   } catch (e) {}
 }
-
 async function run() {
   const { weather, rates } = await fetchWeatherAndRates();
+  await ensureHeroBanner();
   const startUtc = Date.UTC(2026, 10, 23, 21, 0, 0);
 
   let rawNews = [];
@@ -290,6 +306,8 @@ async function run() {
 
   const candidates = [];
   const liveFeedRaw = [];
+  const creditRe = /(источник:|видео:|кадры:|фото:|@|t\.me\/|vl\.ru|primamedia|mash|shot|baza|112)/i;
+
   for (const ch of CHANNELS) {
     try {
       const html = await getHttp(['https:', '', ['t', 'me'].join('.'), 's', ch.id].join(SLASH));
@@ -298,7 +316,7 @@ async function run() {
         const idx = b.indexOf('tgme_widget_message_text');
         if (idx === -1) continue;
         const txt = cleanText(b.slice(b.indexOf(GT, idx) + 1, b.indexOf(LT + SLASH + 'div' + GT, idx)));
-        if (txt.length < 40 || isAdOrSpam(txt)) continue;
+        if (txt.length < 35 || (!ch.own && isAdOrSpam(txt))) continue;
 
         const tm = b.match(/datetime="([^"]+)"/);
         const msgTs = tm ? Date.parse(tm.at(1)) : 0;
@@ -308,20 +326,50 @@ async function run() {
         const num = pm ? Number(pm.at(1)) : 0;
         if (num && state[ch.id] && num <= state[ch.id]) continue;
         if (num > maxId) maxId = num;
-        if (txt.length >= 90 && (!msgTs || (Date.now() - msgTs) <= 12 * 3600000)) {
-          candidates.push({ raw: txt, src: ch.off ? 'По данным: ' + ch.name : '', own: Boolean(ch.own) });
+
+        const vm = b.match(/<video[^>]+src="([^"]+)"/i);
+        const rawVideoUrl = vm ? vm.at(1).replace(/&amp;/g, '&') : '';
+        const safeVideoUrl = (ch.own || (!creditRe.test(txt) && rawVideoUrl)) ? rawVideoUrl : '';
+
+        const im = b.match(/background-image:url\('([^']+)'\)/i);
+        const ownPhotoUrl = (ch.own && im) ? im.at(1) : '';
+
+        if (txt.length >= 60 && (!msgTs || (Date.now() - msgTs) <= 6 * 3600000)) {
+          candidates.push({
+            raw: txt,
+            src: ch.off && !ch.own ? 'По данным: ' + ch.name : '',
+            own: Boolean(ch.own),
+            videoUrl: safeVideoUrl,
+            ownPhotoUrl: ownPhotoUrl
+          });
         }
       }
       if (maxId > 0) state[ch.id] = maxId;
     } catch (e) {}
   }
 
+  for (const rssUrl of RSS_FEEDS) {
+    try {
+      const xml = await getHttp(rssUrl);
+      for (const it of xml.split('<item>').slice(1, 7)) {
+        const tM = it.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
+        const dM = it.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
+        const title = cleanText(tM ? tM.at(1) : '');
+        const desc = cleanText(dM ? dM.at(1) : '');
+        const full = (title + '. ' + desc).trim();
+        if (full.length >= 90 && !isAdOrSpam(full) && !isDuplicate(title, news)) {
+          candidates.push({ raw: full, src: '', own: false, videoUrl: '', ownPhotoUrl: '' });
+        }
+      }
+    } catch (e) {}
+  }
   updateLiveOutages(liveFeedRaw.concat(news));
   buildTrafficRadar(liveFeedRaw.concat(news));
 
   if (typeof updateAfisha === 'function') {
     await updateAfisha(AI_KEY);
   }
+
   if (Date.now() < startUtc) {
     fs.writeFileSync('news.json', JSON.stringify(news, null, 2), 'utf8');
     buildHtml(news, weather, rates);
@@ -330,6 +378,9 @@ async function run() {
 
   fs.writeFileSync('tg_state.json', JSON.stringify(state, null, 2), 'utf8');
 
+  const vlNow = new Date(Date.now() + 10 * 3600000);
+  const vlHour = vlNow.getUTCHours();
+  const isDayHours = vlHour >= 7 && vlHour < 23;
   const lastPostTs = news.length > 0 ? Number(news.at(0).id) || 0 : 0;
   const elapsedMin = (Date.now() - lastPostTs) / 60000;
 
@@ -339,7 +390,7 @@ async function run() {
     let ai = null;
     if (c.own) {
       const lines = c.raw.split('\n').map(s => s.trim()).filter(Boolean);
-      const head = String((lines.length ? lines.at(0) : '') || 'Сообщение редакции ИА «Прим_Дозор»').slice(0, 85);
+      const head = String((lines.length ? lines.at(0) : '') || 'Эксклюзив редакции ИА «Прим_Дозор»').slice(0, 85);
       ai = {
         title: head,
         cat: 'city',
@@ -348,7 +399,7 @@ async function run() {
         district: detectDistrict(c.raw),
         age: '18+',
         urgent: true,
-        tldr: '• Официальное сообщение редакции ИА «Прим_Дозор»',
+        tldr: '• Официальный материал редакции ИА «Прим_Дозор»',
         text: c.raw,
         skipTg: true
       };
@@ -357,13 +408,20 @@ async function run() {
     }
 
     if (!ai || isDuplicate(ai.title, news)) continue;
-    // Обычные материалы выходят не чаще 1 раза в 30 минут; срочные (ЧП, МЧС, погода, криминал) — вне очереди
-    if (!ai.urgent && elapsedMin < 28 && added === 0) continue;
-    if (added >= 1 && !ai.urgent) break;
 
+    // График: с 07:00 до 23:00 — 1 пост раз в 30 мин; срочные (ЧП, криминал, МЧС, погода, отключения) — круглосуточно 24/7
+    if (!ai.urgent) {
+      if (!isDayHours) continue;
+      if (elapsedMin < 28 && added === 0) continue;
+      if (added >= 1) break;
+    }
+
+    const postId = Date.now() + added;
     const vl = new Date(Date.now() + 10 * 3600000);
+    const videoFile = c.videoUrl ? await processCleanVideo(c.videoUrl, postId) : '';
+
     const post = {
-      id: Date.now() + added,
+      id: postId,
       isoDate: new Date().toISOString(),
       date: 'Сегодня, ' + String(vl.getUTCHours()).padStart(2, '0') + ':' + String(vl.getUTCMinutes()).padStart(2, '0'),
       cat: ai.cat || 'city',
@@ -377,6 +435,8 @@ async function run() {
       tgText: ai.tgText || '',
       text: ai.text,
       coverPrompt: ai.coverPrompt || '',
+      ownPhotoUrl: c.ownPhotoUrl || '',
+      video: videoFile,
       src: c.src,
       skipTg: Boolean(ai.skipTg)
     };
@@ -401,9 +461,14 @@ async function run() {
     } catch (e) {}
   }
 
-  const toTg = finalNews.slice(0, added).filter(p => !p.skipTg);
-  if (toTg.length > 0 && TG_TOKEN) {
-    await postToTelegram(toTg, TG_TOKEN, HOST);
+  const toBroadcast = finalNews.slice(0, added);
+  if (toBroadcast.length > 0) {
+    await broadcastPosts(toBroadcast, {
+      tgToken: TG_TOKEN,
+      vkToken: VK_TOKEN,
+      maxToken: MAX_TOKEN,
+      maxChatId: MAX_CHAT_ID
+    }, HOST);
   }
 
   if (TG_TOKEN && await runScheduledReports(TG_TOKEN, HOST, weather, finalNews, state)) {
