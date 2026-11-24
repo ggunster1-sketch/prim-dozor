@@ -49,7 +49,6 @@ var PRIM_SERVICES = [
   { city: 'Партизанск', name: 'ЕДДС Партизанского городского округа 24/7', num: '+7 (42363) 6-24-34' },
   { city: 'Дальнегорск', name: 'ЕДДС Дальнегорского городского округа 24/7', num: '+7 (42373) 3-21-51' }
 ];
-
 function toggleFontSize() {
   var isBig = document.documentElement.classList.toggle('large-font');
   document.documentElement.style.fontSize = isBig ? '118%' : '';
@@ -140,6 +139,7 @@ function fetchW(si) {
     });
   }).catch(function() {});
 }
+
 function makeReactHtml(id) {
   var st = getReactStore(), picked = st[id] || '';
   return '<div class="react-bar" data-react-id="' + id + '" style="display:flex;gap:6px;margin-top:8px">' +
@@ -194,7 +194,6 @@ function filterCat(c, b) {
 
 function filterCity(c) { cCity = c; renderFeed(); }
 function setSearch(v) { cQuery = (v || '').trim(); renderFeed(); }
-
 function applyJkhFilters() {
   var inp = document.getElementById('jkh-search');
   var qr = inp ? String(inp.value || '').toLowerCase().trim() : '';
@@ -297,14 +296,15 @@ function openServiceModal(type) {
   } else if (type === 'transport') {
     mb.innerHTML =
       '<div class="news-meta"><span class="badge-cat">Транспорт Приморского края • 24/7</span></div>' +
-'Официальные расписания транспорта Приморья' +
-'АО «Экспресс Приморья» — Пригородные электропоезда и АэроэкспрессАктуальное расписание электричек: Владивосток, Аэропорт, Уссурийск, Находка, Спасск' +
-'Автовокзалы Приморского края — Междугородние автобусыОфициальное расписание краевых и междугородних автобусных рейсов' +
-'Международный аэропорт Владивосток (VVO) — Онлайн-таблоСтатус вылетов и прилётов в реальном времени' +
-'Морской вокзал Владивостока — Справочная паромных переправРейсы на о. Русский, о. Попова, о. Рейнеке и Славянку: +7 (423) 249-73-01';
+      '<h1 style="font-size:21px;margin:8px 0 14px">Официальные расписания транспорта Приморья</h1>' +
+      '<div class="w-row"><div style="flex:1;padding-right:8px"><a href="https://expressprim.ru" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--accent);text-decoration:none">АО «Экспресс Приморья» — Пригородные электропоезда и Аэроэкспресс</a><div style="font-size:12px;color:var(--muted)">Актуальное расписание электричек: Владивосток, Аэропорт, Уссурийск, Находка, Спасск</div></div></div>' +
+      '<div class="w-row"><div style="flex:1;padding-right:8px"><a href="https://primavtovokzal.ru" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--accent);text-decoration:none">Автовокзалы Приморского края — Междугородние автобусы</a><div style="font-size:12px;color:var(--muted)">Официальное расписание краевых и междугородних автобусных рейсов</div></div></div>' +
+      '<div class="w-row"><div style="flex:1;padding-right:8px"><a href="https://vvo.aero" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--accent);text-decoration:none">Международный аэропорт Владивосток (VVO) — Онлайн-табло</a><div style="font-size:12px;color:var(--muted)">Статус вылетов и прилётов в реальном времени</div></div></div>' +
+      '<div class="w-row"><div style="flex:1;padding-right:8px"><a href="tel:+74232497301" style="font-weight:700;color:var(--accent);text-decoration:none">Морской вокзал Владивостока — Справочная паромных переправ</a><div style="font-size:12px;color:var(--muted)">Рейсы на о. Русский, о. Попова, о. Рейнеке и Славянку: +7 (423) 249-73-01</div></div></div>';
+  }
+  md.style.display = 'flex';
 }
-md.style.display = 'flex';
-}
+
 function renderListItems(boxId, arr, q) {
   var lb = document.getElementById(boxId);
   if (!lb) return;
@@ -329,146 +329,137 @@ function openJkh(idx) {
   var o = getByIdx((window.DIRECTORIES || {}).outages, idx);
   if (!o) return;
   var mb = document.getElementById('m-body'), md = document.getElementById('modal');
-  if (!mb || !md) return;
-  mb.innerHTML =
-    '<div class="news-meta"><span class="badge-cat">ЖКХ 24/7 • ' + (o.type || 'Мониторинг') + '</span> <span>' + (o.city || 'Приморье') + '</span></div>' +
-    '<h1 style="font-size:20px;margin:10px 0 14px">Информация об отключении и адресах</h1>' +
-    '<div style="white-space:pre-line;line-height:1.75;font-size:15.5px;margin-bottom:16px">' + linkifyPhones(o.fullText || o.status || '') + '</div>' +
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border)">' +
-    '<a href="tel:' + cleanDigits(o.phone) + '" class="btn-cta">Позвонить в диспетчерскую: ' + (o.phone || '112') + '</a>' +
-    '<a href="' + mapUrl(o.city, '') + '" target="_blank" rel="noopener noreferrer" class="soc-pill">Открыть карту города</a></div>';
-  md.style.display = 'flex';
+if (!mb || !md) return;
+mb.innerHTML =
+'ЖКХ 24/7 • ' + (o.type || 'Мониторинг') + ' ' + (o.city || 'Приморье') + '' +
+'Информация об отключении и адресах' +
+'' + linkifyPhones(o.fullText || o.status || '') + '' +
+'' +
+'Позвонить в диспетчерскую: ' + (o.phone || '112') + '' +
+'Открыть карту города';
+md.style.display = 'flex';
 }
-
 function shareNative(id) {
-  var n = (window.NEWS || []).find(function(x) { return String(x.id) === String(id); });
-  if (!n) return;
-  var u = window.location.origin + '/news/' + n.id + '.html';
-  if (navigator.share) {
-    navigator.share({ title: n.title, text: n.title + ' — ИА «Прим_Дозор»', url: u }).catch(function() {});
-  } else if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(n.title + ' — ' + u).catch(function() {});
-    alert('Ссылка на статью скопирована в буфер обмена.');
-  }
+var n = (window.NEWS || []).find(function(x) { return String(x.id) === String(id); });
+if (!n) return;
+var u = window.location.origin + '/news/' + n.id + '.html';
+if (navigator.share) {
+navigator.share({ title: n.title, text: n.title + ' — ИА «Прим_Дозор»', url: u }).catch(function() {});
+} else if (navigator.clipboard && navigator.clipboard.writeText) {
+navigator.clipboard.writeText(n.title + ' — ' + u).catch(function() {});
+alert('Ссылка на статью скопирована в буфер обмена.');
 }
-
+}
 function openArt(id) {
-  var n = (window.NEWS || []).find(function(x) { return String(x.id) === String(id); });
-  if (!n) return;
-  var mb = document.getElementById('m-body'), md = document.getElementById('modal');
-  if (!mb || !md) return;
-  try {
-    if (window.history && window.history.pushState) {
-      window.history.pushState({ artId: n.id }, n.title, '/news/' + n.id + '.html');
-    }
-  } catch (e) {}
-  var mediaHtml = n.video
-    ? '<video controls playsinline preload="metadata" poster="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px;background:#000"><source src="./' + n.video + '" type="video/mp4"></video>'
-    : '<img src="./' + n.cover + '" style="width:100%;border-radius:10px;margin-bottom:14px">';
-  mb.innerHTML =
-    '<div class="news-meta"><span class="badge-cat">' + n.catLabel + '</span> <span>' + n.city + '</span> <span>• ' + n.date + '</span></div>' +
-    '<h1 style="font-size:21px;margin:8px 0 14px">' + n.title + '</h1>' +
-    mediaHtml +
-    '<div class="tldr"><strong>Главное:</strong><br>' + linkifyPhones(n.tldr || '').replace(/\n/g, '<br>') + '</div>' +
-    '<div style="white-space:pre-line;line-height:1.75;margin-bottom:16px">' + linkifyPhones(n.text) + '</div>' +
-    makeReactHtml(n.id) +
-    '<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;margin-top:12px;border-top:1px solid var(--border)">' +
-    '<button type="button" class="btn-cta" onclick="shareNative(\'' + n.id + '\')">Поделиться</button> ' +
-    '<a href="https://t.me" target="_blank" rel="noopener noreferrer" class="soc-pill">Читайте нас в Telegram</a> ' +
-    '<a href="https://max.ru" target="_blank" rel="noopener noreferrer" class="soc-pill">Читайте нас в MAX</a> ' +
-    '<a href="https://vk.com" target="_blank" rel="noopener noreferrer" class="soc-pill">Читайте нас в ВК</a> ' +
-    '<a href="https://dzen.ru" target="_blank" rel="noopener noreferrer" class="soc-pill">Читайте нас в Дзен</a></div>';
-  md.style.display = 'flex';
+var n = (window.NEWS || []).find(function(x) { return String(x.id) === String(id); });
+if (!n) return;
+var mb = document.getElementById('m-body'), md = document.getElementById('modal');
+if (!mb || !md) return;
+try {
+if (window.history && window.history.pushState) {
+window.history.pushState({ artId: n.id }, n.title, '/news/' + n.id + '.html');
 }
-
+} catch (e) {}
+var mediaHtml = n.video
+? ''
+: '';
+mb.innerHTML =
+'' + n.catLabel + ' ' + n.city + ' • ' + n.date + '' +
+'' + n.title + '' +
+mediaHtml +
+'Главное:
+' + linkifyPhones(n.tldr || '').replace(/\n/g, '
+') + '' +
+'' + linkifyPhones(n.text) + '' +
+makeReactHtml(n.id) +
+'' +
+'Поделиться ' +
+'Читайте нас в Telegram ' +
+'Читайте нас в MAX ' +
+'Читайте нас в ВК ' +
+'Читайте нас в Дзен';
+md.style.display = 'flex';
+}
 function openAfisha(idx) {
-  var a = getByIdx((window.DIRECTORIES || {}).afisha, idx);
-  if (!a) return;
-  var mb = document.getElementById('m-body'), md = document.getElementById('modal');
-  if (!mb || !md) return;
-  var phoneRow = a.phone ? '<div>Телефон организаторов: <a href="tel:' + cleanDigits(a.phone) + '" style="color:var(--accent);font-weight:700">' + a.phone + '</a></div>' : '';
-  var srcBtn = a.url ? '<a href="' + a.url + '" target="_blank" rel="noopener noreferrer" class="soc-pill">Официальный источник мероприятия</a> ' : '';
-  mb.innerHTML =
-    '<div class="news-meta"><span class="badge-cat">' + (a.tag || 'Афиша') + '</span> <span>' + (a.city || 'Приморье') + '</span></div>' +
-    '<h1 style="font-size:21px;margin:8px 0 14px">' + a.title + '</h1>' +
-    '<div class="tldr"><div>Дата и время: ' + (a.date || '') + '</div><div>Полный адрес: ' + (a.place || a.city || '') + '</div><div>Условия участия: Вход свободный</div>' + phoneRow + '</div>' +
-    '<div style="line-height:1.75;margin-bottom:16px">' + linkifyPhones(a.desc || '') + '</div>' +
-    '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-    '<a href="' + mapUrl(a.city, a.place) + '" target="_blank" rel="noopener noreferrer" class="btn-cta">Показать на Яндекс.Картах</a> ' +
-    srcBtn + '</div>';
-  md.style.display = 'flex';
+var a = getByIdx((window.DIRECTORIES || {}).afisha, idx);
+if (!a) return;
+var mb = document.getElementById('m-body'), md = document.getElementById('modal');
+if (!mb || !md) return;
+var phoneRow = a.phone ? 'Телефон организаторов: ' + a.phone + '' : '';
+var srcBtn = a.url ? 'Официальный источник мероприятия ' : '';
+mb.innerHTML =
+'' + (a.tag || 'Афиша') + ' ' + (a.city || 'Приморье') + '' +
+'' + a.title + '' +
+'Дата и время: ' + (a.date || '') + 'Полный адрес: ' + (a.place || a.city || '') + 'Условия участия: Вход свободный' + phoneRow + '' +
+'' + linkifyPhones(a.desc || '') + '' +
+'' +
+'Показать на Яндекс.Картах ' +
+srcBtn + '';
+md.style.display = 'flex';
 }
-
 function closeMainModal() {
-  var md = document.getElementById('modal');
-  if (md) md.style.display = 'none';
-  try {
-    if (window.location.pathname.indexOf('/news/') === 0 && window.history && window.history.pushState) {
-      window.history.pushState({}, '', '/');
-    }
-  } catch (e) {}
+var md = document.getElementById('modal');
+if (md) md.style.display = 'none';
+try {
+if (window.location.pathname.indexOf('/news/') === 0 && window.history && window.history.pushState) {
+window.history.pushState({}, '', '/');
 }
-
+} catch (e) {}
+}
 window.addEventListener('popstate', function() {
-  var md = document.getElementById('modal');
-  if (md && md.style.display === 'flex') md.style.display = 'none';
+var md = document.getElementById('modal');
+if (md && md.style.display === 'flex') md.style.display = 'none';
 });
-
 function switchDirTab(id, b) {
-  document.querySelectorAll('.mini-tab').forEach(function(x) { x.classList.remove('active'); });
-  if (b) b.classList.add('active');
-  ['dir-jkh', 'dir-phones', 'dir-apteki', 'dir-travma', 'dir-afisha'].forEach(function(k) {
-    var e = document.getElementById(k);
-    if (e) e.style.display = (k === id) ? 'block' : 'none';
-  });
+document.querySelectorAll('.mini-tab').forEach(function(x) { x.classList.remove('active'); });
+if (b) b.classList.add('active');
+['dir-jkh', 'dir-phones', 'dir-apteki', 'dir-travma', 'dir-afisha'].forEach(function(k) {
+var e = document.getElementById(k);
+if (e) e.style.display = (k === id) ? 'block' : 'none';
+});
 }
-
 function renderCityPhones(city) {
-  var sel = city || 'Все города';
-  var list = PRIM_SERVICES.filter(function(x) {
-    return sel === 'Все города' || x.city === 'Все города' || x.city === sel;
-  });
-  var b = document.getElementById('phones-list');
-  if (b) {
-    b.innerHTML = list.map(function(x) {
-      return '<div class="w-row"><div style="flex:1;padding-right:8px"><div style="font-size:11px;color:var(--accent);font-weight:700">' + x.city + '</div><div style="font-size:13px">' + x.name + '</div></div><a href="tel:' + cleanDigits(x.num) + '" class="tel-pill">' + x.num + '</a></div>';
-    }).join('');
-  }
+var sel = city || 'Все города';
+var list = PRIM_SERVICES.filter(function(x) {
+return sel === 'Все города' || x.city === 'Все города' || x.city === sel;
+});
+var b = document.getElementById('phones-list');
+if (b) {
+b.innerHTML = list.map(function(x) {
+return '' + x.city + '' + x.name + '' + x.num + '';
+}).join('');
 }
-
+}
 function renderPoll() {
-  var box = document.getElementById('poll-widget');
-  if (!box) return;
-  var dirPoll = (window.DIRECTORIES || {}).poll;
-  var qText = (dirPoll && dirPoll.question) ? dirPoll.question : 'Какая тема в Приморском крае сейчас требует первоочередного внимания властей и служб?';
-  var opts = (dirPoll && Array.isArray(dirPoll.options) && dirPoll.options.length >= 3)
-    ? dirPoll.options
-    : ['Состояние дорог, мостов и работа общественного транспорта', 'Контроль качества ЖКХ, отопления и водоснабжения', 'Поддержка участников СВО, ветеранов и их семей', 'Развитие медицины и доступность поликлиник в крае'];
-  var pollKey = 'pd_poll_' + qText.slice(0, 24);
-  var voted = -1;
-  try { var rawV = localStorage.getItem(pollKey); if (rawV !== null) voted = Number(rawV); } catch (e) {}
-
-  var html = '<div style="font-size:11.5px;font-weight:800;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Опрос читателей Приморья</div>' +
-    '<div style="font-weight:700;font-size:14px;line-height:1.35;margin-bottom:10px">' + qText + '</div>';
-
-  if (voted >= 0 && voted < opts.length) {
-    html += opts.map(function(label, i) {
-      var isMe = (i === voted);
-      var pct = isMe ? 100 : 0;
-      return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px"><span>' + label + (isMe ? ' — <strong>Ваш голос учтён</strong>' : '') + '</span><strong>' + pct + '%</strong></div>' +
-        '<div style="height:6px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--accent)"></div></div></div>';
-    }).join('') + '<div style="font-size:11.5px;color:var(--muted);margin-top:6px">Голос принят редакцией ИА «Прим_Дозор».</div>';
-  } else {
-    html += opts.map(function(label, i) {
-      return '<button type="button" class="soc-pill" style="display:block;width:100%;text-align:left;margin-bottom:6px;padding:8px 12px;font-size:13px" onclick="votePoll(' + i + ')">' + label + '</button>';
-    }).join('');
-  }
-  box.innerHTML = html;
+var box = document.getElementById('poll-widget');
+if (!box) return;
+var dirPoll = (window.DIRECTORIES || {}).poll;
+var qText = (dirPoll && dirPoll.question) ? dirPoll.question : 'Какая тема в Приморском крае сейчас требует первоочередного внимания властей и служб?';
+var opts = (dirPoll && Array.isArray(dirPoll.options) && dirPoll.options.length >= 3)
+? dirPoll.options
+: ['Состояние дорог, мостов и работа общественного транспорта', 'Контроль качества ЖКХ, отопления и водоснабжения', 'Поддержка участников СВО, ветеранов и их семей', 'Развитие медицины и доступность поликлиник в крае'];
+var pollKey = 'pd_poll_' + qText.slice(0, 24);
+var voted = -1;
+try { var rawV = localStorage.getItem(pollKey); if (rawV !== null) voted = Number(rawV); } catch (e) {}
+var html = 'Опрос читателей Приморья' +
+'' + qText + '';
+if (voted >= 0 && voted < opts.length) {
+html += opts.map(function(label, i) {
+var isMe = (i === voted);
+var pct = isMe ? 100 : 0;
+return '' + label + (isMe ? ' — Ваш голос учтён' : '') + '' + pct + '%' +
+'';
+}).join('') + 'Голос принят редакцией ИА «Прим_Дозор».';
+} else {
+html += opts.map(function(label, i) {
+return '' + label + '';
+}).join('');
 }
-
+box.innerHTML = html;
+}
 window.votePoll = function(idx) {
-  var dirPoll = (window.DIRECTORIES || {}).poll;
-  var qText = (dirPoll && dirPoll.question) ? dirPoll.question : 'Какая тема в Приморском крае сейчас требует первоочередного внимания властей и служб?';
+var dirPoll = (window.DIRECTORIES || {}).poll;
+var qText = (dirPoll && dirPoll.question) ? dirPoll.question : 'Какая тема в Приморском крае сейчас требует первоочередного внимания властей и служб?';
 try { localStorage.setItem('pd_poll_' + qText.slice(0, 24), String(idx)); } catch (e) {}
 renderPoll();
 };
