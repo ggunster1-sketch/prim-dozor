@@ -408,28 +408,33 @@ function buildHtml(news, weather, rates) {
     tag('div', 'id="dir-afisha" style="display:none"', afishaHtml)
   );
   // Создание модальных окон (статьи и народная приёмная)
-  const modalsHtml = /* модальное окно статьи и форма обратной связи ИА «Прим_Дозор» */;
+   const modalsHtml =
+    tag('div', 'id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeMainModal()"',
+      tag('div', 'class="widget" style="max-width:740px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;position:relative"',
+        tag('button', 'type="button" class="soc-pill" style="float:right;margin-bottom:8px" onclick="closeMainModal()"', 'Закрыть') +
+        tag('div', 'id="m-body"', '')
+      )
+    ) +
+    tag('div', 'id="report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.style.display=' + SQ + 'none' + SQ + '"',
+      tag('form', 'class="widget" style="max-width:480px;width:100%;padding:22px" onsubmit="sendReport(event)"',
+        tag('h3', 'style="margin:0 0 8px"', 'Народная приёмная ИА «Прим_Дозор»') +
+        tag('p', 'style="font-size:12.5px;color:var(--muted);margin:0 0 10px"', 'Обращение передаётся дежурному редактору (@prim_dozor) или на почту prim_dozor@internet.ru.') +
+        tag('select', 'id="rep-type" class="input" style="margin-bottom:8px"',
+          tag('option', 'value="Проблема ЖКХ (свет, вода, тепло)"', 'Проблема ЖКХ (свет, вода, тепло)') +
+          tag('option', 'value="Дороги, транспорт и благоустройство"', 'Дороги, транспорт и благоустройство') +
+          tag('option', 'value="Происшествие или оперативная новость"', 'Происшествие или оперативная новость') +
+          tag('option', 'value="Поддержка СВО и волонтёрские инициативы"', 'Поддержка СВО и волонтёрские инициативы') +
+          tag('option', 'value="Отзыв или предложение редакции"', 'Отзыв или предложение редакции')
+        ) +
+        tag('select', 'id="rep-city" class="input" style="margin-bottom:8px"', cityOpts) +
+        tag('textarea', 'id="rep-text" class="input" rows="4" placeholder="Опишите ситуацию, точный адрес или детали..." style="margin-bottom:12px"', '') +
+        tag('div', 'style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"',
+          tag('button', 'type="button" class="soc-pill" onclick="document.getElementById(' + SQ + 'report-modal' + SQ + ').style.display=' + SQ + 'none' + SQ + '"', 'Отмена') +
+          tag('button', 'type="submit" class="btn-cta"', 'Передать в редакцию')
+        )
+      )
+    );
 
-  // Стили сеток и адаптивности
-  const designGridCss = /* CSS-правила для soc-grid, svc-grid, radar-grid и мобильных экранов */;
-
-  // Основной контент страницы
-  const mainHtml = designGridCss + tag('main', 'class="wrap"', ...);
-
-  // Подвал сайта
-  const footerHtml = tag('footer', 'class="site-footer"', ...);
-
-  // Генерация index.html
-  const docType = LT + '!DOCTYPE html' + GT;
-  fs.writeFileSync('index.html', docType + tag('html', 'lang="ru"', headHtml + tag('body', '', topBannerHtml + headerHtml + mainHtml + footerHtml)), 'utf8');
-
-  // Генерация sitemap.xml и robots.txt
-  const todayIso = new Date().toISOString().slice(0, 10);
-  // Запись sitemap.xml и robots.txt через fs.writeFileSync...
-
-  // Генерация RSS-фида для Дзен (dzen.xml)
-  // Обработка последних 30 материалов с тегами, изображениями и ссылками
-  fs.writeFileSync('dzen.xml', dzenRss, 'utf8');
-}
-
-module.exports = { buildHtml };
+  const designGridCss = tag('style', '',
+    '.soc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.svc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.radar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.tile-btn{display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 10px;border-radius:10px;font-size:12.5px;font-weight:700;text-decoration:none;border:none;cursor:pointer;line-height:1.25;transition:opacity .15s}.tile-btn:hover{opacity:.9}.radar-cell{display:flex;flex-direction:column;justify-content:center;padding:8px 10px;border-radius:9px;border:1px solid var(--border);cursor:pointer;color:inherit;font:inherit}.cat-scroll{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}.cat-scroll::-webkit-scrollbar{display:none}.cat-scroll .tab{white-space:nowrap;flex-shrink:0}.hero-img,.news-thumb{aspect-ratio:16/9;object-fit:cover}@media(max-width:920px){.svc-grid{grid-template-columns:repeat(2,1fr)}.svc-grid .tile-btn:last-child{grid-column:span 2}.radar-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:860px){.grid-layout{display:flex!important;flex-direction:column!important}.sidebar,.feed-col{width:100%!important;max-width:100%!important}.news-card{flex-direction:column!important}.news-thumb{width:100%!important;height:185px!important;object-fit:cover!important}}@media(max-width:560px){.soc-grid{grid-template-columns:repeat(2,1fr)}.tile-btn{font-size:12px;padding:8px 8px}}'
+  );
