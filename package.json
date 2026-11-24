@@ -1,5 +1,12 @@
 {
+  "name": "prim-dozor",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node app.js"
+  },
   "dependencies": {
-    "canvas": "^3.2.3"
+    "sharp": "^0.33.5"
   }
 }
