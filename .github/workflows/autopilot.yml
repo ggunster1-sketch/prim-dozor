@@ -1,7 +1,7 @@
 name: PrimDozor Autopilot 24/7
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 concurrency:
   group: autopilot
@@ -15,17 +15,28 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - run: npm install canvas
-      - env:
+          node-version: '22'
+      - run: npm install
+      - name: Создание файла ключа IndexNow
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: |
+          mkdir -p public
+          if [ -n "$INDEXNOW_KEY" ]; then
+            echo -n "$INDEXNOW_KEY" > "public/${INDEXNOW_KEY}.txt"
+          fi
+      - name: Запуск автопилота ИА «Прим_Дозор»
+        env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
           MAX_TOKEN: ${{ secrets.MAX_TOKEN }}
+          MAX_BOT_TOKEN: ${{ secrets.MAX_TOKEN }}
           MAX_CHAT_ID: ${{ secrets.MAX_CHAT_ID }}
-        run: node bot.js
-      - run: |
+        run: node app.js
+      - name: Сохранение и публикация изменений
+        run: |
           git config user.name "PrimDozor Bot"
           git config user.email "bot@primdozor.ru"
           git add -A
