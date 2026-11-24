@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { createCanvas } = require('canvas');
+const { createCanvas, loadImage } = require('canvas');
 
 function isAdOrSpam(text) {
   const s = String(text || '').toLowerCase();
@@ -84,14 +84,35 @@ function updateLiveOutages(rawItems) {
 
 function detectTheme(post) {
   const s = ((post.title || '') + ' ' + (post.text || '')).toLowerCase();
-  if (post.cat === 'auto' || /(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#111827', c2: '#7f1d1d', glow: '#ef4444', tag: 'АВТО И ДОРОГИ' };
-  if (/(пожар|возгоран|огонь|мчс|спасател|дым)/i.test(s)) return { c1: '#270909', c2: '#9a3412', glow: '#f97316', tag: 'ЭКСТРЕННАЯ СВОДКА • МЧС' };
-  if (post.cat === 'law' || /(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#090d16', c2: '#1e3a8a', glow: '#3b82f6', tag: 'ВЛАСТЬ И ЗАКОН' };
-  if (post.cat === 'city' || /(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОД И ЖКХ' };
-  if (post.cat === 'econ') return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: 'ЭКОНОМИКА И БИЗНЕС' };
-  if (post.cat === 'sport') return { c1: '#1e1b4b', c2: '#4c1d95', glow: '#a855f7', tag: 'СПОРТ И КУЛЬТУРА' };
-  return { c1: '#0f172a', c2: '#1e293b', glow: '#cbd5e1', tag: String(post.catLabel || 'НОВОСТИ ПРИМОРЬЯ').toUpperCase() };
+  if (/(сво|военн|флот|тихоокеанск|арми|защитник|патриот|ветеран)/i.test(s)) return { c1: '#0b192c', c2: '#1e3a5f', glow: '#38bdf8', tag: 'СВО И ЗАЩИТА ОТЕЧЕСТВА', scene: 'Russian Pacific Fleet naval ship and coastal city bay in Vladivostok, documentary editorial photography, dramatic natural lighting, no text' };
+  if (post.cat === 'auto' || /(дтп|авари|столкновен|наезд|автомобил|машин|трасс|дорог|гибдд|мост)/i.test(s)) return { c1: '#111827', c2: '#7f1d1d', glow: '#ef4444', tag: 'АВТО И ДОРОГИ', scene: 'Modern highway bridge over sea bay in Vladivostok Primorsky Krai with city traffic, documentary news photography, no text' };
+  if (/(пожар|возгоран|огонь|мчс|спасател|дым)/i.test(s)) return { c1: '#270909', c2: '#9a3412', glow: '#f97316', tag: 'ОПЕРАТИВНАЯ СВОДКА • МЧС', scene: 'Emergency rescue firefighters team and red rescue vehicle at urban street scene in Russia, news photojournalism, no text' };
+  if (post.cat === 'law' || /(полиц|мвд|суд|прокурат|задержан|уголовн|краж|разб|мошенн|следств|ск )/i.test(s)) return { c1: '#090d16', c2: '#1e3a8a', glow: '#3b82f6', tag: 'ВЛАСТЬ И ЗАКОН', scene: 'Government administration building and courthouse architecture in Russian Far East city, official press photography, no text' };
+  if (post.cat === 'city' || /(жкх|отключен|вод[аыу]|свет|электричеств|отоплен|теплотрасс|ремонт)/i.test(s)) return { c1: '#042f2e', c2: '#115e59', glow: '#14b8a6', tag: 'ГОРОД И ЖКХ', scene: 'Municipal utility workers repairing city water heating pipeline infrastructure in Russian city, news reportage photo, no text' };
+  if (post.cat === 'med' || /(медицин|больниц|врач|поликлиник|здрав|скорая)/i.test(s)) return { c1: '#062038', c2: '#0369a1', glow: '#38bdf8', tag: 'МЕДИЦИНА И ЗДРАВООХРАНЕНИЕ', scene: 'Modern regional hospital medical center building and ambulance in Russia, clean editorial news photography, no text' };
+  if (post.cat === 'econ') return { c1: '#0f172a', c2: '#1e293b', glow: '#eab308', tag: 'ЭКОНОМИКА И БИЗНЕС', scene: 'Commercial seaport container terminal and cargo ships in Vladivostok Primorsky Krai, industrial news photography, no text' };
+  if (post.cat === 'sport') return { c1: '#1e1b4b', c2: '#4c1d95', glow: '#a855f7', tag: 'СПОРТ И КУЛЬТУРА', scene: 'Modern sports arena and concert hall cultural event in Vladivostok, vibrant editorial photography, no text' };
+  return { c1: '#0f172a', c2: '#1e293b', glow: '#cbd5e1', tag: String(post.catLabel || 'НОВОСТИ ПРИМОРЬЯ').toUpperCase(), scene: 'Panoramic view of Vladivostok Golden Bridge and Zolotoy Rog bay in Primorsky Krai, editorial news photography, no text' };
 }
+async function fetchTopicPhoto(scenePrompt) {
+  const aiKey = (process.env.AI_API_KEY || '').trim();
+  if (!aiKey) return null;
+  try {
+    const res = await fetch('https://polza.ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiKey },
+      body: JSON.stringify({ model: 'openai/gpt-image-1', prompt: scenePrompt, size: '1536x1024', n: 1 })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const item = data && Array.isArray(data.data) ? data.data.at(0) : null;
+    if (!item) return null;
+    if (item.b64_json) return await loadImage(Buffer.from(item.b64_json, 'base64'));
+    if (item.url) return await loadImage(item.url);
+  } catch (e) {}
+  return null;
+}
+
 async function drawThemedCover(post) {
   if (!fs.existsSync('covers')) fs.mkdirSync('covers', { recursive: true });
   const w = 1200, h = 675;
@@ -105,52 +126,63 @@ async function drawThemedCover(post) {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
 
-  const rad = ctx.createRadialGradient(w * 0.8, h * 0.25, 20, w * 0.8, h * 0.25, 480);
-  rad.addColorStop(0, th.glow + '44');
-  rad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = rad;
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-  ctx.lineWidth = 2;
-  for (let x = 0; x < w; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-  for (let y = 0; y < h; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-
-  ctx.strokeStyle = th.glow + '77';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(740, 410); ctx.lineTo(880, 130); ctx.lineTo(1020, 410);
-  ctx.moveTo(810, 270); ctx.lineTo(950, 270);
-  ctx.stroke();
+  const photo = await fetchTopicPhoto(post.coverPrompt || th.scene);
+  if (photo) {
+    const scale = Math.max(w / photo.width, h / photo.height);
+    const dw = photo.width * scale;
+    const dh = photo.height * scale;
+    ctx.drawImage(photo, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    ctx.fillStyle = 'rgba(9, 13, 22, 0.25)';
+    ctx.fillRect(0, 0, w, h);
+  } else {
+    const rad = ctx.createRadialGradient(w * 0.8, h * 0.25, 20, w * 0.8, h * 0.25, 480);
+    rad.addColorStop(0, th.glow + '55');
+    rad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rad;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = th.glow + '77';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(740, 410); ctx.lineTo(880, 130); ctx.lineTo(1020, 410);
+    ctx.moveTo(810, 270); ctx.lineTo(950, 270);
+    ctx.stroke();
+  }
 
   ctx.save();
   ctx.translate(w / 2, h / 2);
-  ctx.rotate(-0.22);
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  ctx.font = 'bold 68px sans-serif';
+  ctx.rotate(-0.2);
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.font = 'bold 64px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('ИА «ПРИМ_ДОЗОР» • PRIMDOZOR.RU', 0, 15);
   ctx.restore();
 
-  const grad = ctx.createLinearGradient(0, h - 340, 0, h);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(9,13,22,0.96)');
+  const topGrad = ctx.createLinearGradient(0, 0, 0, 110);
+  topGrad.addColorStop(0, 'rgba(9,13,22,0.85)');
+  topGrad.addColorStop(1, 'rgba(9,13,22,0)');
+  ctx.fillStyle = topGrad;
+  ctx.fillRect(0, 0, w, 110);
+
+  const grad = ctx.createLinearGradient(0, h - 330, 0, h);
+  grad.addColorStop(0, 'rgba(9,13,22,0)');
+  grad.addColorStop(0.45, 'rgba(9,13,22,0.82)');
+  grad.addColorStop(1, 'rgba(9,13,22,0.98)');
   ctx.fillStyle = grad;
-  ctx.fillRect(0, h - 340, w, 340);
+  ctx.fillRect(0, h - 330, w, 330);
 
   ctx.fillStyle = '#b91c1c';
-  ctx.fillRect(40, 32, 235, 44);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 21px sans-serif';
-  ctx.fillText('ПРИМ_ДОЗОР', 58, 61);
+  ctx.fillRect(40, 28, 225, 42);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText('ПРИМ_ДОЗОР', 56, 56);
 
   ctx.fillStyle = th.glow;
-  ctx.font = 'bold 19px sans-serif';
-  ctx.fillText(th.tag, 295, 61);
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText(th.tag, 284, 56);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.font = 'bold 21px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU', w - 230, 61);
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
+  ctx.font = 'bold 19px sans-serif';
+  ctx.fillText('PRIMDOZOR.RU', w - 215, 56);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 34px sans-serif';
@@ -158,7 +190,7 @@ async function drawThemedCover(post) {
   const lines = [];
   let line = '';
   for (const word of words) {
-    if (ctx.measureText(line + ' ' + word).width > 1100) {
+    if (ctx.measureText(line + ' ' + word).width > 1110) {
       if (line) lines.push(line);
       line = word;
     } else {
@@ -167,7 +199,7 @@ async function drawThemedCover(post) {
   }
   if (line) lines.push(line);
 
-  let y = h - 70 - (lines.slice(0, 3).length - 1) * 44;
+  let y = h - 72 - (lines.slice(0, 3).length - 1) * 44;
   for (const l of lines.slice(0, 3)) {
     ctx.fillText(l, 40, y);
     y += 44;
@@ -175,10 +207,10 @@ async function drawThemedCover(post) {
 
   ctx.fillStyle = '#cbd5e1';
   ctx.font = 'bold 16px sans-serif';
-  ctx.fillText('PRIMDOZOR.RU  •  ' + String(post.city || 'Приморский край').toUpperCase() + '  •  ' + (post.age || '18+'), 40, h - 22);
+  ctx.fillText('ИА «ПРИМ_ДОЗОР»  •  ' + String(post.city || 'Приморский край').toUpperCase() + '  •  ' + (post.age || '18+'), 40, h - 22);
 
   const file = 'covers/c_' + post.id + '.jpg';
-  fs.writeFileSync(file, canvas.toBuffer('image/jpeg', { quality: 0.88 }));
+  fs.writeFileSync(file, canvas.toBuffer('image/jpeg', { quality: 0.9 }));
   return file;
 }
 
