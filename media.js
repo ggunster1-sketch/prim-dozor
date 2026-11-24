@@ -3,7 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import sharp from 'sharp';
 
-const MEDIA_DIR = path.resolve('public/media');
+const MEDIA_DIR = path.resolve('media');
 const COVER_WIDTH = 1200;
 const COVER_HEIGHT = 630;
 
