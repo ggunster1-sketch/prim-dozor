@@ -438,3 +438,88 @@ function buildHtml(news, weather, rates) {
   const designGridCss = tag('style', '',
     '.soc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.svc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.radar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.tile-btn{display:flex;align-items:center;justify-content:center;text-align:center;padding:9px 10px;border-radius:10px;font-size:12.5px;font-weight:700;text-decoration:none;border:none;cursor:pointer;line-height:1.25;transition:opacity .15s}.tile-btn:hover{opacity:.9}.radar-cell{display:flex;flex-direction:column;justify-content:center;padding:8px 10px;border-radius:9px;border:1px solid var(--border);cursor:pointer;color:inherit;font:inherit}.cat-scroll{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}.cat-scroll::-webkit-scrollbar{display:none}.cat-scroll .tab{white-space:nowrap;flex-shrink:0}.hero-img,.news-thumb{aspect-ratio:16/9;object-fit:cover}@media(max-width:920px){.svc-grid{grid-template-columns:repeat(2,1fr)}.svc-grid .tile-btn:last-child{grid-column:span 2}.radar-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:860px){.grid-layout{display:flex!important;flex-direction:column!important}.sidebar,.feed-col{width:100%!important;max-width:100%!important}.news-card{flex-direction:column!important}.news-thumb{width:100%!important;height:185px!important;object-fit:cover!important}}@media(max-width:560px){.soc-grid{grid-template-columns:repeat(2,1fr)}.tile-btn{font-size:12px;padding:8px 8px}}'
   );
+  const mainHtml = designGridCss + tag('main', 'class="wrap"',
+    socialBar +
+    servicesBar +
+    radarBox +
+    tag('div', 'class="cat-scroll" style="margin:8px 0"', catTabs) +
+    tag('div', 'style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px"',
+      tag('select', 'class="soc-pill" style="flex:1 1 190px;min-height:38px" onchange="filterCity(this.value)"', distOpts) +
+      tag('input', 'type="search" class="input" style="flex:2 1 220px;min-height:38px;padding:6px 12px;font-size:14px" placeholder="Поиск по новостям, улицам и городам края..." oninput="setSearch(this.value)"')
+    ) +
+    tag('div', 'class="grid-layout"',
+      tag('section', 'id="feed" class="feed-col"', cards) +
+      tag('aside', 'class="sidebar"',
+        weatherWidget +
+        tag('div', 'class="widget" style="padding:16px;margin-bottom:14px"',
+          tag('h3', 'style="margin:0 0 8px"', 'Народный контроль Приморья • 24/7') +
+          tag('button', 'type="button" class="btn-cta" onclick="openReport()"', 'Сообщить о проблеме или новости')
+        ) +
+        dirWidget +
+        pollWidget
+      )
+    ) +
+    modalsHtml +
+    tag('script', 'src="./app.js?v=200"', '')
+  );
+
+  const footerHtml = tag('footer', 'class="site-footer"',
+    tag('div', 'class="wrap" style="line-height:1.7"',
+      '© 2026 ИА «Прим_Дозор» (18+). Оперативные новости Владивостока и Приморского края 24/7.' + tag('br') +
+      'Редакция и администрация портала: Козин А.И. • Почта: prim_dozor@internet.ru' + tag('br') +
+      tag('a', 'href="' + SOC_URLS.tg + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700"', 'Читайте нас в Telegram') + ' • ' +
+      tag('a', 'href="' + SOC_URLS.max + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700"', 'Читайте нас в MAX') + ' • ' +
+      tag('a', 'href="' + SOC_URLS.vk + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700"', 'Читайте нас в ВК') + ' • ' +
+      tag('a', 'href="' + SOC_URLS.dzen + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700"', 'Читайте нас в Дзен')
+    )
+  );
+
+  const docType = LT + '!DOCTYPE html' + GT;
+  fs.writeFileSync('index.html', docType + tag('html', 'lang="ru"', headHtml + tag('body', '', topBannerHtml + headerHtml + mainHtml + footerHtml)), 'utf8');
+
+  const xmlHead = LT + '?xml version="1.0" encoding="UTF-8"?' + GT;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const urlItems = [{ loc: 'https://' + HOST + '/', mod: todayIso }].concat(
+    list.map(n => ({ loc: 'https://' + HOST + '/news/' + n.id + '.html', mod: n.isoDate ? String(n.isoDate).slice(0, 10) : todayIso }))
+  );
+  const sm = xmlHead + tag('urlset', 'xmlns="http://sitemaps.org"',
+    urlItems.map(u => tag('url', '', tag('loc', '', u.loc) + tag('lastmod', '', u.mod))).join('')
+  );
+  fs.writeFileSync('sitemap.xml', sm, 'utf8');
+  fs.writeFileSync('robots.txt', 'User-agent: *\nAllow: /\nAllow: /dzen.xml\nSitemap: https://' + HOST + '/sitemap.xml\n', 'utf8');
+
+  const cdataStart = LT + '![CDATA[';
+  const cdataEnd = ']]' + GT;
+  const dzenItems = list.slice(0, 30).map(n => {
+    const link = 'https://' + HOST + '/news/' + n.id + '.html';
+    const pubDate = new Date(Number(n.id) || Date.now()).toUTCString();
+    const shortDesc = esc(String(n.text || '').replace(/\s+/g, ' ').slice(0, 220)) + '...';
+    const imgTag = n.cover ? tag('figure', '', tag('img', 'src="https://' + HOST + '/' + esc(n.cover) + '" alt=""')) : '';
+    const bodyP = String(n.text || '').split('\n\n').map(par => tag('p', '', esc(par))).join('');
+    const signP = tag('p', '', 'Читайте оперативные сводки Приморского края в ' + tag('a', 'href="' + SOC_URLS.tg + '"', 'Telegram') + ', ' + tag('a', 'href="' + SOC_URLS.max + '"', 'MAX') + ' и ' + tag('a', 'href="' + SOC_URLS.vk + '"', 'ВКонтакте') + '. Источник: ' + tag('a', 'href="' + link + '"', 'ИА «Прим_Дозор»') + '.');
+    return tag('item', '',
+      tag('title', '', esc(n.title)) +
+      tag('link', '', link) +
+      tag('guid', '', link) +
+      tag('pubDate', '', pubDate) +
+      tag('description', '', shortDesc) +
+      tag('category', '', 'format-article') +
+      tag('category', '', 'index') +
+      tag('category', '', 'comment-all') +
+      tag('enclosure', 'url="https://' + HOST + '/' + esc(n.cover) + '" type="image/jpeg"') +
+      tag('content:encoded', '', cdataStart + imgTag + bodyP + signP + cdataEnd)
+    );
+  }).join('');
+  const dzenRss = xmlHead + tag('rss', 'version="2.0" xmlns:content="http://purl.org"',
+    tag('channel', '',
+      tag('title', '', 'ИА «Прим_Дозор» | Новости Владивосток Приморье') +
+      tag('link', '', 'https://' + HOST + '/') +
+      tag('description', '', 'Оперативные новости Владивостока и Приморского края 24/7') +
+      tag('language', '', 'ru') +
+      dzenItems
+    )
+  );
+  fs.writeFileSync('dzen.xml', dzenRss, 'utf8');
+}
+
+module.exports = { buildHtml };
