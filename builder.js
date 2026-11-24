@@ -12,8 +12,9 @@ const SOC_URLS = {
   direct: 'https://t.me',
   vk: 'https://vk.com',
   max: 'https://max.ru',
-  dzen: 'https://dzen.ru'
+  dzen: 'https://dzen.ru/prim_dozor'
 };
+
 
 function tag(name, attrs, inner) {
   return LT + name + (attrs ? ' ' + attrs : '') + GT + (inner !== undefined ? inner + LT + SLASH + name + GT : '');
